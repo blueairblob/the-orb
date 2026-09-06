@@ -41,6 +41,7 @@ Current decisions locked:
 | `engine/` | Phase 1 Python engine (object model, state machine, brief-builder, voice loop). Scaffold only. |
 | `experiments/` | Model / prompt / brief experiments run on the dev host. One dated folder per experiment. |
 | `demos/` | Recorded runs worth keeping — transcripts, audio, notes. |
+| `devlog/` | Living journal of development sessions — decisions, commands, outcomes, open threads, dated. |
 
 ## Where to start
 

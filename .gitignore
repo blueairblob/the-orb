@@ -26,6 +26,10 @@ secrets/
 *.ogg
 !**/manifest*.json
 
+# Experiment output — curate what's worth keeping, don't auto-commit raw traces
+experiments/*/*.jsonl
+experiments/*/run-*/
+
 # OS / editor
 .DS_Store
 Thumbs.db

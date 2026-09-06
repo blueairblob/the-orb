@@ -14,13 +14,20 @@ the LLM owns only its *mouth* (the words). That split is the whole idea.
 
 ## Status
 
-**Design-complete, nothing built yet.** The PRD passed its own exit test (§22): new problems now
-fold into old ones rather than multiplying, which is the signal to stop designing and start
-building.
+**The cell-and-guard proof of concept (PRD §8) runs end to end, in text mode, on the desktop.**
+Object model, guard Character Engine, brief-builder, guardrail, and core loop are all built
+(`engine/`) and exercised against the real Gemma 4 E2B model via `orb-engine`. Both terminal
+states — talk your way to an unlock, or push the guard to a lockout — are reachable.
 
-The **one piece of genuine uncertainty** is the hardware spike (§0) — does a small model run
-acceptably on a warm mid-range Android phone? Everything else is engineering. **Nothing starts
-until the spike returns an answer.**
+What's still **not** built is real voice. This desktop dev host has no audio hardware at all, so
+`engine/voice.py` defines a swappable protocol and only a text-mode backend exists so far — the
+real Android on-device STT/TTS backend is Phase 2, on a device that actually has a microphone
+and a speaker.
+
+The **one piece of genuine uncertainty** remains the hardware spike (§0) — does a small model run
+acceptably on a warm mid-range Android phone? That question is still open and still gates the
+on-device deployment decision; everything built so far is desktop engine logic, deliberately kept
+separate from it (see `CLAUDE.md`, "This dev host vs the phone").
 
 Current decisions locked:
 
@@ -39,10 +46,11 @@ Current decisions locked:
 | `docs/decisions/` | Architecture Decision Records — one file per locked decision. |
 | `docs/archive/` | Superseded working docs (e.g. the completed cleanup action plan). |
 | `spike/` | The go/no-go hardware benchmark. `spike/README.md` defines the pass mark and how to log results. |
-| `engine/` | Phase 1 Python engine (object model, state machine, brief-builder, voice loop). Scaffold only. |
+| `engine/` | Phase 1 Python engine — object model, guard, brief-builder, core loop. Runs (text-mode voice). |
 | `experiments/` | Model / prompt / brief experiments run on the dev host. One dated folder per experiment. |
 | `demos/` | Recorded runs worth keeping — transcripts, audio, notes. |
 | `devlog/` | Living journal of development sessions — decisions, commands, outcomes, open threads, dated. |
+| `tests/` | Engine-logic tests, run against a stub LLM — no model download needed. |
 
 ## Where to start
 

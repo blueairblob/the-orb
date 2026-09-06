@@ -16,12 +16,12 @@ from pathlib import Path
 import click
 import yaml
 
-from experiments.harness import runner
+from engine import llm
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def _print_result(name: str, result: runner.PromptResult) -> None:
+def _print_result(name: str, result: llm.PromptResult) -> None:
     click.echo(click.style(f"[{name}]", fg="cyan", bold=True))
     click.echo(f"  prompt:   {result.prompt}")
     click.echo(f"  response: {result.response}")
@@ -42,7 +42,7 @@ def main() -> None:
 
 
 @main.command()
-@click.option("--model-id", default=runner.DEFAULT_MODEL_ID, show_default=True)
+@click.option("--model-id", default=llm.DEFAULT_MODEL_ID, show_default=True)
 @click.option(
     "--yes",
     is_flag=True,
@@ -50,34 +50,34 @@ def main() -> None:
 )
 def setup(model_id: str, yes: bool) -> None:
     """Downloads and imports Gemma 4 E2B (~2.5 GB) via the litert-lm CLI."""
-    if runner.is_model_ready(model_id):
+    if llm.is_model_ready(model_id):
         click.echo(f"Model '{model_id}' already imported at "
-                   f"{runner.resolve_model_path(model_id)}.")
+                   f"{llm.resolve_model_path(model_id)}.")
         return
 
     if not yes:
         click.confirm(
             f"This downloads ~2.5 GB from Hugging Face "
-            f"({runner.DEFAULT_HF_REPO}) to {runner.litert_lm_base_dir()}. Continue?",
+            f"({llm.DEFAULT_HF_REPO}) to {llm.litert_lm_base_dir()}. Continue?",
             abort=True,
         )
 
-    path = runner.import_model(model_id)
+    path = llm.import_model(model_id)
     click.echo(f"Imported '{model_id}' -> {path}")
 
 
 @main.command()
 @click.argument("prompt")
 @click.option("--system", "system_message", default=None, help="System message / brief.")
-@click.option("--model-id", default=runner.DEFAULT_MODEL_ID, show_default=True)
+@click.option("--model-id", default=llm.DEFAULT_MODEL_ID, show_default=True)
 @click.option("--verbose", is_flag=True, help="Show native LiteRT-LM engine logs.")
 def prompt(prompt: str, system_message: str | None, model_id: str, verbose: bool) -> None:
     """Sends a single prompt and prints the reply plus desktop timing."""
-    if not runner.is_model_ready(model_id):
+    if not llm.is_model_ready(model_id):
         raise click.ClickException(
             f"Model '{model_id}' not imported yet. Run `orb-harness setup` first."
         )
-    with runner.GemmaHarness(
+    with llm.GemmaHarness(
         model_id=model_id, system_message=system_message, verbose=verbose
     ) as harness:
         result = harness.ask(prompt)
@@ -86,7 +86,7 @@ def prompt(prompt: str, system_message: str | None, model_id: str, verbose: bool
 
 @main.command()
 @click.argument("cases_file", type=click.Path(exists=True, path_type=Path))
-@click.option("--model-id", default=runner.DEFAULT_MODEL_ID, show_default=True)
+@click.option("--model-id", default=llm.DEFAULT_MODEL_ID, show_default=True)
 @click.option(
     "--out-dir",
     type=click.Path(path_type=Path),
@@ -100,7 +100,7 @@ def batch(cases_file: Path, model_id: str, out_dir: Path | None, verbose: bool) 
     Case file format: a YAML list of {name, prompt, system_message?} — see
     `experiments/harness/prompts/seed_cases.yaml` for the starter set.
     """
-    if not runner.is_model_ready(model_id):
+    if not llm.is_model_ready(model_id):
         raise click.ClickException(
             f"Model '{model_id}' not imported yet. Run `orb-harness setup` first."
         )
@@ -117,7 +117,7 @@ def batch(cases_file: Path, model_id: str, out_dir: Path | None, verbose: bool) 
 
     click.echo(f"Running {len(cases)} case(s) from {cases_file} -> {trace_path}")
     with (
-        runner.GemmaHarness(model_id=model_id, verbose=verbose) as harness,
+        llm.GemmaHarness(model_id=model_id, verbose=verbose) as harness,
         trace_path.open("w") as trace_file,
     ):
         for case in cases:
@@ -140,16 +140,16 @@ def batch(cases_file: Path, model_id: str, out_dir: Path | None, verbose: bool) 
 
 @main.command()
 @click.option("--system", "system_message", default=None, help="System message / brief.")
-@click.option("--model-id", default=runner.DEFAULT_MODEL_ID, show_default=True)
+@click.option("--model-id", default=llm.DEFAULT_MODEL_ID, show_default=True)
 @click.option("--verbose", is_flag=True, help="Show native LiteRT-LM engine logs.")
 def repl(system_message: str | None, model_id: str, verbose: bool) -> None:
     """Interactive free-form prompting against a running model instance."""
-    if not runner.is_model_ready(model_id):
+    if not llm.is_model_ready(model_id):
         raise click.ClickException(
             f"Model '{model_id}' not imported yet. Run `orb-harness setup` first."
         )
     click.echo("Interactive mode. Ctrl-D or 'exit' to quit.")
-    with runner.GemmaHarness(
+    with llm.GemmaHarness(
         model_id=model_id, system_message=system_message, verbose=verbose
     ) as harness:
         while True:

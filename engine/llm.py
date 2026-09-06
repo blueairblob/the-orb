@@ -1,9 +1,14 @@
-"""Thin wrapper around litert-lm's Python API for prodding Gemma 4 E2B.
+"""The engine's LLM client: thin wrapper around litert-lm's Python API.
 
-Uses the same runtime and .litertlm quantised weights the app will ship with
-on Android (see PRD §11), so brief/prompt iteration done here reflects real
-model behaviour — but the *timings* are desktop CPU numbers, not the phone
-spike (PRD §0). Label them accordingly wherever they're surfaced.
+This is core engine responsibility (PRD §7 step 5 — "LLM narrates"), not dev
+tooling: it's how the engine actually talks to Gemma 4 E2B, using the same
+runtime and .litertlm quantised weights the app ships with on Android (PRD
+§11). `experiments/harness/` reuses this module for desktop iteration rather
+than duplicating it — dev tooling depends on the engine, not the other way
+round.
+
+Timings reported here are desktop CPU numbers when run on this dev host —
+NOT the phone spike (PRD §0). Label them accordingly wherever they're shown.
 """
 
 from __future__ import annotations
@@ -125,8 +130,8 @@ class PromptResult:
 class GemmaHarness:
     """Loads Gemma 4 E2B via LiteRT-LM and runs prompts against it.
 
-    Desktop-CPU only: this is for brief/prompt iteration (PRD §14,
-    `experiments/README.md`), not the §0 phone go/no-go benchmark.
+    Used both by the engine's own core loop (`engine/loop.py`) and by
+    `experiments/harness/` for desktop brief/prompt iteration (PRD §14).
     """
 
     def __init__(

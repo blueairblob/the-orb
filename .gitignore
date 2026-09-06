@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Models — never commit large weights
+*.task
+*.litertlm
+*.gguf
+*.bin
+*.safetensors
+models/
+
+# Secrets / local config
+.env
+*.local
+secrets/
+
+# Audio asset working files (keep the bank elsewhere; commit only manifests)
+*.wav
+*.mp3
+*.ogg
+!**/manifest*.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

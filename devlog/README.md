@@ -27,4 +27,5 @@ leave it here if it's closer to "here's what we tried and found."
 
 ## Entries
 
+- [2026-09-06 — The Evennia evaluation](2026-09-06-evennia-evaluation.md)
 - [2026-09-06 — Phase 1 environment + the Gemma 4 E2B harness](2026-09-06-phase-1-env-and-gemma-harness.md)

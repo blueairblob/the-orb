@@ -27,8 +27,9 @@ Current decisions locked:
 - **Spike benchmark model: Gemma 4 E2B** (`litert-community/gemma-4-E2B-it-litert-lm`, `.litertlm`).
 - **Prototype language: Python**, desktop-first. The phone shell is a deliberately separate,
   later phase.
-- **World-model shortcut under evaluation: Evennia** (borrow the typeclass object model, ignore
-  the MUD server).
+- **World model: build fresh, not on Evennia.** Evaluated hands-on and declined — its object
+  model is inseparable from a Django+Twisted multiplayer server stack. See
+  [ADR 0002](docs/decisions/0002-evennia-evaluation.md).
 
 ## Repo map
 

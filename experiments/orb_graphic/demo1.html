@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Responsive Particle Orb</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            color: #ffffff;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .status-container {
+            margin-top: 10px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-container">
+        <button id="mic-btn">Enable Microphone</button>
+        <div class="status-container">
+            <div id="status-dot" class="status-dot"></div>
+            <span id="status-text">Microphone Offline</span>
+        </div>
+    </div>
+
+    <canvas id="orbCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('orbCanvas');
+        const ctx = canvas.getContext('2d');
+        const micBtn = document.getElementById('mic-btn');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+
+        // Configuration Constants
+        const PARTICLE_COUNT = 3000;
+        const BASE_GRAVITY = 0.15;
+        const BASE_ORB_RADIUS = 120;
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        // Audio System State
+        let audioContext = null;
+        let analyser = null;
+        let dataArray = null;
+        let isMicActive = false;
+
+        // Global Dynamic Visual Variables
+        let voiceVolume = 0;      // Maps to orb scale/pulse
+        let voiceMood = 0;        // 0 = Calm (Green), 1 = Active (Blue), 2 = Alarmed (Red)
+        let globalAngleX = 0;     // 3D Rotation tracking
+        let globalAngleY = 0;
+
+        // Target RGB profiles for Mood States
+        const MOOD_COLORS = [
+            { r: 34, g: 197, b: 94 },   // Green (Calm)
+            { r: 59, g: 130, b: 246 },  // Blue (Active)
+            { r: 239, g: 68, b: 68 }    // Red (Alarmed)
+        ];
+
+        // Particle Structure
+        class Particle {
+            constructor() {
+                this.reset();
+                // Randomise initial distance to prevent starting in a flat ring
+                this.radius = Math.random() * BASE_ORB_RADIUS * 2; 
+            }
+
+            reset() {
+                // Initialize spherical coordinates
+                this.theta = Math.random() * Math.PI * 2; // Orbital angle
+                this.phi = Math.acos((Math.random() * 2) - 1); // Elevation angle
+                this.radius = BASE_ORB_RADIUS + (Math.random() * 60 - 30);
+                this.speed = 0.02 + Math.random() * 0.03;
+                this.size = 1.0 + Math.random() * 1.5;
+                
+                // Color Mixing Engine properties
+                this.r = MOOD_COLORS[0].r;
+                this.g = MOOD_COLORS[0].g;
+                this.b = MOOD_COLORS[0].b;
+            }
+
+            update(volume, currentMood) {
+                // Orbit mechanics - rotate around Y axis primarily
+                this.theta += this.speed * (1 + volume * 1.5);
+
+                // Sound volume dynamically pushes particles outward
+                const targetRadius = (BASE_ORB_RADIUS + (volume * 140)) * (1 + Math.sin(this.theta * 2) * 0.05);
+                
+                // Higher central gravity drags particles back tightly
+                const gravityStrength = BASE_GRAVITY * (1 + volume * 0.5);
+                this.radius += (targetRadius - this.radius) * gravityStrength;
+
+                // --- Edge-Inward Organic Colour Bleed Logic ---
+                // Identify normalized distance from center core
+                const maxExpectedRadius = BASE_ORB_RADIUS + 140;
+                const normalizedDist = Math.min(this.radius / maxExpectedRadius, 1);
+                
+                // Calculate threshold based on current global mood
+                // Highly dynamic moods cause a faster inward ripple
+                const rippleWave = (Math.sin(Date.now() * 0.005) * 0.1) + currentMood;
+                
+                let targetMoodIdx = Math.floor(rippleWave);
+                let nextMoodIdx = Math.min(targetMoodIdx + 1, 2);
+                let mixFactor = rippleWave - targetMoodIdx;
+
+                // Outer edge particles shift to the new target colour profile first
+                if (normalizedDist > (1 - (volume * 0.5))) {
+                    targetMoodIdx = Math.min(Math.floor(currentMood + 0.5), 2);
+                    mixFactor = 1;
+                }
+
+                const targetR = MOOD_COLORS[targetMoodIdx].r * (1 - mixFactor) + MOOD_COLORS[nextMoodIdx].r * mixFactor;
+                const targetG = MOOD_COLORS[targetMoodIdx].g * (1 - mixFactor) + MOOD_COLORS[nextMoodIdx].g * mixFactor;
+                const targetB = MOOD_COLORS[targetMoodIdx].b * (1 - mixFactor) + MOOD_COLORS[nextMoodIdx].b * mixFactor;
+
+                // Smoothly blend the pixel's current color to its localized targeted color
+                this.r += (targetR - this.r) * 0.1;
+                this.g += (targetG - this.g) * 0.1;
+                this.b += (targetB - this.b) * 0.1;
+            }
+
+            render() {
+                // Convert Spherical mapping to 3D Cartesian coordinates
+                let x3d = this.radius * Math.sin(this.phi) * Math.cos(this.theta);
+                let y3d = this.radius * Math.cos(this.phi);
+                let z3d = this.radius * Math.sin(this.phi) * Math.sin(this.theta);
+
+                // Apply Global 3D Field Rotation (Pitch and Yaw Matrix modifications)
+                // Y-axis rotation
+                let xRot1 = x3d * Math.cos(globalAngleY) - z3d * Math.sin(globalAngleY);
+                let zRot1 = x3d * Math.sin(globalAngleY) + z3d * Math.cos(globalAngleY);
+                
+                // X-axis rotation
+                let yRot2 = y3d * Math.cos(globalAngleX) - zRot1 * Math.sin(globalAngleX);
+                let zRot2 = y3d * Math.sin(globalAngleX) + zRot1 * Math.cos(globalAngleX);
+
+                // Perspective projection onto 2D canvas screen space
+                const fieldOfView = 400;
+                const perspectiveScale = fieldOfView / (fieldOfView + zRot2);
+                
+                const screenX = width / 2 + xRot1 * perspectiveScale;
+                const screenY = height / 2 + yRot2 * perspectiveScale;
+
+                // Render micro pixels using high brightness opacity
+                if (screenX >= 0 && screenX <= width && screenY >= 0 && screenY <= height) {
+                    const finalOpacity = Math.max(0.1, perspectiveScale * 0.8);
+                    ctx.fillStyle = `rgba(${Math.floor(this.r)}, ${Math.floor(this.g)}, ${Math.floor(this.b)}, ${finalOpacity})`;
+                    
+                    // Pixels appear larger if physically closer to the viewport camera
+                    const renderingSize = Math.max(0.5, this.size * perspectiveScale);
+                    ctx.fillRect(screenX, screenY, renderingSize, renderingSize);
+                }
+            }
+        }
+
+        // Generate Particle Pool array
+        const particles = Array.from({ length: PARTICLE_COUNT }, () => new Particle());
+
+        // Setup microphone feed processing
+        async function initAudio() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 512; // Frequency resolution bins
+                
+                source.connect(analyser);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                isMicActive = true;
+                statusDot.style.background = '#22c55e';
+                statusText.innerText = "Microphone Active - Speak Now";
+                micBtn.style.display = 'none';
+            } catch (err) {
+                console.error("Audio Access Denied: ", err);
+                statusText.innerText = "Permission Denied / Mic Unreachable";
+            }
+        }
+
+        // Core visual calculation engine
+        function processAudioMetrics() {
+            if (!isMicActive) {
+                // Gentle rhythmic idle pulse when audio engine is unlinked
+                voiceVolume = 0.05 + Math.sin(Date.now() * 0.002) * 0.03;
+                voiceMood = 0; // Pure Calm Green state
+                return;
+            }
+
+
+analyser.getByteFrequencyData(dataArray);
+let totalVolume = 0;
+let highFreqSum = 0;
+const len = dataArray.length;
+for (let i = 0; i < len; i++) {
+totalVolume += dataArray[i];
+// Segment higher frequencies to evaluate voice intensity/cadence spikes
+if (i > len * 0.5) {
+highFreqSum += dataArray[i];
+}
+}
+// Normalize volume output to scale linearly between 0.0 and 1.0
+const calculatedVolume = (totalVolume / len) / 255;
+// Smooth transitions to prevent erratic frame jitter
+voiceVolume += (calculatedVolume - voiceVolume) * 0.2;
+const highFreqAverage = (highFreqSum / (len * 0.5)) / 255;
+// Map Audio attributes straight to distinct Mood profiles
+// Loud and sharp high friction signals trigger Alarmed (Red)
+if (voiceVolume > 0.25 || highFreqAverage > 0.15) {
+voiceMood += (2.0 - voiceMood) * 0.1;
+}
+// Moderate ambient chatter triggers Active (Blue)
+else if (voiceVolume > 0.06) {
+voiceMood += (1.0 - voiceMood) * 0.08;
+}
+// Whispering or absolute quiet conditions fade back to Calm (Green)
+else {
+voiceMood += (0.0 - voiceMood) * 0.05;
+}
+}
+// Main Animation Frame loop
+function animate() {
+// Semi-transparent clearing fill provides a fluid motion trails path
+ctx.fillStyle = 'rgba(5, 5, 5, 0.25)';
+ctx.fillRect(0, 0, width, height);
+processAudioMetrics();
+// Continuously drift global coordinate canvas viewpoint frame rotation matrix
+globalAngleY += 0.003 + (voiceVolume * 0.01);
+globalAngleX = Math.sin(Date.now() * 0.0004) * 0.3;
+// Run structural pipeline transformations
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+particles[i].update(voiceVolume, voiceMood);
+particles[i].render();
+}
+requestAnimationFrame(animate);
+}
+// Listener Attachments
+micBtn.addEventListener('click', () => {
+if (!audioContext) initAudio();
+});
+window.addEventListener('resize', () => {
+width = canvas.width = window.innerWidth;
+height = canvas.height = window.innerHeight;
+});
+// Fire rendering loop
+animate();
+

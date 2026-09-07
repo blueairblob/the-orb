@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swirling Particle Orb - Mood Switcher</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030303;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #control-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(10, 10, 10, 0.75);
+            padding: 12px 20px;
+            border-radius: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .mood-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .mood-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .mood-btn.active[data-mood="0"] { background: #22c55e; color: #000; box-shadow: 0 0 15px rgba(34, 197, 94, 0.4); }
+        .mood-btn.active[data-mood="1"] { background: #3b82f6; color: #fff; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
+        .mood-btn.active[data-mood="2"] { background: #ef4444; color: #fff; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+
+        #panel-title {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="control-panel">
+        <span id="panel-title">System State:</span>
+        <button class="mood-btn active" data-mood="0">Calm</button>
+        <button class="mood-btn" data-mood="1">Active</button>
+        <button class="mood-btn" data-mood="2">Alarmed</button>
+    </div>
+
+    <canvas id="orbCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('orbCanvas');
+        const ctx = canvas.getContext('2d');
+        const buttons = document.querySelectorAll('.mood-btn');
+
+        // Configuration matching your criteria
+        const PARTICLE_COUNT = 4500;    // Increased pixel count for dust-like aesthetic
+        const TIGHT_GRAVITY = 0.25;     // High gravity to keep the core compressed and small
+        const TARGET_ORB_RADIUS = 75;   // Smaller baseline ball radius
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        // Visual States
+        let currentMood = 0;            // 0 = Green, 1 = Blue, 2 = Red
+        let targetMood = 0;
+        let globalAngleY = 0;           // Rotation matrices tracking
+        let globalAngleX = 0;
+        
+        // Dynamic speed modifiers tied to the active state
+        let swirlSpeedModifier = 1.0;
+        let pulseSpeed = 0.003;
+        let pulseIntensity = 0.06;
+
+        // RGB profiles for the states
+        const MOOD_PROFILES = [
+            { r: 34, g: 197, b: 94, swirl: 1.0, pulseS: 0.002, pulseI: 0.04 },  // Green (Calm)
+            { r: 59, g: 130, b: 246, swirl: 2.2, pulseS: 0.005, pulseI: 0.09 }, // Blue (Active)
+            { r: 239, g: 68, b: 68, swirl: 4.5, pulseS: 0.012, pulseI: 0.18 }   // Red (Alarmed)
+        ];
+
+        class MicroPixel {
+            constructor() {
+                // Initialize in random spherical shell space
+                this.theta = Math.random() * Math.PI * 2;
+                this.phi = Math.acos((Math.random() * 2) - 1);
+                this.radius = TARGET_ORB_RADIUS + (Math.random() * 150 - 75);
+                
+                // Ultra tiny particle configurations
+                this.baseSpeed = 0.01 + Math.random() * 0.015;
+                this.size = 0.6 + Math.random() * 1.0; 
+
+                // Seed initial color as Calm Green
+                this.r = MOOD_PROFILES[0].r;
+                this.g = MOOD_PROFILES[0].g;
+                this.b = MOOD_PROFILES[0].b;
+            }
+
+            update() {
+                // Orbital velocity accelerated by active state profile
+                this.theta += this.baseSpeed * swirlSpeedModifier;
+
+                // Pulsating breathing behavior calculated via sine waves
+                const waveOffset = Math.sin(Date.now() * pulseSpeed + (this.phi * 4)) * pulseIntensity;
+                const dynamicBallRadius = TARGET_ORB_RADIUS * (1 + waveOffset);
+
+                // Intense gravitational force snapping pixels inward tightly
+                this.radius += (dynamicBallRadius - this.radius) * TIGHT_GRAVITY;
+
+                // --- Edge-Inward Color Transition Mapping ---
+                // Measure exact distance scaling fraction relative to center core
+                const maxShellRadius = TARGET_ORB_RADIUS * 2;
+                const normalizedDist = Math.min(this.radius / maxShellRadius, 1);
+
+                let localTargetIdx = targetMood;
+
+                // Organic logic: Outer edges adopt the new state color first.
+                // The center core delays, holding the legacy color a fraction longer.
+                if (currentMood !== targetMood) {
+                    const rippleFront = currentMood + (targetMood - currentMood) * (1 - normalizedDist);
+                    localTargetIdx = Math.round(rippleFront);
+                }
+
+                // Blend specific individual pixel values to their calculated targets
+                const tr = MOOD_PROFILES[localTargetIdx].r;
+                const tg = MOOD_PROFILES[localTargetIdx].g;
+                const tb = MOOD_PROFILES[localTargetIdx].b;
+
+                this.r += (tr - this.r) * 0.08;
+                this.g += (tg - this.g) * 0.08;
+                this.b += (tb - this.b) * 0.08;
+            }
+
+            render() {
+                // Generate 3D spatial points
+                let x3d = this.radius * Math.sin(this.phi) * Math.cos(this.theta);
+                let y3d = this.radius * Math.cos(this.phi);
+                let z3d = this.radius * Math.sin(this.phi) * Math.sin(this.theta);
+
+                // Continuous global 3D matrix camera pitch/yaw rotation transformations
+                // Rotation around Y
+                let xRot1 = x3d * Math.cos(globalAngleY) - z3d * Math.sin(globalAngleY);
+                let zRot1 = x3d * Math.sin(globalAngleY) + z3d * Math.cos(globalAngleY);
+                
+                // Rotation around X
+                let yRot2 = y3d * Math.cos(globalAngleX) - zRot1 * Math.sin(globalAngleX);
+                let zRot2 = y3d * Math.sin(globalAngleX) + zRot1 * Math.cos(globalAngleX);
+
+                // Perspective scaling
+                const fov = 350;
+                const scale = fov / (fov + zRot2);
+                
+                const screenX = width / 2 + xRot1 * scale;
+                const screenY = height / 2 + yRot2 * scale;
+
+                // Clip boundaries check before rendering canvas context blocks
+                if (screenX >= 0 && screenX <= width && screenY >= 0 && screenY <= height) {
+                    const depthAlpha = Math.max(0.15, scale * 0.85);
+                    ctx.fillStyle = `rgba(${Math.floor(this.r)}, ${Math.floor(this.g)}, ${Math.floor(this.b)}, ${depthAlpha})`;
+                    
+                    const renderedSize = this.size * scale;
+                    ctx.fillRect(screenX, screenY, renderedSize, renderedSize);
+                }
+            }
+        }
+
+        // Initialize micro particle array pool
+        const particlePool = Array.from({ length: PARTICLE_COUNT }, () => new MicroPixel());
+
+        // Process global states transitions
+        function smoothStateTransitions() {
+            currentMood += (targetMood - currentMood) * 0.05;
+
+            // Extract target settings matching the interpolation states
+            const profile = MOOD_PROFILES[targetMood];
+            swirlSpeedModifier += (profile.swirl - swirlSpeedModifier) * 0.05;
+            pulseSpeed += (profile.pulseS - pulseSpeed) * 0.05;
+            pulseIntensity += (profile.pulseI - pulseIntensity) * 0.05;
+        }
+
+        function animate() {
+            // High speed motion tracking blur trails canvas clear
+            ctx.fillStyle = 'rgba(3, 3, 3, 0.22)';
+            ctx.fillRect(0, 0, width, height);
+
+            smoothStateTransitions();
+
+            // Continuous environment rotation drift over time
+            globalAngleY += 0.002 + (swirlSpeedModifier * 0.001);
+            globalAngleX = Math.sin(Date.now() * 0.0003) * 0.25;
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                particlePool[i].update();
+                particlePool[i].render();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Control Panel state interaction mapping
+        buttons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                buttons.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                targetMood = parseInt(e.target.getAttribute('data-mood'));
+            });
+        });
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Trigger loop execution
+        animate();
+    </script>
+</body>

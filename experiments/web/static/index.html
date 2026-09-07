@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Orb — cell and guard</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <canvas id="orb-canvas"></canvas>
+
+  <div id="hud">
+    <div id="status-line">
+      <span id="status-dot" class="status-dot"></span>
+      <span id="status-text">Connecting…</span>
+    </div>
+    <button id="mic-btn" disabled>🎙 Hold to talk</button>
+  </div>
+
+  <button id="debug-toggle" title="Toggle debug panel">⋯</button>
+
+  <div id="debug-panel" hidden>
+    <div id="transcript"></div>
+    <form id="debug-form">
+      <input id="debug-input" type="text" placeholder="Type a line instead of speaking…" autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script src="/orb.js"></script>
+</body>
+</html>

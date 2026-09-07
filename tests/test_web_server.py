@@ -15,6 +15,7 @@ def test_state_and_reply_protocol(tmp_path):
         state = ws.receive_json()
         assert state["type"] == "state"
         assert state["mood"] == 40
+        assert state["speaker"] == "dm"
         assert "intro" in state
 
         ws.send_json({"type": "utterance", "text": "please, my friend"})
@@ -25,10 +26,27 @@ def test_state_and_reply_protocol(tmp_path):
         reply = ws.receive_json()
         assert reply["type"] == "reply"
         assert reply["text"] == "Hmph. Fine."
+        assert reply["speaker"] == "guard"
         assert reply["mood"] > 40
         assert reply["outcome"] is None
 
     assert (tmp_path / "save.json").is_file()
+
+
+def test_environment_query_comes_back_as_dm(tmp_path):
+    scenario = build_cell_and_guard()
+    llm = StubLLM(reply="A cold stone cell, a locked door.")
+    app = create_app(llm, scenario, tmp_path / "save.json")
+    client = TestClient(app)
+
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()  # initial state
+        ws.send_json({"type": "utterance", "text": "what do I see?"})
+        ws.receive_json()  # thinking
+        reply = ws.receive_json()
+
+        assert reply["speaker"] == "dm"
+        assert reply["mood"] == 40  # unmoved — the guard wasn't addressed
 
 
 def test_empty_and_malformed_messages_are_ignored(tmp_path):

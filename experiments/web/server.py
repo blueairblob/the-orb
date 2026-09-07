@@ -45,7 +45,7 @@ def create_app(llm: LLMClient, scenario: CellAndGuard, save_path: Path) -> FastA
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket) -> None:
         await websocket.accept()
-        await websocket.send_json({**_state_message(), "intro": INTRO})
+        await websocket.send_json({**_state_message(), "intro": INTRO, "speaker": "dm"})
 
         try:
             while True:
@@ -61,12 +61,18 @@ def create_app(llm: LLMClient, scenario: CellAndGuard, save_path: Path) -> FastA
                     continue
 
                 await websocket.send_json({"type": "thinking"})
-                reply, outcome = await asyncio.to_thread(
+                reply, speaker, outcome = await asyncio.to_thread(
                     run_turn, scenario, llm, utterance
                 )
                 save_state(save_path, scenario)
                 await websocket.send_json(
-                    {**_state_message(), "type": "reply", "text": reply, "outcome": outcome}
+                    {
+                        **_state_message(),
+                        "type": "reply",
+                        "text": reply,
+                        "speaker": speaker,
+                        "outcome": outcome,
+                    }
                 )
         except WebSocketDisconnect:
             pass

@@ -1,4 +1,4 @@
-from engine.brief import build_brief
+from engine.brief import build_guard_brief
 from engine.scenario import build_cell_and_guard
 
 
@@ -8,7 +8,7 @@ def test_brief_reflects_current_state():
     scenario.guard.remember("player", "please let me out")
     scenario.guard.remember("guard", "No.")
 
-    brief = build_brief(scenario.guard, scenario.door, scenario.room)
+    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room)
 
     assert "locked" in brief
     assert "ready to help" in brief
@@ -20,6 +20,6 @@ def test_brief_reflects_unlocked_door():
     scenario = build_cell_and_guard()
     scenario.door.unlock()
 
-    brief = build_brief(scenario.guard, scenario.door, scenario.room)
+    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room)
 
     assert "unlocked" in brief

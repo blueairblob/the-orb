@@ -13,8 +13,8 @@ import sys
 from pathlib import Path
 from typing import Protocol
 
-from engine import guardrail
-from engine.brief import build_brief
+from engine import dm, guardrail
+from engine.brief import build_guard_brief
 from engine.guard import Guard
 from engine.llm import GemmaHarness, is_model_ready
 from engine.save import load_state, save_state
@@ -38,32 +38,57 @@ class LLMClient(Protocol):
     def ask(self, prompt: str, system_message: str | None = None) -> LLMResult: ...
 
 
+def _ask_and_record(
+    llm: LLMClient, guard: Guard, prompt: str, brief: str, speaker: str
+) -> str:
+    result = llm.ask(prompt, system_message=brief)
+    reply = guardrail.filter_reply(result.response)
+    guard.remember(speaker, reply)
+    return reply
+
+
 def run_turn(
     scenario: CellAndGuard, llm: LLMClient, player_utterance: str
-) -> tuple[str, str | None]:
-    """Runs one turn end to end. Returns (spoken_reply, outcome), where
-    outcome is 'unlock', 'lockout', or None."""
+) -> tuple[str, str, str | None]:
+    """Runs one turn end to end. Returns (spoken_reply, speaker, outcome),
+    where speaker is 'dm' or 'guard' and outcome is 'unlock', 'lockout', or
+    None. Routes to the DM (PRD §12: "the DM wearing a different hat") for
+    scene narration and grounding refusals; the guard only ever speaks his
+    own dialogue — see `engine/dm.py`."""
     guard: Guard = scenario.guard
+    scenario.world.clock.advance(TURN_MINUTES)
+    route = dm.classify_utterance(player_utterance)
+
+    if route == "refusal":
+        guard.remember("player", player_utterance)
+        brief = dm.build_refusal_brief(scenario.room, player_utterance)
+        reply = _ask_and_record(llm, guard, player_utterance, brief, "dm")
+        return reply, "dm", None
+
+    if route == "narration":
+        guard.remember("player", player_utterance)
+        brief = dm.build_narration_brief(scenario.room, scenario.door, guard)
+        reply = _ask_and_record(llm, guard, player_utterance, brief, "dm")
+        return reply, "dm", None
+
+    # Default: dialogue directed at the guard.
     # Check for a repeat against prior turns before this one joins memory.
     guard.adjust_mood_from_text(player_utterance)
     guard.remember("player", player_utterance)
-    scenario.world.clock.advance(TURN_MINUTES)
 
     outcome = guard.check_thresholds()
     if outcome == "unlock":
         scenario.door.unlock()
 
-    brief = build_brief(guard, scenario.door, scenario.room)
-    result = llm.ask(player_utterance, system_message=brief)
-    reply = guardrail.filter_reply(result.response)
-    guard.remember("guard", reply)
-    return reply, outcome
+    brief = build_guard_brief(guard, scenario.door, scenario.room)
+    reply = _ask_and_record(llm, guard, player_utterance, brief, "guard")
+    return reply, "guard", outcome
 
 
 def run_loop(
     scenario: CellAndGuard, llm: LLMClient, voice: Voice, save_path: Path
 ) -> None:
-    voice.speak(INTRO)
+    voice.speak(INTRO, speaker="dm")
     while True:
         try:
             utterance = voice.listen()
@@ -74,15 +99,15 @@ def run_loop(
         if not utterance.strip():
             continue
 
-        reply, outcome = run_turn(scenario, llm, utterance)
-        voice.speak(reply)
+        reply, speaker, outcome = run_turn(scenario, llm, utterance)
+        voice.speak(reply, speaker=speaker)
         save_state(save_path, scenario)
 
         if outcome == "unlock":
-            voice.speak("(The door creaks open. You're free.)")
+            voice.speak("(The door creaks open. You're free.)", speaker="dm")
             break
         if outcome == "lockout":
-            voice.speak("(The guard storms off. Your only way out just left.)")
+            voice.speak("(The guard storms off. Your only way out just left.)", speaker="dm")
             break
 
 

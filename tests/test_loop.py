@@ -28,7 +28,7 @@ class ScriptedVoice:
 
     def __init__(self, lines: list[str]):
         self._lines = iter(lines)
-        self.spoken: list[str] = []
+        self.spoken: list[tuple[str, str]] = []  # (speaker, text)
 
     def listen(self) -> str:
         try:
@@ -36,22 +36,52 @@ class ScriptedVoice:
         except StopIteration:
             raise EOFError from None
 
-    def speak(self, text: str) -> None:
-        self.spoken.append(text)
+    def speak(self, text: str, speaker: str = "guard") -> None:
+        self.spoken.append((speaker, text))
 
 
 def test_run_turn_updates_mood_and_memory():
     scenario = build_cell_and_guard()
     llm = StubLLM(reply="Hmph. Fine.")
 
-    reply, outcome = run_turn(scenario, llm, "please, my friend")
+    reply, speaker, outcome = run_turn(scenario, llm, "please, my friend")
 
     assert reply == "Hmph. Fine."
+    assert speaker == "guard"
     assert outcome is None
     assert scenario.guard.mood.value > 40
     assert "player: please, my friend" in scenario.guard.memory
     assert "guard: Hmph. Fine." in scenario.guard.memory
     assert llm.calls[0][0] == "please, my friend"
+
+
+def test_environment_query_routes_to_dm_without_moving_mood():
+    scenario = build_cell_and_guard()
+    llm = StubLLM(reply="A cold stone cell, a locked door.")
+    starting_mood = scenario.guard.mood.value
+
+    reply, speaker, outcome = run_turn(scenario, llm, "what does this place look like?")
+
+    assert speaker == "dm"
+    assert outcome is None
+    assert reply == "A cold stone cell, a locked door."
+    assert scenario.guard.mood.value == starting_mood
+    assert "dm: A cold stone cell, a locked door." in scenario.guard.memory
+    # The DM's brief, not the guard's — should describe the scene, not voice the guard.
+    assert "Dungeon Master" in llm.calls[0][1]
+
+
+def test_ungrounded_action_is_refused_by_the_dm():
+    scenario = build_cell_and_guard()
+    llm = StubLLM(reply="There is no such thing here.")
+    starting_mood = scenario.guard.mood.value
+
+    _reply, speaker, outcome = run_turn(scenario, llm, "I cast a fireball at the guard")
+
+    assert speaker == "dm"
+    assert outcome is None
+    assert scenario.guard.mood.value == starting_mood
+    assert "no place here" in llm.calls[0][1] or "no such thing" in llm.calls[0][1].lower()
 
 
 def test_kind_conversation_reaches_unlock():
@@ -63,7 +93,7 @@ def test_kind_conversation_reaches_unlock():
 
     outcome = None
     for line in kind_lines:
-        _, outcome = run_turn(scenario, llm, line)
+        _, _, outcome = run_turn(scenario, llm, line)
         if outcome:
             break
 
@@ -78,11 +108,22 @@ def test_hostile_conversation_reaches_lockout():
 
     outcome = None
     for line in hostile_lines:
-        _, outcome = run_turn(scenario, llm, line)
+        _, _, outcome = run_turn(scenario, llm, line)
         if outcome:
             break
 
     assert outcome == "lockout"
+
+
+def test_run_loop_speaks_intro_as_the_dm(tmp_path):
+    scenario = build_cell_and_guard()
+    llm = StubLLM()
+    voice = ScriptedVoice(["quit"])
+    save_path = tmp_path / "save.json"
+
+    run_loop(scenario, llm, voice, save_path)
+
+    assert voice.spoken[0][0] == "dm"
 
 
 def test_run_loop_ends_session_on_unlock(tmp_path):
@@ -95,7 +136,7 @@ def test_run_loop_ends_session_on_unlock(tmp_path):
     run_loop(scenario, llm, voice, save_path)
 
     assert scenario.door.locked is False
-    assert any("free" in line for line in voice.spoken)
+    assert any("free" in text for _, text in voice.spoken)
     assert save_path.is_file()
 
 

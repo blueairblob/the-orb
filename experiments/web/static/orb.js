@@ -26,6 +26,10 @@
     { at: 100, h: 112, s: 70, l: 55 }, // ready to help — green-gold
   ];
 
+  // The DM's colour while narrating — pale, cool, mood-agnostic. Distinct
+  // on sight from anywhere on the guard's mood gradient above.
+  const DM_NEUTRAL_HSL = { h: 220, s: 18, l: 68 };
+
   function moodToHsl(mood) {
     const clamped = Math.max(0, Math.min(100, mood));
     let lo = MOOD_COLOR_STOPS[0];
@@ -88,6 +92,7 @@
       this.particles = Array.from({ length: PARTICLE_COUNT }, () => new Particle());
       this.moodValue = 40;
       this.phase = "idle"; // idle | listening | thinking | speaking
+      this.speaker = "guard"; // guard | dm — only matters while phase === "speaking"
       this.micVolume = 0;
       this._angleY = 0;
       this._angleX = 0;
@@ -102,6 +107,10 @@
 
     setPhase(phase) {
       this.phase = phase;
+    }
+
+    setSpeaker(speaker) {
+      this.speaker = speaker;
     }
 
     setMicVolume(volume) {
@@ -143,7 +152,11 @@
       ctx.fillRect(0, 0, this.width, this.height);
 
       const { swirl, radiusPulse, brightness } = this._phaseDynamics(now);
-      const { h, s, l } = moodToHsl(this.moodValue);
+      // The DM isn't a mood-bearing character — while it's speaking, the
+      // orb shouldn't borrow the guard's colour. A fixed neutral tone
+      // instead; the guard's mood gradient applies everywhere else.
+      const isDmSpeaking = this.phase === "speaking" && this.speaker === "dm";
+      const { h, s, l } = isDmSpeaking ? DM_NEUTRAL_HSL : moodToHsl(this.moodValue);
       const targetRgb = hslToRgb(h, s, Math.min(85, l * brightness));
 
       this._angleY += 0.0016 + swirl * 0.0006;
@@ -206,10 +219,13 @@
     statusText.textContent = text;
   }
 
+  const ROLE_LABELS = { player: "You", guard: "Guard", dm: "DM" };
+
   function appendLine(role, text) {
     const el = document.createElement("div");
     el.className = `line ${role}`;
-    el.textContent = role === "player" ? `You: ${text}` : role === "guard" ? `Guard: ${text}` : text;
+    const label = ROLE_LABELS[role];
+    el.textContent = label ? `${label}: ${text}` : text;
     transcript.appendChild(el);
     transcript.scrollTop = transcript.scrollHeight;
   }
@@ -242,15 +258,16 @@
       if (message.type === "state") {
         orb.setMood(message.mood);
         if (message.intro) {
-          appendLine("system", message.intro);
+          appendLine(message.speaker || "dm", message.intro);
+          speak(message.intro, message.speaker || "dm");
         }
       } else if (message.type === "thinking") {
         orb.setPhase("thinking");
-        setStatus("thinking", "The guard is considering…");
+        setStatus("thinking", "Considering…");
       } else if (message.type === "reply") {
         orb.setMood(message.mood);
-        appendLine("guard", message.text);
-        speak(message.text);
+        appendLine(message.speaker, message.text);
+        speak(message.text, message.speaker);
         if (message.outcome === "unlock") {
           appendLine("system", "(The door creaks open. You're free.)");
         } else if (message.outcome === "lockout") {
@@ -267,14 +284,25 @@
   }
 
   // ---------------------------------------------------------------------
-  // Text-to-speech: speaks the guard's reply. No real amplitude/timing
-  // data is exposed by speechSynthesis in most browsers, so the orb's
-  // "speaking" animation (see Orb._phaseDynamics) is a rhythmic stand-in,
-  // not synced to actual audio.
+  // Text-to-speech: speaks the DM's narration or the guard's reply, with
+  // different pitch/rate per speaker (PRD §12 — the DM narrates, the guard
+  // only ever speaks his own dialogue; they should sound like two voices,
+  // not one). No real amplitude/timing data is exposed by speechSynthesis
+  // in most browsers, so the orb's "speaking" animation (see
+  // Orb._phaseDynamics) is a rhythmic stand-in, not synced to actual audio.
   // ---------------------------------------------------------------------
-  function speak(text) {
+  const VOICE_PROFILES = {
+    dm: { pitch: 1.0, rate: 0.95 },
+    guard: { pitch: 0.75, rate: 1.05 },
+  };
+
+  function speak(text, speaker) {
     orb.setPhase("speaking");
-    setStatus("speaking", "Guard is speaking…");
+    orb.setSpeaker(speaker);
+    setStatus(
+      speaker === "dm" ? "narrating" : "speaking",
+      speaker === "dm" ? "The DM narrates…" : "Guard is speaking…"
+    );
     if (!("speechSynthesis" in window)) {
       // No TTS support: hold the speaking phase briefly, then settle.
       setTimeout(() => {
@@ -284,6 +312,9 @@
       return;
     }
     const utterance = new SpeechSynthesisUtterance(text);
+    const profile = VOICE_PROFILES[speaker] || VOICE_PROFILES.guard;
+    utterance.pitch = profile.pitch;
+    utterance.rate = profile.rate;
     utterance.onend = () => {
       orb.setPhase("idle");
       setStatus("connected", "Connected");

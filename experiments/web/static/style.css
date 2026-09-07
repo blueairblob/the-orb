@@ -47,6 +47,7 @@ html, body {
 .status-dot.listening { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; }
 .status-dot.thinking { background: #eab308; box-shadow: 0 0 8px #eab308; }
 .status-dot.speaking { background: #a855f7; box-shadow: 0 0 8px #a855f7; }
+.status-dot.narrating { background: #7dd3fc; box-shadow: 0 0 8px #7dd3fc; }
 
 #mic-btn {
   background: rgba(255, 255, 255, 0.08);
@@ -111,6 +112,7 @@ html, body {
 #transcript .line { margin-bottom: 6px; }
 #transcript .line.player { color: #93c5fd; }
 #transcript .line.guard { color: #d8b4fe; }
+#transcript .line.dm { color: #7dd3fc; font-style: italic; }
 #transcript .line.system { color: rgba(255, 255, 255, 0.4); font-style: italic; }
 
 #debug-form {

@@ -75,6 +75,16 @@ class Guard(Thing):
     memory: list[str] = dataclasses.field(default_factory=list)
     unlock_threshold: int = 75
     lockout_threshold: int = 10
+    # PRD §12's own example, verbatim — drives are what make an NPC feel
+    # alive underneath the conversation, not just a mood number.
+    drives: list[str] = dataclasses.field(
+        default_factory=lambda: [
+            "bored",
+            "cold",
+            "wants his watch to end",
+            "secretly a little soft on prisoners",
+        ]
+    )
 
     def remember(self, speaker: str, line: str) -> None:
         self.memory.append(f"{speaker}: {line}")

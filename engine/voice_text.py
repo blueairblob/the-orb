@@ -14,5 +14,5 @@ class TextVoice:
     def listen(self) -> str:
         return input(self._prompt)
 
-    def speak(self, text: str) -> None:
-        print(f"Guard: {text}")
+    def speak(self, text: str, speaker: str = "guard") -> None:
+        print(f"{speaker.upper()}: {text}")

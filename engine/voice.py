@@ -22,6 +22,8 @@ class Voice(Protocol):
         """Blocks until the player has said/typed something, returns the text."""
         ...
 
-    def speak(self, text: str) -> None:
-        """Speaks/prints `text` to the player."""
+    def speak(self, text: str, speaker: str = "guard") -> None:
+        """Speaks/prints `text` to the player. `speaker` is 'guard' or 'dm'
+        (PRD §12: the DM narrates, the guard only ever speaks his own
+        dialogue) — a backend is free to voice them differently."""
         ...

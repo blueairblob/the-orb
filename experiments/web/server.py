@@ -78,6 +78,8 @@ def create_app(llm: LLMClient, scenario: CellAndGuard, save_path: Path) -> FastA
 
 
 def main() -> None:
+    import os
+
     from engine.loop import DEFAULT_SAVE_PATH
     from engine.save import load_state
 
@@ -90,9 +92,16 @@ def main() -> None:
     DEFAULT_SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
     scenario = load_state(DEFAULT_SAVE_PATH)
 
+    # Defaults to localhost-only. Set ORB_WEB_HOST to bind elsewhere — e.g. a
+    # Tailscale interface IP, so the page is reachable from another device
+    # on the tailnet without exposing it on any public interface.
+    host = os.environ.get("ORB_WEB_HOST", "127.0.0.1")
+    port = int(os.environ.get("ORB_WEB_PORT", "8000"))
+
     with GemmaHarness() as llm:
         app = create_app(llm, scenario, DEFAULT_SAVE_PATH)
-        uvicorn.run(app, host="127.0.0.1", port=8000)
+        print(f"Serving on http://{host}:{port}/")
+        uvicorn.run(app, host=host, port=port)
 
 
 if __name__ == "__main__":

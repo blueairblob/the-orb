@@ -24,9 +24,21 @@ uv run orb-web
 Then open `http://127.0.0.1:8000/` in **Chrome or Edge** (see caveat below). Click the mic button,
 speak, and the guard should reply — spoken aloud, with the orb's colour tracking its mood.
 
-If this host is remote from your own machine, you'll need the port reachable from your browser —
-either an SSH tunnel (`ssh -L 8000:localhost:8000 <host>`) or the port opened on this box's
-firewall/security list. Ask if you're not sure which applies here.
+### Reaching it from another device (this box is headless)
+
+By default the server only binds to `127.0.0.1` — not reachable from anywhere but this host. If
+you're on the same Tailscale network, bind it to this box's Tailscale interface instead so it's
+reachable from your machine without exposing it publicly:
+
+```bash
+ORB_WEB_HOST=$(tailscale ip -4) ORB_WEB_PORT=8420 uv run orb-web
+```
+
+Then open `http://<that-tailscale-ip>:8420/` in your browser. Port 8000 is already taken by
+something else on this box's Tailscale interface (other services live there too — didn't
+investigate further, just picked a free port; check with `ss -tlnp` before assuming a port is
+open). Deliberately binds to the Tailscale interface specifically, not `0.0.0.0` — keeps it off
+any public interface this box might also have.
 
 ## Known limitations — read before judging the voice quality
 

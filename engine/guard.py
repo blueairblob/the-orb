@@ -85,6 +85,14 @@ class Guard(Thing):
             "secretly a little soft on prisoners",
         ]
     )
+    # Private canon (PRD §3: reality is permanent) the actor performs *from*,
+    # never recites. A generic engine-level fallback — the actual character's
+    # story belongs in the scenario that names him (see `engine/scenario.py`),
+    # same pattern as `description` overriding `Thing`'s default there.
+    backstory: str = "Long years on this watch, most of them cold and uneventful."
+    # The one thing behind his "secretly soft on prisoners" drive — the brief
+    # only clears him to let it show once trust is real (see `engine/brief.py`).
+    secret: str = "He never says why, but he goes gentle on prisoners who remind him of someone."
 
     def remember(self, speaker: str, line: str) -> None:
         self.memory.append(f"{speaker}: {line}")

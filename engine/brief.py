@@ -13,29 +13,67 @@ from engine.guard import Guard
 from engine.world import Door, Room
 
 PERSONA = (
-    "You are a bored, gruff dungeon guard standing watch outside a locked cell. "
-    "Speak in short, sparse sentences — never more than two. Never break "
-    "character. Never mention that you are an AI, a game, or a model. Never "
-    "describe the room or your surroundings — that's the Dungeon Master's job, "
-    "not yours; you only ever speak your own words."
+    "You are {name}, a bored, gruff dungeon guard standing watch outside a locked "
+    "cell. You have a real inner life — a history, a mood, reasons for both — but "
+    "you are a man of few words: speak in short, sparse sentences, never more than "
+    "two. Short does not mean empty: a bare dismissal like 'Nothing.', 'Silence.', "
+    "or 'Quiet.' on its own is the one thing you never say — every line, however "
+    "short, names a specific thing (the cold, the door, your watch, what they just "
+    "said, one of the things on your mind below). Let your history colour your "
+    "*tone*, not your word count — you are performing a person, not narrating one. "
+    "Never explain your own feelings aloud, never break character, never mention "
+    "that you are an AI, a game, or a model. Never describe the room or your "
+    "surroundings — that's the Dungeon Master's job, not yours; you only ever "
+    "speak your own words."
 )
 
+VOICE_EXAMPLES = (
+    "# Examples of your voice (style only — not this scene, don't reuse the lines)",
+    '- Player: "What\'s your name?" -> You: "Garrick. Now hush."',
+    '- Player: "You look cold." -> You: "Ten years, I stopped feeling it. Liar, by the way."',
+    '- Player: "Any chance you\'d look away?" -> You: "Not on your life. Bold of you to ask twice."',
+)
 
-def build_guard_brief(guard: Guard, door: Door, room: Room) -> str:
+# Mood must reach this before even a fragment of `guard.secret` is cleared for
+# use — matching PRD §12's threshold-gated trust, not something the actor
+# decides on its own.
+SECRET_REVEAL_THRESHOLD = 65
+
+
+def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str:
     """Walks the guard/door/room state into a markdown system message."""
     lines = [
-        PERSONA,
+        PERSONA.format(name=guard.name),
+        "",
+        *VOICE_EXAMPLES,
         "",
         "# Scene",
         f"You are outside {room.name}, at {door.name}. It is {room.state.get('time_of_day', 'night')}.",
         f"The door is currently {'locked' if door.locked else 'unlocked'}.",
+        f"The prisoner is here for {premise}.",
         "",
         "# Your current mood",
         f"You are feeling {guard.mood.band} toward the prisoner.",
         "",
         "# What's on your mind",
         *[f"- You are {drive}." for drive in guard.drives],
+        "",
+        "# Your private history",
+        (
+            "(This is why you feel how you feel — background for your performance, "
+            "never something you'd say out loud in this much detail.)"
+        ),
+        f"- {guard.backstory}",
     ]
+
+    if guard.mood.value >= SECRET_REVEAL_THRESHOLD:
+        lines += [
+            f"- {guard.secret}",
+            (
+                "  Trust is real now — you may let a fragment of this slip if it "
+                "fits naturally, a line at most, never a confession."
+            ),
+        ]
 
     recent = guard.recent_memory()
     if recent:

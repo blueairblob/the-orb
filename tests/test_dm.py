@@ -37,7 +37,8 @@ def test_refusal_brief_names_the_attempted_action():
 
 def test_narration_brief_describes_scene_not_guard_dialogue():
     scenario = build_cell_and_guard()
-    brief = build_narration_brief(scenario.room, scenario.door, scenario.guard)
+    brief = build_narration_brief(scenario.room, scenario.door, scenario.guard, scenario.premise)
 
     assert "locked" in brief
     assert "Do not speak as the guard" in brief
+    assert scenario.premise in brief

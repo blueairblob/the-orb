@@ -38,11 +38,28 @@ class LLMClient(Protocol):
     def ask(self, prompt: str, system_message: str | None = None) -> LLMResult: ...
 
 
+RETRY_NUDGE = (
+    "\n\n# Note\n"
+    "Your instinct just now was a bare dismissal ('Nothing.', 'Silence.', "
+    "'Quiet.') — resist it. Give a short line that's actually *about* "
+    "something: your mood, your history, or what was just said."
+)
+
+
 def _ask_and_record(
     llm: LLMClient, guard: Guard, prompt: str, brief: str, speaker: str
 ) -> str:
     result = llm.ask(prompt, system_message=brief)
     reply = guardrail.filter_reply(result.response)
+
+    # The engine directs: a flat non-answer gets one retake with a nudge,
+    # rather than shipping it or silently rewriting what the actor said.
+    if guardrail.is_bland_dismissal(reply):
+        retry_result = llm.ask(prompt, system_message=brief + RETRY_NUDGE)
+        retry_reply = guardrail.filter_reply(retry_result.response)
+        if not guardrail.is_bland_dismissal(retry_reply):
+            reply = retry_reply
+
     guard.remember(speaker, reply)
     return reply
 
@@ -67,7 +84,7 @@ def run_turn(
 
     if route == "narration":
         guard.remember("player", player_utterance)
-        brief = dm.build_narration_brief(scenario.room, scenario.door, guard)
+        brief = dm.build_narration_brief(scenario.room, scenario.door, guard, scenario.premise)
         reply = _ask_and_record(llm, guard, player_utterance, brief, "dm")
         return reply, "dm", None
 
@@ -80,7 +97,7 @@ def run_turn(
     if outcome == "unlock":
         scenario.door.unlock()
 
-    brief = build_guard_brief(guard, scenario.door, scenario.room)
+    brief = build_guard_brief(guard, scenario.door, scenario.room, scenario.premise)
     reply = _ask_and_record(llm, guard, player_utterance, brief, "guard")
     return reply, "guard", outcome
 

@@ -26,6 +26,16 @@ DEFAULT_MODEL_ID = "gemma-4-e2b"
 DEFAULT_HF_REPO = "litert-community/gemma-4-E2B-it-litert-lm"
 DEFAULT_HF_FILE = "gemma-4-E2B-it.litertlm"
 
+# This model's own imported defaults are temperature=0.0, top_p=0.0 — fully
+# greedy decoding. That's fine for deterministic tool-calling, but for
+# in-character dialogue it collapses every reply to whatever single token is
+# statistically safest ("Nothing.", "Silence."), no matter how much backstory
+# is in the brief: there's no sampling left for a *character's* word choice
+# to survive in. This is a chat/creative-writing default, not a universal
+# one — override per call if a future use of GemmaHarness wants determinism
+# back (e.g. structured/tool output).
+DEFAULT_SAMPLER_CONFIG_KWARGS = {"temperature": 0.85, "top_k": 40, "top_p": 0.95}
+
 
 def litert_lm_base_dir() -> Path:
     """Mirrors litert_lm_cli.config.get_cli_base_dir() (respects LITERT_LM_DIR)."""
@@ -140,6 +150,7 @@ class GemmaHarness:
         system_message: str | None = None,
         cpu_thread_count: int | None = None,
         verbose: bool = False,
+        sampler_config: Any | None = "default",
     ):
         import litert_lm
 
@@ -153,6 +164,15 @@ class GemmaHarness:
         )
         self._litert_lm = litert_lm
         self._system_message = system_message
+        # "default" (not None) means "use this module's chat-tuned sampling,
+        # not the model's own imported default" — see DEFAULT_SAMPLER_CONFIG_KWARGS
+        # above. Pass sampler_config=None explicitly to fall back to the
+        # model's own (greedy) defaults instead.
+        self._sampler_config = (
+            litert_lm.SamplerConfig(**DEFAULT_SAMPLER_CONFIG_KWARGS)
+            if sampler_config == "default"
+            else sampler_config
+        )
         self._engine = litert_lm.Engine(
             model_path=str(model_path),
             backend=litert_lm.Backend.CPU(thread_count=cpu_thread_count),
@@ -170,6 +190,7 @@ class GemmaHarness:
 
     def ask(self, prompt: str, system_message: str | None = None) -> PromptResult:
         conversation = self._engine.create_conversation(
+            sampler_config=self._sampler_config,
             system_message=(
                 system_message if system_message is not None else self._system_message
             )

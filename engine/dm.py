@@ -86,7 +86,7 @@ def build_refusal_brief(room: Room, attempted_action: str) -> str:
     )
 
 
-def build_narration_brief(room: Room, door: Door, guard: Guard) -> str:
+def build_narration_brief(room: Room, door: Door, guard: Guard, premise: str) -> str:
     return "\n".join(
         [
             DM_PERSONA,
@@ -98,6 +98,10 @@ def build_narration_brief(room: Room, door: Door, guard: Guard) -> str:
                 f"{room.state.get('time_of_day', 'night')}."
             ),
             f"The guard beyond the door seems {guard.mood.band}.",
+            (
+                f"The player is here for {premise} — mention this only if directly "
+                "relevant to what's being asked, not as a reflex."
+            ),
             "",
             "# Your task",
             (

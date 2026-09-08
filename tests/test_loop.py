@@ -13,13 +13,27 @@ class StubLLM:
     """A fake LLM client: echoes a fixed in-character line, so engine-logic
     tests never need the real model."""
 
-    def __init__(self, reply: str = "Silence."):
+    def __init__(self, reply: str = "Stay put."):
         self.reply = reply
         self.calls: list[tuple[str, str | None]] = []
 
     def ask(self, prompt: str, system_message: str | None = None) -> StubResult:
         self.calls.append((prompt, system_message))
         return StubResult(response=self.reply)
+
+
+class SequencedLLM:
+    """Returns each reply in `replies` in order, then repeats the last —
+    for exercising the bland-dismissal retry in `engine.loop._ask_and_record`."""
+
+    def __init__(self, replies: list[str]):
+        self.replies = replies
+        self.calls: list[tuple[str, str | None]] = []
+
+    def ask(self, prompt: str, system_message: str | None = None) -> StubResult:
+        self.calls.append((prompt, system_message))
+        index = min(len(self.calls) - 1, len(self.replies) - 1)
+        return StubResult(response=self.replies[index])
 
 
 class ScriptedVoice:
@@ -53,6 +67,27 @@ def test_run_turn_updates_mood_and_memory():
     assert "player: please, my friend" in scenario.guard.memory
     assert "guard: Hmph. Fine." in scenario.guard.memory
     assert llm.calls[0][0] == "please, my friend"
+
+
+def test_bland_dismissal_triggers_one_retry():
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Silence.", "Ten years on this watch. Longest yet."])
+
+    reply, _, _ = run_turn(scenario, llm, "please, my friend")
+
+    assert reply == "Ten years on this watch. Longest yet."
+    assert len(llm.calls) == 2
+    assert "Note" in llm.calls[1][1]  # the retry brief carries the nudge
+
+
+def test_retry_gives_up_after_one_more_bland_reply():
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Silence.", "Nothing."])
+
+    reply, _, _ = run_turn(scenario, llm, "please, my friend")
+
+    assert reply == "Silence."  # kept the first attempt rather than looping
+    assert len(llm.calls) == 2
 
 
 def test_environment_query_routes_to_dm_without_moving_mood():

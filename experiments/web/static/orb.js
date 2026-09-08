@@ -59,6 +59,29 @@
     return { r: 255 * f(0), g: 255 * f(8), b: 255 * f(4) };
   }
 
+  // Cheap smooth "organic" noise: a handful of incommensurate sine waves,
+  // offset by `seed` so different callers get uncorrelated but equally
+  // smooth signals. No jumps, no external noise library — just enough
+  // irregularity that motion doesn't read as a mechanical, repeating loop.
+  // Range is roughly [-1, 1].
+  function organicNoise(t, seed) {
+    const s = seed * 17.31;
+    return (
+      Math.sin(t * 0.7 + s) * 0.5 +
+      Math.sin(t * 1.9 + s * 2.1) * 0.3 +
+      Math.sin(t * 3.3 + s * 0.37) * 0.2
+    );
+  }
+
+  // How restless the orb's noise-driven wobble should be, from the guard's
+  // mood: hostile reads as agitated and quicker to jitter, warm reads as
+  // slow and settled. Calmer moods aren't just a different colour — they
+  // should *move* calmer too.
+  function restlessnessFromMood(mood) {
+    const clamped = Math.max(0, Math.min(100, mood));
+    return 1.5 - (clamped / 100) * 1.0; // 1.5 (hostile) .. 0.5 (warm)
+  }
+
   // ---------------------------------------------------------------------
   // Orb renderer
   // ---------------------------------------------------------------------
@@ -72,6 +95,7 @@
       this.radius = BASE_RADIUS + (Math.random() * 70 - 35);
       this.speed = 0.01 + Math.random() * 0.02;
       this.size = 0.8 + Math.random() * 1.3;
+      this.seed = Math.random() * 1000;
       this.r = 255;
       this.g = 255;
       this.b = 255;
@@ -96,6 +120,12 @@
       this.micVolume = 0;
       this._angleY = 0;
       this._angleX = 0;
+      // Eased copies of the per-phase targets below, so switching phase
+      // (or mood swinging) glides rather than snapping — the "organic"
+      // part is as much about smoothing transitions as adding noise.
+      this._swirl = 1.0;
+      this._radiusPulse = 0;
+      this._brightness = 1.0;
 
       this._tick = this._tick.bind(this);
       requestAnimationFrame(this._tick);
@@ -118,29 +148,41 @@
     }
 
     // Per-phase target radius offset + swirl speed multiplier + brightness.
-    _phaseDynamics(now) {
+    // Every phase layers `restlessness * organicNoise(...)` on top of its
+    // baseline instead of a bare deterministic sine, so the same phase
+    // never traces the exact same loop twice, and a hostile mood visibly
+    // fidgets more than a warm one at rest.
+    _phaseDynamics(now, restlessness) {
       switch (this.phase) {
         case "listening":
           return {
-            swirl: 1.3 + this.micVolume * 2.5,
-            radiusPulse: this.micVolume * 90,
+            swirl: 1.15 + this.micVolume * 1.3 + organicNoise(now * 0.0012, 4) * 0.2 * restlessness,
+            radiusPulse: this.micVolume * 80 + organicNoise(now * 0.001, 5) * 10 * restlessness,
             brightness: 1 + this.micVolume * 0.4,
           };
         case "thinking": {
-          // Tight, fast shimmer — reads as "considering," not lag.
-          const shimmer = Math.sin(now * 0.018) * 12;
-          return { swirl: 3.2, radiusPulse: shimmer, brightness: 1.15 };
+          // A settled shimmer — reads as "considering," not agitation.
+          const shimmer = organicNoise(now * 0.0035, 6) * 14 * restlessness;
+          return {
+            swirl: 1.5 + organicNoise(now * 0.0018, 7) * 0.3 * restlessness,
+            radiusPulse: shimmer,
+            brightness: 1.12,
+          };
         }
         case "speaking": {
-          // No real amplitude data from speechSynthesis — a rhythmic pulse
+          // No real amplitude data from speechSynthesis — an organic pulse
           // stands in for one. Documented compromise, not real lip-sync.
-          const talk = (Math.sin(now * 0.012) + 1) / 2;
-          return { swirl: 1.8, radiusPulse: talk * 35, brightness: 1.2 };
+          const talk = (organicNoise(now * 0.003, 8) + 1) / 2;
+          return {
+            swirl: 1.35 + organicNoise(now * 0.0015, 9) * 0.2 * restlessness,
+            radiusPulse: talk * 30,
+            brightness: 1.15,
+          };
         }
         default:
           return {
-            swirl: 1.0,
-            radiusPulse: Math.sin(now * 0.0015) * 8,
+            swirl: 1.0 + organicNoise(now * 0.0006, 1) * 0.15 * restlessness,
+            radiusPulse: organicNoise(now * 0.0008, 2) * 9 * restlessness,
             brightness: 1.0,
           };
       }
@@ -151,7 +193,18 @@
       ctx.fillStyle = "rgba(3, 3, 4, 0.22)";
       ctx.fillRect(0, 0, this.width, this.height);
 
-      const { swirl, radiusPulse, brightness } = this._phaseDynamics(now);
+      const restlessness = restlessnessFromMood(this.moodValue);
+      const target = this._phaseDynamics(now, restlessness);
+      // Ease toward each frame's target rather than snapping to it — this
+      // is most of what makes phase/mood changes feel organic instead of
+      // mechanical, on top of the noise itself.
+      this._swirl += (target.swirl - this._swirl) * 0.05;
+      this._radiusPulse += (target.radiusPulse - this._radiusPulse) * 0.05;
+      this._brightness += (target.brightness - this._brightness) * 0.05;
+      const swirl = this._swirl;
+      const radiusPulse = this._radiusPulse;
+      const brightness = this._brightness;
+
       // The DM isn't a mood-bearing character — while it's speaking, the
       // orb shouldn't borrow the guard's colour. A fixed neutral tone
       // instead; the guard's mood gradient applies everywhere else.
@@ -160,7 +213,7 @@
       const targetRgb = hslToRgb(h, s, Math.min(85, l * brightness));
 
       this._angleY += 0.0016 + swirl * 0.0006;
-      this._angleX = Math.sin(now * 0.0003) * 0.22;
+      this._angleX = organicNoise(now * 0.00022, 3) * 0.22;
 
       const dynamicRadius = BASE_RADIUS + radiusPulse;
       const cosY = Math.cos(this._angleY);
@@ -170,7 +223,11 @@
       const fov = 380;
 
       for (const p of this.particles) {
-        p.theta += p.speed * swirl;
+        // A slow, per-particle noise wobble on top of the shared swirl —
+        // without it every particle moves in lockstep, which is part of
+        // what reads as mechanical rather than alive.
+        const wobble = 1 + organicNoise(now * 0.0009, p.seed) * 0.25 * restlessness;
+        p.theta += p.speed * swirl * wobble;
         p.radius += (dynamicRadius - p.radius) * 0.06;
         p.r += (targetRgb.r - p.r) * 0.08;
         p.g += (targetRgb.g - p.g) * 0.08;
@@ -208,6 +265,8 @@
   const statusDot = document.getElementById("status-dot");
   const statusText = document.getElementById("status-text");
   const micBtn = document.getElementById("mic-btn");
+  const micLevel = document.getElementById("mic-level");
+  const micLevelFill = document.getElementById("mic-level-fill");
   const debugToggle = document.getElementById("debug-toggle");
   const debugPanel = document.getElementById("debug-panel");
   const debugForm = document.getElementById("debug-form");
@@ -240,7 +299,8 @@
   let ws = null;
 
   function connect() {
-    ws = new WebSocket(`ws://${location.host}/ws`);
+    const wsScheme = location.protocol === "https:" ? "wss:" : "ws:";
+    ws = new WebSocket(`${wsScheme}//${location.host}/ws`);
 
     ws.addEventListener("open", () => {
       setStatus("connected", "Connected");
@@ -323,9 +383,11 @@
   }
 
   // ---------------------------------------------------------------------
-  // Speech recognition (click to talk) + live mic volume for the
-  // "listening" visual. Known limitation (see README): SpeechRecognition
-  // is Chrome/Edge-only and cloud-backed, not on-device.
+  // Speech recognition (press-and-hold to talk) + live mic volume, shown
+  // both on the orb (mood-coloured motion) and as a plain level meter next
+  // to the button — the orb alone isn't legible enough as "is my mic
+  // actually picking anything up" feedback. Known limitation (see README):
+  // SpeechRecognition is Chrome/Edge-only and cloud-backed, not on-device.
   // ---------------------------------------------------------------------
   let recognizer = null;
   let audioContext = null;
@@ -352,7 +414,12 @@
     let total = 0;
     for (let i = 0; i < micDataArray.length; i++) total += micDataArray[i];
     const volume = total / micDataArray.length / 255;
-    if (listening) orb.setMicVolume(volume);
+    if (listening) {
+      orb.setMicVolume(volume);
+      // Raw average is quiet relative to 1.0 for normal speech — boosted
+      // so the meter actually moves instead of sitting near empty.
+      micLevelFill.style.width = `${Math.min(100, volume * 320)}%`;
+    }
     requestAnimationFrame(pollMicVolume);
   }
 
@@ -377,44 +444,56 @@
     orb.setPhase("listening");
     micBtn.classList.add("active");
     micBtn.textContent = "🎙 Listening…";
+    micLevel.hidden = false;
     setStatus("listening", "Listening…");
 
+    // Only the recognizer's own events tear things down — releasing the
+    // button asks it to wrap up (see releaseListening) but the transcript
+    // it was mid-capturing on release still gets sent, not discarded.
     recognizer.onresult = (event) => {
       const result = event.results[event.results.length - 1];
       if (result.isFinal) {
-        stopListening();
-        sendUtterance(result[0].transcript.trim());
+        const transcript = result[0].transcript.trim();
+        cleanupListening();
+        if (transcript) sendUtterance(transcript);
       }
     };
-    recognizer.onerror = () => stopListening();
-    recognizer.onend = () => {
-      if (listening) stopListening();
-    };
+    recognizer.onerror = () => cleanupListening();
+    recognizer.onend = () => cleanupListening();
 
     recognizer.start();
   }
 
-  function stopListening() {
+  // Button released: tell the recognizer to finish up. Its own onresult/
+  // onend handlers (still attached) do the actual cleanup once it responds
+  // — that's what lets a phrase finished right at release still get sent.
+  function releaseListening() {
+    if (recognizer) recognizer.stop();
+  }
+
+  function cleanupListening() {
+    if (!listening) return;
     listening = false;
     orb.setMicVolume(0);
     micBtn.classList.remove("active");
     micBtn.textContent = "🎙 Hold to talk";
+    micLevel.hidden = true;
+    micLevelFill.style.width = "0%";
     if (recognizer) {
       recognizer.onresult = null;
       recognizer.onerror = null;
       recognizer.onend = null;
-      recognizer.stop();
       recognizer = null;
     }
   }
 
-  micBtn.addEventListener("click", () => {
-    if (listening) {
-      stopListening();
-    } else {
-      startListening();
-    }
+  micBtn.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    if (!listening) startListening();
   });
+  ["pointerup", "pointerleave", "pointercancel"].forEach((eventName) =>
+    micBtn.addEventListener(eventName, releaseListening)
+  );
 
   debugForm.addEventListener("submit", (event) => {
     event.preventDefault();

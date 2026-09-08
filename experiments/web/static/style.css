@@ -70,6 +70,21 @@ html, body {
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
 }
 
+#mic-level {
+  width: 180px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+#mic-level-fill {
+  height: 100%;
+  width: 0%;
+  background: #3b82f6;
+  transition: width 0.06s linear;
+}
+
 #debug-toggle {
   position: absolute;
   top: 16px;

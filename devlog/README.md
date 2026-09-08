@@ -27,6 +27,8 @@ leave it here if it's closer to "here's what we tried and found."
 
 ## Entries
 
+- [2026-09-08 — NPC Minds on Gemma 4 E2B (reference doc, not a session log — shared externally, saved here for the LiteRT-LM/prompting specifics)](2026-09-08-npc-gemma-e2b-android-dnd-guide.md)
+- [2026-09-08 — Chasing the guard's voice: five patches, then back to fundamentals](2026-09-08-brief-tuning-and-fundamentals.md)
 - [2026-09-07 — Splitting the DM from the guard (PRD §12)](2026-09-07-dm-npc-split.md)
 - [2026-09-07 — Desktop web testing rig: real voice + the orb](2026-09-07-web-testing-rig.md)
 - [2026-09-06 — Building the engine: object model, guard, core loop](2026-09-06-build-the-engine.md)

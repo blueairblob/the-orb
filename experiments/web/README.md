@@ -40,6 +40,15 @@ investigate further, just picked a free port; check with `ss -tlnp` before assum
 open). Deliberately binds to the Tailscale interface specifically, not `0.0.0.0` — keeps it off
 any public interface this box might also have.
 
+**Voice doesn't work over this plain-`http://` path — text only.** `getUserMedia` and
+`SpeechRecognition` both require a *secure context* (`https://` or `localhost`); a bare Tailscale
+IP over `http://` isn't one, so `navigator.mediaDevices` is simply `undefined` there and the mic
+button can't function no matter what's clicked. The page now detects this on load, says so, and
+opens the text-input debug panel automatically — but there's no way around it short of serving
+over real HTTPS (e.g. `tailscale cert` for this box's `*.ts.net` name) or tunnelling back to
+`localhost`. Until then, treat Tailscale access as **engine/dialogue testing only** — reach for
+`127.0.0.1` when you actually want to test voice.
+
 ## Known limitations — read before judging the voice quality
 
 - **`SpeechRecognition` is Chrome/Edge-only**, and it's **cloud-backed** (often literally Google's

@@ -397,6 +397,16 @@
 
   function ensureMicVolumeAnalysis() {
     if (audioContext) return Promise.resolve();
+    // navigator.mediaDevices is undefined outright on an insecure origin
+    // (plain http:// on anything but localhost — e.g. the Tailscale-IP
+    // access path in README.md) rather than merely denying permission.
+    // Calling straight into it throws *synchronously*, before any Promise
+    // exists, which skips right past callers' .catch() and hard-crashes
+    // the rest of startListening() — the mic button silently does nothing
+    // at all. Fail as a normal rejected promise instead.
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return Promise.reject(new Error("getUserMedia unavailable (insecure context)"));
+    }
     return navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioContext.createMediaStreamSource(stream);
@@ -458,7 +468,24 @@
         if (transcript) sendUtterance(transcript);
       }
     };
-    recognizer.onerror = () => cleanupListening();
+    recognizer.onerror = (event) => {
+      // Chrome's speech recognition needs a secure context (https:// or
+      // localhost) for mic access, same as getUserMedia above — on the
+      // Tailscale-IP http:// access path this fails as "not-allowed"/
+      // "service-not-allowed" every time. "aborted" (releaseListening's own
+      // recognizer.stop()) and "no-speech" are normal, not failures.
+      const reason = event && event.error;
+      if (reason === "not-allowed" || reason === "service-not-allowed") {
+        appendLine(
+          "system",
+          "Speech recognition was blocked — this usually means an insecure "
+            + "origin (voice needs https:// or localhost). Use the text box below."
+        );
+      } else if (reason && reason !== "aborted" && reason !== "no-speech") {
+        appendLine("system", `Speech recognition error (${reason}) — use the text box below.`);
+      }
+      cleanupListening();
+    };
     recognizer.onend = () => cleanupListening();
 
     recognizer.start();
@@ -502,6 +529,20 @@
     sendUtterance(text);
     debugInput.value = "";
   });
+
+  // Voice (both getUserMedia and SpeechRecognition) needs a secure context
+  // — https:// or localhost — and silently can't work otherwise. Say so
+  // up front and open the text box, rather than leaving a press-and-hold
+  // that will always no-op as the only clue something's wrong (see
+  // ensureMicVolumeAnalysis and recognizer.onerror above).
+  if (!window.isSecureContext) {
+    appendLine(
+      "system",
+      "Voice input needs a secure context (https:// or localhost) — this page is "
+        + "plain http://, so the mic button won't work here. Use the text box below."
+    );
+    debugPanel.hidden = false;
+  }
 
   connect();
 })();

@@ -99,12 +99,19 @@ html, body {
   font-size: 16px;
 }
 
+/* Below the orb, not overlapping it: the sphere sits roughly in the
+   viewport's upper-middle band (BASE_RADIUS 110 in orb.js, drawn from
+   canvas centre), and #hud is pinned to the very bottom (bottom: 36px) —
+   this sits in the gap between the two, centred like #hud rather than
+   floating in a corner. */
 #debug-panel {
   position: absolute;
-  top: 56px;
-  right: 16px;
-  width: 320px;
-  max-height: 60vh;
+  top: 58%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  max-height: 24vh;
   background: rgba(10, 10, 12, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
@@ -121,7 +128,7 @@ html, body {
   font-size: 12px;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.75);
-  max-height: 40vh;
+  max-height: 16vh;
 }
 
 #transcript .line { margin-bottom: 6px; }

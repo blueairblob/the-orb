@@ -35,6 +35,15 @@ RUDE_DELTA = -4
 THREAT_DELTA = -8
 REPEAT_DELTA = -2
 
+# Reverted back down after a real test: widening this to 24 (and the brief's
+# window to 16) was meant to fix the guard forgetting an offer from a dozen
+# turns back, but a live session showed it made verbatim self-repetition
+# *worse*, not better (devlog). A small-model prompting reference the user
+# shared makes the same case directly: "forgetting old chats is in character
+# for a low-level NPC... giving him real long-term memory tends to break
+# believability, and risks overloading the small model's context." Kept
+# slightly above what recent_memory's default shows, not equal to it — see
+# that default below.
 MAX_MEMORY = 12
 
 
@@ -100,6 +109,14 @@ class Guard(Thing):
 
     def recent_memory(self, turns: int = 6) -> list[str]:
         return self.memory[-turns:]
+
+    def own_lines(self, speaker: str, limit: int = 6) -> list[str]:
+        """Just `speaker`'s own most recent lines, unprefixed — for a
+        verbatim-repeat check (see guardrail.is_repeated_reply), distinct
+        from recent_memory's full back-and-forth."""
+        prefix = f"{speaker}: "
+        lines = [entry[len(prefix):] for entry in self.memory if entry.startswith(prefix)]
+        return lines[-limit:]
 
     def _is_repeat(self, utterance: str) -> bool:
         recent_player_lines = [

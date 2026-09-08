@@ -33,8 +33,42 @@ DEFAULT_HF_FILE = "gemma-4-E2B-it.litertlm"
 # is in the brief: there's no sampling left for a *character's* word choice
 # to survive in. This is a chat/creative-writing default, not a universal
 # one — override per call if a future use of GemmaHarness wants determinism
-# back (e.g. structured/tool output).
-DEFAULT_SAMPLER_CONFIG_KWARGS = {"temperature": 0.85, "top_k": 40, "top_p": 0.95}
+# back (e.g. structured/tool output). 0.85 was tried first and escaped the
+# greedy collapse, but let the guard drift into ungrounded, aphorism-like
+# lines disconnected from what was actually said (devlog: rapport-run
+# transcript). 0.6 is a middle point — enough room to avoid the flat
+# dismissals, tighter than 0.85's drift.
+#
+# Turned out not to fully hold in real play: at 0.6, a live session hit
+# "Nothing."/"Silence." repeatedly, including cases where engine/loop.py's
+# own bland-dismissal *retry* landed on another bland reply — because the
+# retry was reusing this same low-temperature config, which is close enough
+# to deterministic that resampling doesn't reliably produce something
+# different. See RETRY_SAMPLER_CONFIG_KWARGS below: the fix is giving the
+# retry its own higher-diversity sampling, not raising this one back up and
+# reintroducing the 0.85 drift for every normal reply.
+DEFAULT_SAMPLER_CONFIG_KWARGS = {"temperature": 0.6, "top_k": 40, "top_p": 0.9}
+
+# Used only for engine/loop.py's one bland-dismissal retry, not normal
+# replies — deliberately more diverse than DEFAULT_SAMPLER_CONFIG_KWARGS so
+# a resample has a real chance of landing somewhere else, rather than
+# reusing sampling close enough to deterministic to reproduce the same
+# bland output it was meant to escape.
+RETRY_SAMPLER_CONFIG_KWARGS = {"temperature": 1.0, "top_k": 50, "top_p": 0.97}
+
+# NoRepeatNgramConfig is a hard constraint, not a bias: the model literally
+# cannot reproduce a 3-token sequence that already appears in its context.
+# Applied to every ask() call, not just retries — a much more direct fix for
+# tail-phrase drift ("Now, be quiet." / "Now, stop wasting my time.",
+# recurring across unrelated turns — devlog 2026-09-08) than detecting it
+# after the fact via guardrail.is_repeated_reply, which only catches a
+# *whole* reply matching, not a repeated fragment within it. Works because
+# brief.py already embeds the guard's own recent lines in the prompt itself
+# ("What's been said so far") — a 3-gram from his last reply is already in
+# context, so reusing it verbatim this turn is exactly what gets blocked.
+# window_size=256 covers the whole brief comfortably within Gemma 4's
+# 512-token sliding window (devlog: the shared NPC-prompting doc).
+DEFAULT_NO_REPEAT_NGRAM_KWARGS = {"no_repeat_ngram_size": 3, "window_size": 256}
 
 
 def litert_lm_base_dir() -> Path:
@@ -188,16 +222,39 @@ class GemmaHarness:
     def __exit__(self, *exc_info: object) -> None:
         self.close()
 
-    def ask(self, prompt: str, system_message: str | None = None) -> PromptResult:
+    def ask(
+        self,
+        prompt: str,
+        system_message: str | None = None,
+        sampler_config: Any | str = "default",
+    ) -> PromptResult:
+        """`sampler_config`: "default" (this instance's usual sampling, see
+        DEFAULT_SAMPLER_CONFIG_KWARGS) or "retry" (RETRY_SAMPLER_CONFIG_KWARGS
+        — higher diversity, for engine/loop.py's bland-dismissal resample) —
+        or pass a real SamplerConfig to override outright."""
+        if sampler_config == "default":
+            resolved_sampler_config = self._sampler_config
+        elif sampler_config == "retry":
+            resolved_sampler_config = self._litert_lm.SamplerConfig(
+                **RETRY_SAMPLER_CONFIG_KWARGS
+            )
+        else:
+            resolved_sampler_config = sampler_config
+
         conversation = self._engine.create_conversation(
-            sampler_config=self._sampler_config,
+            sampler_config=resolved_sampler_config,
             system_message=(
                 system_message if system_message is not None else self._system_message
             )
         )
         try:
             start = time.perf_counter()
-            response = conversation.send_message(prompt)
+            response = conversation.send_message(
+                prompt,
+                no_repeat_ngram_config=self._litert_lm.interfaces.NoRepeatNgramConfig(
+                    **DEFAULT_NO_REPEAT_NGRAM_KWARGS
+                ),
+            )
             total_time_s = time.perf_counter() - start
             info = conversation.get_benchmark_info()
             return PromptResult(

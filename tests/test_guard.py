@@ -51,9 +51,27 @@ def test_repeating_the_same_line_is_penalised():
 
 def test_memory_is_capped():
     guard = make_guard()
-    for i in range(20):
+    for i in range(40):
         guard.remember("player", f"line {i}")
     assert len(guard.memory) == 12
+
+
+def test_own_lines_filters_by_speaker_and_strips_prefix():
+    guard = make_guard()
+    guard.remember("player", "let me out")
+    guard.remember("guard", "No.")
+    guard.remember("player", "please")
+    guard.remember("guard", "Move slow.")
+
+    assert guard.own_lines("guard") == ["No.", "Move slow."]
+    assert guard.own_lines("player") == ["let me out", "please"]
+
+
+def test_own_lines_respects_limit():
+    guard = make_guard()
+    for i in range(10):
+        guard.remember("guard", f"line {i}")
+    assert guard.own_lines("guard", limit=3) == ["line 7", "line 8", "line 9"]
 
 
 def test_thresholds():

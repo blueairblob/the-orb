@@ -17,7 +17,9 @@ class StubLLM:
         self.reply = reply
         self.calls: list[tuple[str, str | None]] = []
 
-    def ask(self, prompt: str, system_message: str | None = None) -> StubResult:
+    def ask(
+        self, prompt: str, system_message: str | None = None, sampler_config: str = "default"
+    ) -> StubResult:
         self.calls.append((prompt, system_message))
         return StubResult(response=self.reply)
 
@@ -28,10 +30,12 @@ class SequencedLLM:
 
     def __init__(self, replies: list[str]):
         self.replies = replies
-        self.calls: list[tuple[str, str | None]] = []
+        self.calls: list[tuple[str, str | None, str]] = []
 
-    def ask(self, prompt: str, system_message: str | None = None) -> StubResult:
-        self.calls.append((prompt, system_message))
+    def ask(
+        self, prompt: str, system_message: str | None = None, sampler_config: str = "default"
+    ) -> StubResult:
+        self.calls.append((prompt, system_message, sampler_config))
         index = min(len(self.calls) - 1, len(self.replies) - 1)
         return StubResult(response=self.replies[index])
 
@@ -78,6 +82,8 @@ def test_bland_dismissal_triggers_one_retry():
     assert reply == "Ten years on this watch. Longest yet."
     assert len(llm.calls) == 2
     assert "Note" in llm.calls[1][1]  # the retry brief carries the nudge
+    assert llm.calls[0][2] == "default"
+    assert llm.calls[1][2] == "retry"  # resampled with higher diversity, not a repeat
 
 
 def test_retry_gives_up_after_one_more_bland_reply():
@@ -87,6 +93,32 @@ def test_retry_gives_up_after_one_more_bland_reply():
     reply, _, _ = run_turn(scenario, llm, "please, my friend")
 
     assert reply == "Silence."  # kept the first attempt rather than looping
+
+
+def test_verbatim_self_repeat_triggers_one_retry():
+    scenario = build_cell_and_guard()
+    scenario.guard.remember("player", "earlier line")
+    scenario.guard.remember("guard", "Move slow.")
+    llm = SequencedLLM(["Move slow.", "Wait by the wall."])
+
+    reply, _, _ = run_turn(scenario, llm, "come on then")
+
+    assert reply == "Wait by the wall."
+    assert len(llm.calls) == 2
+    assert "repeat" in llm.calls[1][1].lower()  # retry brief carries the repeat nudge
+    assert llm.calls[1][2] == "retry"
+
+
+def test_repeat_retry_gives_up_if_still_repeated():
+    scenario = build_cell_and_guard()
+    scenario.guard.remember("player", "earlier line")
+    scenario.guard.remember("guard", "Move slow.")
+    llm = SequencedLLM(["Move slow.", "Move slow."])
+
+    reply, _, _ = run_turn(scenario, llm, "come on then")
+
+    assert reply == "Move slow."
+    assert len(llm.calls) == 2
     assert len(llm.calls) == 2
 
 

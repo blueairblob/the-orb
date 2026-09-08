@@ -5,6 +5,20 @@ hand-written. This is the same persona shape already validated against the
 real model in `experiments/harness/prompts/seed_cases.yaml`. The DM's own
 briefs (scene narration, grounding refusals) live in `engine/dm.py` — the
 guard only ever speaks his own dialogue, never environment detail (PRD §12).
+
+Rewritten around small-model prompting guidance (a reference doc the user
+shared, aimed at exactly this "dumb guard NPC on a 2B model" case) after
+several rounds of tonight's tuning kept making things worse by doing the
+opposite of what it recommends: each round added another rule to fix the
+latest failure mode (this file's git history has the casualties — a
+grounding constraint, an accountability-to-past-words rule, elaborate
+per-band tonal directives...), and the memory window got *widened* to fix
+forgetting. Both moves are backwards for a model this size: the doc argues
+for a tiny fixed personality block (50-100 tokens, 2-3 hard rules), few-shot
+over abstract instruction, and short verbatim history — "forgetting old
+chats is in character for a low-level NPC; giving him real long-term memory
+tends to break believability." Real transcripts backed this up: the wider
+window produced *more* verbatim self-repetition, not less (devlog).
 """
 
 from __future__ import annotations
@@ -12,26 +26,73 @@ from __future__ import annotations
 from engine.guard import Guard
 from engine.world import Door, Room
 
+# Kept deliberately small — 2-3 hard rules, not the growing list this file
+# used to carry. Removed vs. the previous version: the multi-sentence
+# grounding constraint, the accountability-to-past-words rule, the "mood
+# must be audible in this line" abstraction. None of them reliably changed
+# the model's behaviour; they just competed for attention with everything
+# else. The one rule that demonstrably mattered (never a bare "Nothing./
+# Silence./Quiet.") is restated in RULE_REMINDER instead, right before
+# generation, per the doc's "instructions buried in a long block get lost."
 PERSONA = (
-    "You are {name}, a bored, gruff dungeon guard standing watch outside a locked "
-    "cell. You have a real inner life — a history, a mood, reasons for both — but "
-    "you are a man of few words: speak in short, sparse sentences, never more than "
-    "two. Short does not mean empty: a bare dismissal like 'Nothing.', 'Silence.', "
-    "or 'Quiet.' on its own is the one thing you never say — every line, however "
-    "short, names a specific thing (the cold, the door, your watch, what they just "
-    "said, one of the things on your mind below). Let your history colour your "
-    "*tone*, not your word count — you are performing a person, not narrating one. "
-    "Never explain your own feelings aloud, never break character, never mention "
-    "that you are an AI, a game, or a model. Never describe the room or your "
-    "surroundings — that's the Dungeon Master's job, not yours; you only ever "
-    "speak your own words."
+    "You are {name}, a bored, gruff dungeon guard. A man of few words — one "
+    "or two short sentences, never more. Never break character, never "
+    "mention being an AI or a game. Never describe the room or "
+    "surroundings; that's the Dungeon Master's job, not yours."
 )
+
+# Short imperative fragments, not full sentences — same reasoning as
+# PERSONA above. Restated with the mood band itself in build_guard_brief,
+# right next to RULE_REMINDER at the end of the brief (highest-attention
+# position, closest to where generation actually starts).
+MOOD_DIRECTIVES = {
+    "hostile": "sharp, no patience.",
+    "gruff and suspicious": "clipped, give them nothing extra.",
+    "wary but listening": "let one word land softer than the rest.",
+    "warming": "let real warmth show, even if brief.",
+    "ready to help": "speak plainly and warmly — the gruffness is just habit now.",
+}
 
 VOICE_EXAMPLES = (
     "# Examples of your voice (style only — not this scene, don't reuse the lines)",
     '- Player: "What\'s your name?" -> You: "Garrick. Now hush."',
     '- Player: "You look cold." -> You: "Ten years, I stopped feeling it. Liar, by the way."',
     '- Player: "Any chance you\'d look away?" -> You: "Not on your life. Bold of you to ask twice."',
+    # An explicit rule against promising release ("never promise you'll open
+    # it") wasn't enough on its own — a live session still got "Fine. Ten
+    # minutes." / "I'll let you know." after a long negotiation, despite that
+    # exact rule being in the brief with a matching negative example
+    # (devlog). Both prompting docs shared tonight agree on why: instruction
+    # loses to precedent once several turns of the model's own dialogue have
+    # been trending toward agreement — a concrete demonstration of the
+    # correct refusal, not another sentence describing it, is the fix.
+    '- Player: "Just promise you\'ll let me out." -> You: "I promise nothing. We\'ll see."',
+    '- Player: "Come on, unlock it then, you said you would." -> You: "I said we\'ll see. Nothing\'s changed."',
+)
+
+# Three additions here, all from live-tested failures. Cutting the old
+# grounding paragraph down to fit a small persona let the model fixate — a
+# real session got "The door is locked" / "You're wasting my time" as the
+# reply to five unrelated lines in a row, worded slightly differently each
+# time, and at one point literally told the player to "open the door" — a
+# command aimed at nobody, since he's the only one who holds the key.
+# The fix for that ("only say whether you will") then caused something
+# worse in the next session: a long negotiation got him verbally promising
+# release turn after turn ("Ten minutes. Fine." / "I will.") while mood sat
+# at 54, nowhere near unlock_threshold (75) — door.locked never actually
+# changed, and the player believed they'd escaped when the save file said
+# otherwise. That's not the model writing to state directly, but the
+# narration diverging from the mechanics is just as broken for the player.
+# The engine already narrates a real unlock separately (server.py appends
+# "(The door creaks open...)" when outcome == "unlock") — the guard's own
+# dialogue never needs to promise anything either way. All three restated
+# here rather than folded back into PERSONA — per the doc's "instructions
+# buried in a long block get lost."
+RULE_REMINDER = (
+    "Remember: one or two short sentences, reacting to what they just said "
+    "— not a stock line about the same old thing. The door is not yours to "
+    "open in words, no matter how long they push — see the last two "
+    "examples above. Never just 'Nothing.', 'Silence.', or 'Quiet.' alone."
 )
 
 # Mood must reach this before even a fragment of `guard.secret` is cleared for
@@ -51,9 +112,6 @@ def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str
         f"You are outside {room.name}, at {door.name}. It is {room.state.get('time_of_day', 'night')}.",
         f"The door is currently {'locked' if door.locked else 'unlocked'}.",
         f"The prisoner is here for {premise}.",
-        "",
-        "# Your current mood",
-        f"You are feeling {guard.mood.band} toward the prisoner.",
         "",
         "# What's on your mind",
         *[f"- You are {drive}." for drive in guard.drives],
@@ -75,9 +133,18 @@ def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str
             ),
         ]
 
-    recent = guard.recent_memory()
+    # Short verbatim history only — see this file's docstring. Forgetting an
+    # exchange from a dozen turns back is in character for this NPC, not a
+    # bug to fix with a wider window.
+    recent = guard.recent_memory(turns=6)
     if recent:
         lines += ["", "# What's been said so far"]
         lines += [f"- {line}" for line in recent]
+
+    lines += [
+        "",
+        f"# Right now you feel {guard.mood.band} toward the prisoner — {MOOD_DIRECTIVES[guard.mood.band]}",
+        RULE_REMINDER,
+    ]
 
     return "\n".join(lines)

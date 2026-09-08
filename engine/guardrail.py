@@ -32,12 +32,36 @@ FALLBACK_LINE = "The guard grunts, and says nothing more."
 # for another take (PRD §1: the engine directs).
 BLAND_DISMISSALS = {"nothing", "silence", "quiet"}
 
+# The model sometimes wraps its whole reply in literal quote marks (seen
+# repeatedly in real sessions: '"Silence."', '"What do you want?"') — without
+# stripping these first, a quoted bland dismissal slips past the check below
+# undetected (rstrip only trims .!…, never the quote outside that), so
+# engine/loop.py never retries it. Straight and curly, since the model isn't
+# consistent about which it uses.
+_WRAPPING_QUOTES = "\"'‘’“”"
+
+
+def _normalize(text: str) -> str:
+    return text.strip().strip(_WRAPPING_QUOTES).strip().lower().rstrip(".!…")
+
 
 def is_bland_dismissal(text: str) -> bool:
     """True if `text` is (near enough) just one of `BLAND_DISMISSALS` and
     nothing else — a flat non-answer rather than an in-character line."""
-    normalized = text.strip().lower().rstrip(".!…")
-    return normalized in BLAND_DISMISSALS
+    return _normalize(text) in BLAND_DISMISSALS
+
+
+def is_repeated_reply(text: str, prior_lines: list[str]) -> bool:
+    """True if `text` is (near enough) verbatim one of the speaker's own
+    recent lines — an echo of a past turn, not a fresh reaction to this one.
+    Widening the guard's memory window was meant to fix real amnesia
+    (forgetting an offer made a dozen lines back) but turned out to make him
+    *more* prone to literally repeating himself verbatim once — devlog: "Move
+    slow." recurred four times in one session, for four different prompts.
+    Same shape as is_bland_dismissal: a narrow, last-resort check so
+    engine/loop.py knows to ask for another take, not a rewrite."""
+    normalized = _normalize(text)
+    return any(normalized == _normalize(prior) for prior in prior_lines)
 
 
 def filter_reply(text: str) -> str:

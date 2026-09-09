@@ -19,6 +19,12 @@ def test_ordinary_dialogue_defaults_to_guard():
     assert classify_utterance("You're an idiot") == "dialogue"
 
 
+def test_environment_query_words_dont_false_positive_inside_longer_words():
+    # Regression (devlog 2026-09-09): "look" as a bare substring matched
+    # inside "looking", misrouting real guard dialogue to the DM.
+    assert classify_utterance("Have you ever thought about looking the other way?") == "dialogue"
+
+
 def test_combat_flavoured_threats_stay_dialogue_not_refusal():
     # Aggressive dialogue toward the guard is handled by the guard's own
     # mood heuristic, not routed to a DM refusal — only clearly nonexistent

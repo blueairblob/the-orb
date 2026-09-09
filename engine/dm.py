@@ -38,15 +38,21 @@ DM_PERSONA = (
 # heuristic as aggressive dialogue, not routed here.
 UNGROUNDED_WORDS = {"cast", "spell", "wand", "potion", "scroll", "sword"}
 
-ENVIRONMENT_QUERY_PATTERNS = (
-    "look",
-    "describe",
+# Single words, matched as whole words (like UNGROUNDED_WORDS above) — a bare
+# substring match here false-positived on "look" inside "looking" (devlog
+# 2026-09-09: "Have you ever thought about looking the other way?", clearly
+# guard dialogue, got misrouted to the DM).
+ENVIRONMENT_QUERY_WORDS = {"look", "describe", "surroundings"}
+
+# Multi-word phrases, matched as substrings — safe as substrings since a
+# space-containing phrase can't hide inside a single unrelated word the way
+# a bare word like "look" can.
+ENVIRONMENT_QUERY_PHRASES = (
     "what do i see",
     "what does",
     "where am i",
     "what's around",
     "whats around",
-    "surroundings",
 )
 
 Route = Literal["refusal", "narration", "dialogue"]
@@ -58,7 +64,9 @@ def classify_utterance(text: str) -> Route:
 
     if words & UNGROUNDED_WORDS:
         return "refusal"
-    if any(pattern in lowered for pattern in ENVIRONMENT_QUERY_PATTERNS):
+    if words & ENVIRONMENT_QUERY_WORDS or any(
+        phrase in lowered for phrase in ENVIRONMENT_QUERY_PHRASES
+    ):
         return "narration"
     return "dialogue"
 

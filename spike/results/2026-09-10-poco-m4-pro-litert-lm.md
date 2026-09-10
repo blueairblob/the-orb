@@ -126,6 +126,26 @@ count, but 128/1.81s ≈ 71 tok/s against the *padded* count — consistent with
 throughput). Not confirmed against the model export config itself, but the numbers line up too
 well to be coincidence — see Open threads.
 
+**Confirmed directly.** Ran the same brief-as-turn-1, varying-length-turn-2 protocol at 6 follow-up
+lengths (single sample each — a quick confirmation pass, not a rigorous batch):
+
+| Turn-2 tokens (actual) | Prefill duration |
+|---|---|
+| 11 | 1.94s |
+| 23 | 1.96s |
+| 48 | 2.40s |
+| 88 | 1.98s |
+| 138 | 4.07s |
+| 196 | 3.40s |
+
+Everything from 11 to 88 tokens — an 8x range in actual new-token count — costs essentially the
+same ~2s. Crossing ~128 tokens roughly doubles the cost (138 and 196 both land around 3.4–4.1s,
+consistent with spilling into a second bucket). This is about as clean a confirmation as a
+single-sample sweep can give: **any incremental turn under ~128 tokens pays the same ~2s floor
+on this model/device/backend, regardless of how short it actually is.** That floor, not the
+session-reuse mechanism (which works fine), is what stands between LiteRT-LM CPU and the ~1s pass
+mark for a real guard conversation, where almost every player turn is well under 128 tokens.
+
 **Revised reading:** the session/cache-reuse mechanism is not the blocker it looked like after the
 first pass — it works, and works consistently. The remaining gap to the ~1s pass mark for a real
 incremental turn is now most plausibly this **fixed prefill-bucket floor** (~1.8s regardless of
@@ -198,12 +218,10 @@ load) that this desk-bound session doesn't touch.
 
 ## Open threads
 
-- [ ] **Confirm/refute the fixed-prefill-bucket hypothesis.** Check the `.litertlm` model's
-  exported signature shapes directly (or test with turn-2 inputs of varying length — e.g. 5, 50,
-  100, 150 tokens — and see whether prefill duration stays flat until a threshold then jumps) to
-  see whether ~1.8s really is a fixed floor around a 128-token bucket, and whether a
-  differently-exported model (or a `--prefill_batch_sizes` override, if the *dynamic* executor
-  can be selected) could shrink that floor for short incremental turns.
+- [x] **Confirm/refute the fixed-prefill-bucket hypothesis** — confirmed directly, see above.
+- [ ] Whether a differently-exported model (smaller bucket) or the "dynamic executor" mentioned in
+  `--prefill_chunk_size`'s help text could shrink the ~2s floor for short incremental turns —
+  not attempted this session, would need investigating how to select/build that executor variant.
 - [ ] Repeat the full 2026-09-09 protocol with `litert_lm_advanced_main` and real session reuse:
   hot/pocket, ~18-20 min, rotating prompts, thermal-drift-by-window table. Now unblocked.
 - [ ] Revisit thread-count tuning with a proper batch (n≥10 per setting) once TTFT methodology is

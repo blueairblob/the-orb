@@ -91,7 +91,7 @@ jobs:
         run: |
           bazelisk build \
             --disk_cache=~/.cache/bazel --repository_cache=~/.cache/bazel/repo \
-            --config=android_arm64 \
+            --config=android_arm64 -c opt \
             //runtime/engine:litert_lm_main
 
       - name: Collect artifacts

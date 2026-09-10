@@ -85,6 +85,53 @@ from this; the n=8 real-brief batch above (at threads=4, chosen as a reasonable 
 before this variance was fully apparent) is the trustworthy number, not the single-shot spot
 checks.
 
+## Update — same day: real session reuse via `litert_lm_advanced_main`
+
+The single biggest open question from the first pass ("does LiteRT-LM support incremental
+per-turn KV-cache reuse the way the GGUF baseline's `llama-server` did?") is resolved: **yes**,
+but not through `litert_lm_main` or its `--multi_turns` flag (that flag is declared but never
+read by that binary — dead flag, explains the earlier concatenation artifact). The sibling demo
+`litert_lm_advanced_main` (also built by the same CI job now) wires `--multi_turns` through the
+real `Conversation`/`Session` API (`runtime/engine/litert_lm_lib.cc`): each stdin line becomes a
+separate `SendMessage` call on the *same* session, and per-turn benchmark data is logged
+separately.
+
+**Protocol:** fed the flattened one-line brief as turn 1, a short player follow-up
+("You beg him again to let you out.") as turn 2, `--backend=cpu --num_cpu_threads=4
+--max_output_tokens=24`, n=6 full repeats (fresh process each time — this binary doesn't support
+looping the same session across process invocations, so each repeat still pays the full turn-1
+cold cost; only turn 2 is the "steady-state" measurement).
+
+| Turn | Prefill tokens | Prefill duration (median) | Prefill speed (median) | Decode duration (median, 7 tok) | Decode speed (median) |
+|---|---|---|---|---|---|
+| 1 (full ~500-token brief) | 501 | 7.53s | 66.4 tok/s | 1.60s | 4.39 tok/s |
+| 2 (17-token follow-up) | 17 | **1.81s** | 9.4 tok/s | 1.07s | **6.53 tok/s** |
+
+Turn 2 only reprocessed 17 tokens instead of the full ~518 — **confirmed real KV-cache reuse**,
+and remarkably tight across all 6 repeats (prefill duration range 1.78–1.86s, a fraction of
+turn-1's variance). Turn 2's decode is also faster than turn-1's, consistent with a warm
+executor. A "steady-state TTFT" proxy (turn-2 prefill + turn-2 decode/7, approximating time to
+the first output token of an incremental turn) comes out to **~1.96s median**.
+
+**But there's a second bottleneck this uncovers: fixed prefill shape/batching.** Turn 2's prefill
+speed (9.4 tok/s) is *far* below turn 1's (66.4 tok/s) for the same model doing the same kind of
+work — a 7x drop in apparent throughput for a 30x smaller input. That's not believable as real
+per-token compute cost. `--helpfull` confirms `--prefill_chunk_size` and `--prefill_batch_sizes`
+default to unchunked/whole-prompt processing here (`prefill_chunk_size=-1`, "Only supported by
+the dynamic executor" — not what's running), and the delegate logs name the compiled subgraph
+`prefill_128` — strongly suggesting the exported `.litertlm` model has a **statically-shaped
+prefill signature bucketed at (at least) 128 tokens**. If so, a 17-token incremental turn still
+pays compute proportional to a full 128-token bucket (17/1.81s ≈ 9.4 "tok/s" against the *nominal*
+count, but 128/1.81s ≈ 71 tok/s against the *padded* count — consistent with turn 1's real
+throughput). Not confirmed against the model export config itself, but the numbers line up too
+well to be coincidence — see Open threads.
+
+**Revised reading:** the session/cache-reuse mechanism is not the blocker it looked like after the
+first pass — it works, and works consistently. The remaining gap to the ~1s pass mark for a real
+incremental turn is now most plausibly this **fixed prefill-bucket floor** (~1.8s regardless of
+how short the new turn's text is), not a cold-full-reprocess problem. That's a more tractable,
+more specific target than "no session support" would have been.
+
 ## The brief used
 
 Generated fresh via `uv run python3 -c "from engine.scenario import build_cell_and_guard; from
@@ -96,17 +143,24 @@ reproduced in full here since it's identical in structure to the one already in
 
 ## Verdict against the pass mark
 
-**Not yet gradeable against the ~1s TTFT bar, and it would be misleading to call it "worse than
-GGUF" from these numbers.** The 10s TTFT is a real measurement of what `litert_lm_main` (the
-demo CLI) does today, but it is not a measurement of what the shipping architecture would do in
-an actual app, which would hold a persistent session and reuse the KV cache for the static
-persona block exactly as the GGUF/llama-server test did. Prefill throughput — the number that
-*is* comparable between the two runtimes regardless of session/caching architecture — favors
-LiteRT-LM by roughly 3x (52.5 vs ~14–18 tok/s). That's evidence *for* the "actual shipping runtime
-has headroom above the GGUF floor" hypothesis from the PRD §0 research, even though the
-end-to-end TTFT number from this session can't be used directly yet.
+**Closer than the first pass suggested, but still over the ~1s bar, and — surprisingly — not
+clearly ahead of the pessimistic GGUF baseline on real incremental-turn latency.** With real
+session reuse confirmed (see Update above), the honest steady-state number for LiteRT-LM CPU on
+this device is **~1.96s** per incremental turn, against the GGUF/llama-server baseline's **1.33s
+median** from 2026-09-09. Both numbers are desk-bound/single-sample-protocol in different ways
+(GGUF: real 18-min hot/pocket run, n=192; LiteRT-LM: desk-bound n=6) so this isn't a fully settled
+comparison, but it means the PRD §0 research's "shipping runtime has headroom above the GGUF
+floor" hypothesis is **not yet confirmed** — raw prefill throughput clearly favors LiteRT-LM
+(52.5–66 vs ~14–18 tok/s), but a fixed prefill-bucket floor (~1.8s regardless of how short the
+new turn is, see Update) appears to be eating that advantage for the short, incremental turns a
+real guard conversation is made of. Decode speed, the other half of end-to-end latency, is
+roughly comparable-to-favoring LiteRT-LM (6.53 vs 3.87 tok/s mean) — so the gap is specifically in
+prefill-floor overhead, not raw generation speed.
 
-Thermal/hot-pocket behavior for LiteRT-LM: **not tested this session** — see Open threads.
+Thermal/hot-pocket behavior for LiteRT-LM: **not tested this session** — see Open threads. Given
+the ~1.96s steady-state number, a hot/pocket run is worth doing regardless of whether the
+prefill-bucket question gets resolved first — it exercises a different axis (sustained thermal
+load) that this desk-bound session doesn't touch.
 
 ## Gotchas from this run
 
@@ -118,12 +172,14 @@ Thermal/hot-pocket behavior for LiteRT-LM: **not tested this session** — see O
 - **`-c opt` barely moved the numbers** (decode 2.31→2.45 tok/s either way) — the earlier
   hypothesis that the first build's slow numbers were a `fastbuild`-vs-`opt` artifact was wrong;
   don't assume it without checking again on a cleaner benchmark.
-- **The demo CLI (`litert_lm_main`) is not the production integration surface.** Its `--multi_turns`
-  flag was tested (fed a follow-up line after the brief via piped stdin) and did *not* do
-  incremental turn-by-turn prefill — it concatenated everything into one 518-token prefill and
-  reported "Total 1 turns". Real turn-to-turn session/cache reuse, if the runtime supports it at
-  all, lives in LiteRT-LM's Engine/Session C++ (or Python/Kotlin binding) API, not this benchmark
-  binary. This is the single most important open question left by this session.
+- **`litert_lm_main`'s `--multi_turns` flag is dead code in that binary** — declared in the shared
+  flags file and linked in, but never read by `litert_lm_main.cc`'s own logic, which always sends
+  exactly one message. That's why piping a follow-up line after the brief just got concatenated
+  into one 518-token prefill ("Total 1 turns") instead of being treated as a second turn. The
+  sibling `litert_lm_advanced_main` binary (same repo, `runtime/engine:litert_lm_advanced_main`)
+  *does* wire `--multi_turns` through the real session — see the Update above. Worth remembering
+  for any future LiteRT-LM CLI work: check which of the two demo binaries actually implements a
+  flag before concluding a feature doesn't exist.
 - **Wireless debugging's pairing service only listens on the phone's local Wi-Fi interface**, not
   the Tailscale interface — pairing had to be done by SSH-tunnelling through Termux's sshd (itself
   reachable over Tailscale) back to the phone's own `127.0.0.1:<pairing-port>`. The main
@@ -142,13 +198,14 @@ Thermal/hot-pocket behavior for LiteRT-LM: **not tested this session** — see O
 
 ## Open threads
 
-- [ ] **Resolve the session/KV-cache-reuse question.** Either find a LiteRT-LM CLI flag/mode that
-  does real incremental per-turn prefill, or write a small harness against the actual
-  Engine/Session API (C++ or the Python bindings) that holds one session across turns. Without
-  this, TTFT numbers from `litert_lm_main` will always overstate real per-turn latency for a
-  guard conversation, where the persona/system block is static turn-to-turn by design (PRD §4).
-- [ ] Once session reuse works, repeat the full 2026-09-09 protocol: hot/pocket, ~18-20 min,
-  rotating prompts, thermal-drift-by-window table.
+- [ ] **Confirm/refute the fixed-prefill-bucket hypothesis.** Check the `.litertlm` model's
+  exported signature shapes directly (or test with turn-2 inputs of varying length — e.g. 5, 50,
+  100, 150 tokens — and see whether prefill duration stays flat until a threshold then jumps) to
+  see whether ~1.8s really is a fixed floor around a 128-token bucket, and whether a
+  differently-exported model (or a `--prefill_batch_sizes` override, if the *dynamic* executor
+  can be selected) could shrink that floor for short incremental turns.
+- [ ] Repeat the full 2026-09-09 protocol with `litert_lm_advanced_main` and real session reuse:
+  hot/pocket, ~18-20 min, rotating prompts, thermal-drift-by-window table. Now unblocked.
 - [ ] Revisit thread-count tuning with a proper batch (n≥10 per setting) once TTFT methodology is
   fixed — the current spot checks are too noisy to act on.
 - [ ] Test `--cache_compiled_shaders_only` for the GPU backend to see if the 30.8s one-time init

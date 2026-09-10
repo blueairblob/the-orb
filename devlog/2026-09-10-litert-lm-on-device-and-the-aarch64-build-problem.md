@@ -54,17 +54,23 @@ adb connect 127.0.0.1:<connect-port>
 
 Got a real Android arm64 `litert_lm_main` built and running on `poco-m4-pro`, both CPU (XNNPACK)
 and GPU (real OpenCL/Mali driver, not the software Vulkan fallback that sank the equivalent GPU
-attempt on 2026-09-09) backends. Headline finding: **prefill throughput clearly beats the GGUF
-baseline** (52.5 vs ~14–18 tok/s median), supporting the PRD §0 research's expectation that the
-shipping runtime has headroom above the llama.cpp/GGUF floor — but the raw **TTFT numbers from
-this session aren't usable yet**, because `litert_lm_main` is a single-shot CLI with no
-persistent session, so every invocation reprocesses the full ~490-token brief from cold (10s
-TTFT) instead of reusing a cached persona prefix the way the GGUF baseline's `llama-server` did.
-Full numbers, caveats, and the thread-count/big.LITTLE notes are in the results file. The build
-itself: first attempt failed on `npm install -g @bazel/bazelisk` (`EACCES` on the hosted
+attempt on 2026-09-09) backends. First pass: prefill throughput clearly beat the GGUF baseline
+(52.5 vs ~14–18 tok/s median), but raw TTFT (~10s) looked bad — traced to `litert_lm_main` being
+a single-shot CLI with no persistent session, reprocessing the full ~490-token brief from cold
+every call. Same-session follow-up: found and built the sibling `litert_lm_advanced_main` binary,
+whose `--multi_turns` flag (unlike `litert_lm_main`'s, which is dead code) is wired through the
+real `Conversation`/`Session` API. **Confirmed real KV-cache reuse across turns** — a follow-up
+turn only reprocessed 17 tokens instead of the full ~500, stable across 6 repeats — giving a real
+steady-state TTFT of ~1.96s. That's still over the ~1s pass mark and, unexpectedly, not clearly
+ahead of the GGUF baseline's 1.33s hot-run median: the data now points at a **fixed prefill-bucket
+floor** (the model's `prefill_128`-named compiled subgraph suggests short turns still pay
+close to a full 128-token prefill's compute) as the likely remaining bottleneck, not the
+session-reuse question that first looked like the blocker. Full numbers in the results file. The
+build itself: first attempt failed on `npm install -g @bazel/bazelisk` (`EACCES` on the hosted
 runner — switched to downloading the bazelisk binary directly); second attempt succeeded in
 ~28 min cold, ~7 min with the Bazel cache warm; adding `-c opt` for the third build barely
-changed the numbers (the earlier "must be a fastbuild artifact" theory doesn't hold up).
+changed the numbers (the earlier "must be a fastbuild artifact" theory doesn't hold up); a fourth
+build added `litert_lm_advanced_main` alongside the original target, ~same warm-cache build time.
 
 ## Gotchas & notes
 
@@ -79,21 +85,30 @@ changed the numbers (the earlier "must be a fastbuild artifact" theory doesn't h
 - **`adb-shell` (pure-Python) doesn't support Android 11+ wireless pairing** — only the older
   pre-shared-key `adb connect` protocol. Would have been a much simpler no-sudo, no-NDK-style-arch
   workaround if it had; ruled out after checking its source rather than assuming.
-- **`litert_lm_main --multi_turns` is not a KV-cache-reuse mechanism** — tested directly (piped a
-  follow-up line via stdin after `--input_prompt_file`), and it just concatenated everything into
-  one larger single-shot prefill. Don't reach for this flag expecting per-turn incremental
-  prefill; real session reuse (if the runtime supports it at all outside a full app integration)
-  would need the Engine/Session API directly.
+- **`litert_lm_main --multi_turns` is dead code in that specific binary** — declared via the
+  shared flags file but never read by `litert_lm_main.cc`'s own logic, so piping a follow-up line
+  after `--input_prompt_file` just concatenated everything into one larger single-shot prefill.
+  The sibling `litert_lm_advanced_main` binary implements the same flag properly through
+  `runtime/engine/litert_lm_lib.cc`'s `RunMultiTurnConversation`, which does real per-turn
+  `SendMessage` calls on one `Conversation`. Lesson: check which of LiteRT-LM's two demo binaries
+  actually implements a flag before concluding a capability doesn't exist.
+- **Fixed prefill-bucket floor, not session support, looks like the real remaining latency
+  bottleneck.** A 17-token incremental turn took ~1.8s to prefill — 7x slower "tok/s" than the
+  501-token first turn's 66 tok/s, for 30x less nominal work. The delegate logs name the compiled
+  subgraph `prefill_128`; the numbers are consistent with the exported model having a
+  statically-shaped prefill signature bucketed at 128 tokens, so any turn under that still pays
+  close to the full bucket's compute. Not confirmed against the model export itself — see the
+  results file's open threads.
 - **GPU backend's first-run cost is real but likely not representative**: 30.8s `Init Executor`,
   presumably OpenCL shader compilation. `--cache_compiled_shaders_only` exists for exactly this
   and is untested — an open thread, not a verdict against GPU.
 
 ## Open threads
 
-- [ ] **Solve the session/KV-cache-reuse problem for LiteRT-LM** before any further TTFT
-  comparison is meaningful — the single biggest open question from this session. See the results
-  file for detail.
-- [ ] Once that's solved, run the same 18-20 min hot/pocket protocol used for the GGUF baseline.
+- [ ] **Confirm/refute the fixed-prefill-bucket hypothesis** (see results file) — the more
+  specific, tractable target that replaces the now-resolved session-reuse question.
+- [ ] Run the same 18-20 min hot/pocket protocol used for the GGUF baseline, now with
+  `litert_lm_advanced_main` and real session reuse — unblocked as of this session.
 - [ ] Test `--cache_compiled_shaders_only` for the GPU backend.
 - [ ] Properly re-test thread-count sensitivity (n≥10 per setting) — this session's spot checks
   were too noisy (2.4x run-to-run variance at the same setting) to act on.

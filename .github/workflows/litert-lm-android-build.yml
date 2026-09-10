@@ -92,12 +92,13 @@ jobs:
           bazelisk build \
             --disk_cache=~/.cache/bazel --repository_cache=~/.cache/bazel/repo \
             --config=android_arm64 -c opt \
-            //runtime/engine:litert_lm_main
+            //runtime/engine:litert_lm_main //runtime/engine:litert_lm_advanced_main
 
       - name: Collect artifacts
         run: |
           mkdir -p out
           cp bazel-bin/runtime/engine/litert_lm_main out/
+          cp bazel-bin/runtime/engine/litert_lm_advanced_main out/
           cp prebuilt/android_arm64/*.so out/
 
       - name: Upload litert_lm_main (android_arm64)

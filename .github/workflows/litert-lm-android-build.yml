@@ -47,7 +47,11 @@ jobs:
             zlib1g-dev libssl-dev libpng-dev libcurl4-openssl-dev libfftw3-dev
 
       - name: Install Bazelisk
-        run: npm install -g @bazel/bazelisk
+        run: |
+          sudo curl -fsSL -o /usr/local/bin/bazelisk \
+            https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+          sudo chmod +x /usr/local/bin/bazelisk
+          bazelisk version
 
       - name: Install Android SDK (platform-tools + build-tools)
         run: |

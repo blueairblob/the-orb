@@ -103,12 +103,34 @@ build added `litert_lm_advanced_main` alongside the original target, ~same warm-
   presumably OpenCL shader compilation. `--cache_compiled_shaders_only` exists for exactly this
   and is untested — an open thread, not a verdict against GPU.
 
+## Update — 2026-09-11: confirmed the bucket floor directly, hot/pocket run undershoots
+
+Swept turn-2 length from 11 to 196 tokens against the same session (single sample per length —
+a confirmation pass, not a rigorous batch): 11-88 tokens all cost ~2s regardless of actual length
+(an 8x range in real tokens, flat wall-clock time); crossing ~128 tokens roughly doubled it
+(138 and 196 tokens both landed at 3.4-4.1s). Confirms the fixed-bucket-floor hypothesis directly
+— any incremental turn under ~128 tokens pays the same ~2s floor here, which covers essentially
+every real player utterance in a guard conversation.
+
+Then attempted the hot/pocket sustained-load run twice (user unplugged the phone and pocketed it
+for both). Both undershot the intended 18-20 minutes: fed 345 then 881 rotating short follow-ups
+via `cat file | adb shell`, but only ~125-126 lines per run actually got separately-timed
+prefill/decode entries — the rest were tokenized (confirmed via `TextToTokenIds Turns` matching
+the full line count) but seemingly coalesced into fewer real inference calls somewhere in the
+async pipeline, likely because piping the whole file at once buffers far ahead of what the model
+can consume. Net real duration: ~9 and ~11 minutes, not the intended 18-20. Within those shorter
+windows, both runs independently showed **decode time rising ~19-21% from first half to second
+half** — the opposite of the GGUF baseline's flat 18-minute result. Suggestive of thermal
+throttling showing up faster on LiteRT-LM CPU than it did on GGUF, but not confirmed given the
+shorter duration and the turn-coalescing artifact. Full numbers and tables in the results file.
+
 ## Open threads
 
-- [ ] **Confirm/refute the fixed-prefill-bucket hypothesis** (see results file) — the more
-  specific, tractable target that replaces the now-resolved session-reuse question.
-- [ ] Run the same 18-20 min hot/pocket protocol used for the GGUF baseline, now with
-  `litert_lm_advanced_main` and real session reuse — unblocked as of this session.
+- [ ] **Fix the stdin-pacing artifact and re-run the full 18-20 min hot/pocket protocol.** Needs
+  a feeder that sends one line, waits for that turn's reply, then sends the next — not a bulk
+  `cat file | adb shell`. Now the top open thread: both the TTFT-floor number and the thermal
+  drift signal from 2026-09-11 are provisional until this is fixed.
+- [x] Confirm/refute the fixed-prefill-bucket hypothesis — confirmed directly, see Update above.
 - [ ] Test `--cache_compiled_shaders_only` for the GPU backend.
 - [ ] Properly re-test thread-count sensitivity (n≥10 per setting) — this session's spot checks
   were too noisy (2.4x run-to-run variance at the same setting) to act on.

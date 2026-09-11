@@ -152,6 +152,54 @@ incremental turn is now most plausibly this **fixed prefill-bucket floor** (~1.8
 how short the new turn's text is), not a cold-full-reprocess problem. That's a more tractable,
 more specific target than "no session support" would have been.
 
+## Update — 2026-09-11: hot/pocket sustained-load attempt, with a methodology caveat
+
+Attempted the "now unblocked" open thread: real unplugged/in-pocket sustained load with
+`litert_lm_advanced_main`'s session reuse, mirroring the 2026-09-09 GGUF protocol. One long-lived
+process, one brief as turn 1, then hundreds of rotating short follow-ups (10 templates, all under
+the ~128-token bucket) fed as separate stdin lines, `--backend=cpu --num_cpu_threads=4
+--max_output_tokens=24`. Two runs:
+
+| Run | Lines fed | Wall-clock duration | Benchmarked turns (Prefill/Decode) |
+|---|---|---|---|
+| 1 | 345 | 9m02s | 125 / 118 |
+| 2 | 881 | 10m24s | 126 / 116 |
+
+**A real methodology artifact, not a runtime bug (or at least, not confirmed as one):** every
+fed line was tokenized (`TextToTokenIds Turns` matched the full line count both times), and the
+model kept producing real, distinct replies throughout (spot-checked the captured output) — but
+only ~125-126 lines per run actually got a separately-timed `Prefill`/`Decode Turn` entry, and
+those ~125 entries' durations alone account for almost the entire wall-clock time in both runs.
+The likely explanation: piping the whole input file at once (`cat file | adb shell ...`) buffers
+far ahead of what the model can consume, and something in the async `SendMessageAsync` /
+`WaitUntilDone` pipeline coalesces some fraction of rapidly-queued turns into fewer actual
+inference calls rather than truly running one at a time — this needs a properly-paced feeder
+(one line at a time, waiting for each reply) to rule out entirely, not confirmed against the
+library source. **Practical effect: neither run is really an 18-20 minute, 300+ distinct-turn
+test — both are closer to a ~9-11 minute, ~125-distinct-turn test**, shorter than intended and
+short of the GGUF baseline's 18.1 real minutes / 192 requests.
+
+**Within that shorter, real window, both runs show the same drift direction — worth taking
+seriously despite the shorter duration:**
+
+| Run | Prefill 1st-half mean | Prefill 2nd-half mean | Decode 1st-half mean | Decode 2nd-half mean |
+|---|---|---|---|---|
+| 1 | 2.03s | 2.43s (+20%) | 1.64s | 1.99s (+21%) |
+| 2 | 2.59s | 2.70s (+4%) | 1.74s | 2.07s (+19%) |
+
+Decode time rose ~19-21% from first half to second half in **both independent runs**. Prefill
+drift was less consistent (+20% vs +4%). This is the opposite of the GGUF/llama.cpp baseline,
+which showed **no** upward drift over its full 18.1-minute run (second half flat-to-slightly-
+faster than the first). Read cautiously given the shorter real duration and the turn-coalescing
+caveat above, but two independently-reproduced ~20% decode slowdowns is a real signal, not noise
+at this magnitude — plausibly thermal throttling that the GGUF run, at a similar wall-clock
+distance into its own run, hadn't yet shown.
+
+**Net effect on the pass mark:** the thermal half of the gate, which GGUF passed cleanly at 18
+minutes, is now **an open question rather than a pass** for LiteRT-LM CPU — the evidence so far
+points toward throttling appearing within the first ~10 minutes, not toward a clean pass. Needs a
+properly-paced, full-duration re-run before this can be called either way.
+
 ## The brief used
 
 Generated fresh via `uv run python3 -c "from engine.scenario import build_cell_and_guard; from
@@ -177,10 +225,15 @@ real guard conversation is made of. Decode speed, the other half of end-to-end l
 roughly comparable-to-favoring LiteRT-LM (6.53 vs 3.87 tok/s mean) — so the gap is specifically in
 prefill-floor overhead, not raw generation speed.
 
-Thermal/hot-pocket behavior for LiteRT-LM: **not tested this session** — see Open threads. Given
-the ~1.96s steady-state number, a hot/pocket run is worth doing regardless of whether the
-prefill-bucket question gets resolved first — it exercises a different axis (sustained thermal
-load) that this desk-bound session doesn't touch.
+**Thermal/hot-pocket behavior: attempted, and the result leans negative, though not conclusively**
+(see the 2026-09-11 Update above). Two independent unplugged/in-pocket runs — shorter than
+intended (~9-11 real minutes each, not the targeted 18-20, due to a stdin-pacing artifact that
+undercounted distinct turns) — both showed decode time rising ~19-21% from first half to second
+half. That's the opposite of the GGUF baseline, which stayed flat over a full 18.1 real minutes.
+Given the shorter duration and the counting artifact, this isn't a confirmed fail on the thermal
+half of the pass mark, but it's evidence pointing away from a clean pass, where GGUF's own
+thermal result was unambiguous. A properly-paced, full-duration re-run is needed before either
+half of the pass mark (TTFT or thermal) can be called with confidence for LiteRT-LM.
 
 ## Gotchas from this run
 
@@ -222,8 +275,12 @@ load) that this desk-bound session doesn't touch.
 - [ ] Whether a differently-exported model (smaller bucket) or the "dynamic executor" mentioned in
   `--prefill_chunk_size`'s help text could shrink the ~2s floor for short incremental turns —
   not attempted this session, would need investigating how to select/build that executor variant.
-- [ ] Repeat the full 2026-09-09 protocol with `litert_lm_advanced_main` and real session reuse:
-  hot/pocket, ~18-20 min, rotating prompts, thermal-drift-by-window table. Now unblocked.
+- [ ] **Fix the stdin-pacing artifact and re-run the full 18-20 min hot/pocket protocol properly.**
+  Two 2026-09-11 attempts (see Update) both undershot duration and turn count because piping the
+  whole input file at once let the async pipeline coalesce many queued turns into far fewer
+  actually-timed inference calls. Needs a feeder that sends one line, waits for that turn's reply
+  to complete, then sends the next — not a bulk `cat file | adb shell`. This is now the top open
+  thread: both the TTFT and thermal verdicts are provisional until this is fixed.
 - [ ] Revisit thread-count tuning with a proper batch (n≥10 per setting) once TTFT methodology is
   fixed — the current spot checks are too noisy to act on.
 - [ ] Test `--cache_compiled_shaders_only` for the GPU backend to see if the 30.8s one-time init

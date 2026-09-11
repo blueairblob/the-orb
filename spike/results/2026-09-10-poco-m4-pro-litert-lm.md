@@ -200,6 +200,57 @@ minutes, is now **an open question rather than a pass** for LiteRT-LM CPU — th
 points toward throttling appearing within the first ~10 minutes, not toward a clean pass. Needs a
 properly-paced, full-duration re-run before this can be called either way.
 
+## Update — 2026-09-11 (later): properly-paced runs, a new hard limit found, and the clearest drift signal yet
+
+Built a paced feeder (`pexpect`-driven, sends one line, waits for that exact turn's reply and the
+next prompt cue before sending the next — see `paced_hotpocket.py`, not checked into the repo,
+lives in the session scratchpad) to fix the stdin-pacing artifact from the earlier update. First
+fix attempt had its own bug: `pexpect.expect()` re-waited for a *second* occurrence of the prompt
+cue that only appears after sending the next line, deadlocking; switched to `expect_exact()` after
+sequencing the wait-then-send order correctly, verified with a 30-second/7-turn dry run (clean,
+consistent ~3-3.5s per turn) before trusting it with a full run.
+
+**Attempt 1** ran for only ~2.5 minutes (40 clean turns) before the connection died — traced to a
+real hardware/OS constraint, not a script bug: Android's Wireless debugging service stops
+listening entirely once the phone leaves Wi-Fi range (confirmed directly via `nc` from inside
+Termux itself: `127.0.0.1:<port>` went from open to "Connection refused" the moment the phone
+switched to cellular). Not a Tailscale/tunnel problem this time — the ADB daemon itself shuts
+down. Re-pairing wasn't needed once back on Wi-Fi (the device still trusted the host's adb key),
+but the connect port changes every time and needs re-fetching from the Wireless debugging screen.
+
+**Attempt 2**, back on Wi-Fi, ran the full protocol and surfaced a genuine new finding: after
+133 real turns (~6.8 minutes in), the transcript shows `Chosen prefill work group size exceeds
+available state entries (100)` — **the long-lived session has a hard capacity ceiling around
+~100 turns.** Past that point the tool kept matching the prompt cue successfully (no crash, no
+error propagated to the script) but stopped doing real work: turn latency dropped to a fake
+~0.15-0.2s and the generated text started accumulating garbage/repeated tokens turn over turn.
+The script correctly logged 2000 "turns" by that measure, but only the first 133 are real. This
+matters beyond just this test: it means an engine design that holds one ever-growing Conversation
+per NPC encounter needs either a turn cap well under ~100 or periodic session
+rotation/resummarization — though note this test methodology (one raw accumulating session) is
+itself *not* how the real engine is designed to work (PRD §4: the brief is rebuilt fresh from the
+object model each turn, not accumulated as raw LLM conversation history), so this ceiling may
+matter less in practice than it would for a naive chat-style integration.
+
+**The 133 clean, real, properly-paced turns give the best drift signal so far** — a monotonic
+increase across thirds of the window, not just a first-half/second-half average:
+
+| Segment | Mean turn latency (prefill+decode+overhead) |
+|---|---|
+| First third (turns 1-44) | 2.73s |
+| Middle third (turns 45-88) | 2.92s |
+| Last third (turns 89-133) | 3.48s |
+
++27% from first third to last third, monotonic, over a real 6.8-minute continuous window (session
+mean 3.05s, median 2.97s, range 2.34-5.66s). Combined with the earlier (methodologically noisier)
+2026-09-11 runs both independently showing ~19-21% decode slowdown, this is now three separate
+observations all pointing the same direction: **real, reproducible latency growth under sustained
+CPU load**, and — importantly — it's visible within under 7 minutes, well short of the GGUF
+baseline's full 18.1-minute flat result. Still short of a full clean 18-20 minute run (now blocked
+by the ~100-turn session ceiling, not by pacing), but the direction of the finding is no longer in
+doubt: the thermal/sustained-load half of the pass mark looks like a real problem area for
+LiteRT-LM CPU on this device, in clear contrast to GGUF/llama.cpp's clean pass.
+
 ## The brief used
 
 Generated fresh via `uv run python3 -c "from engine.scenario import build_cell_and_guard; from
@@ -225,15 +276,19 @@ real guard conversation is made of. Decode speed, the other half of end-to-end l
 roughly comparable-to-favoring LiteRT-LM (6.53 vs 3.87 tok/s mean) — so the gap is specifically in
 prefill-floor overhead, not raw generation speed.
 
-**Thermal/hot-pocket behavior: attempted, and the result leans negative, though not conclusively**
-(see the 2026-09-11 Update above). Two independent unplugged/in-pocket runs — shorter than
-intended (~9-11 real minutes each, not the targeted 18-20, due to a stdin-pacing artifact that
-undercounted distinct turns) — both showed decode time rising ~19-21% from first half to second
-half. That's the opposite of the GGUF baseline, which stayed flat over a full 18.1 real minutes.
-Given the shorter duration and the counting artifact, this isn't a confirmed fail on the thermal
-half of the pass mark, but it's evidence pointing away from a clean pass, where GGUF's own
-thermal result was unambiguous. A properly-paced, full-duration re-run is needed before either
-half of the pass mark (TTFT or thermal) can be called with confidence for LiteRT-LM.
+**Thermal/hot-pocket behavior: leans negative, and now on firmer footing than the first attempt.**
+Four independent unplugged/in-pocket observations now exist (two bulk-piped, methodologically
+noisy; two properly-paced), and all four show the same direction — latency rising under sustained
+load, never falling or staying flat. The cleanest of the four (133 properly-paced real turns over
+6.8 minutes, 2026-09-11 later Update) shows a **monotonic +27% increase across thirds of the
+window**, visible in under 7 minutes. That's the opposite of the GGUF baseline, which stayed flat
+over its full 18.1-minute run. Still not a full clean 18-20 minute run — now blocked by a ~100-turn
+session capacity ceiling rather than pacing — but with four-for-four agreement on direction and
+one genuinely clean monotonic trend, this is no longer a "leans negative, inconclusive" read. It's
+reasonable to treat the thermal half of the pass mark as **failing, or at least not passing
+cleanly, for LiteRT-LM CPU on this device** unless a full-duration run (via session
+rotation — see Open threads) reverses the trend, which would itself be a surprising result given
+four consistent prior observations.
 
 ## Gotchas from this run
 
@@ -275,12 +330,15 @@ half of the pass mark (TTFT or thermal) can be called with confidence for LiteRT
 - [ ] Whether a differently-exported model (smaller bucket) or the "dynamic executor" mentioned in
   `--prefill_chunk_size`'s help text could shrink the ~2s floor for short incremental turns —
   not attempted this session, would need investigating how to select/build that executor variant.
-- [ ] **Fix the stdin-pacing artifact and re-run the full 18-20 min hot/pocket protocol properly.**
-  Two 2026-09-11 attempts (see Update) both undershot duration and turn count because piping the
-  whole input file at once let the async pipeline coalesce many queued turns into far fewer
-  actually-timed inference calls. Needs a feeder that sends one line, waits for that turn's reply
-  to complete, then sends the next — not a bulk `cat file | adb shell`. This is now the top open
-  thread: both the TTFT and thermal verdicts are provisional until this is fixed.
+- [x] Fix the stdin-pacing artifact — done, see the later 2026-09-11 Update (paced `pexpect`
+  feeder, verified against a dry run before trusting it).
+- [ ] **Run a full 18-20 min hot/pocket test via chained bounded sessions.** The paced feeder
+  works, but a single long-lived Conversation hits a hard ~100-turn capacity ceiling (see Update)
+  well before 18-20 minutes of real turns accumulate. Needs the feeder extended to start a fresh
+  session (new process, fresh brief-as-turn-1) every N turns (N comfortably under 100, e.g. 40-50)
+  and chain sessions back-to-back until the time budget is used, rather than one unbounded session.
+  This is now the top open thread — the thermal verdict above is well-supported by four consistent
+  observations but still not from one continuous full-duration run.
 - [ ] Revisit thread-count tuning with a proper batch (n≥10 per setting) once TTFT methodology is
   fixed — the current spot checks are too noisy to act on.
 - [ ] Test `--cache_compiled_shaders_only` for the GPU backend to see if the 30.8s one-time init

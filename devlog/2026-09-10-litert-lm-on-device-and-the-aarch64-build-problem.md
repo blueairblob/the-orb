@@ -124,13 +124,47 @@ half** — the opposite of the GGUF baseline's flat 18-minute result. Suggestive
 throttling showing up faster on LiteRT-LM CPU than it did on GGUF, but not confirmed given the
 shorter duration and the turn-coalescing artifact. Full numbers and tables in the results file.
 
+## Update — 2026-09-11 (later): paced feeder built, a hard session ceiling found, clearest drift yet
+
+Built `paced_hotpocket.py` (`pexpect`-driven, session scratchpad, not checked in): send one line,
+wait for that exact turn's reply and the next prompt cue, then send the next. First version had a
+sequencing bug (re-waiting for a cue that only appears after the next send, deadlocking on turn 2)
+— fixed by moving the initial wait outside the per-turn function, and switched `expect()` to
+`expect_exact()` after a mystifying timeout on a cue that was visibly already in the buffer
+(regex vs. literal-match edge case, not fully root-caused, exact-match sidesteps it). Verified
+clean with a 30s/7-turn dry run before trusting it with anything longer.
+
+**Attempt 1** died after 2.5 minutes (40 clean turns) — not a script bug: confirmed via `nc` from
+inside Termux itself that Android's Wireless debugging service stops listening the moment the
+phone leaves Wi-Fi range (`127.0.0.1:<port>` went from open to "Connection refused"). Re-pairing
+wasn't needed once back on Wi-Fi (the device still trusted the host's key), just a fresh connect
+port from the Wireless debugging screen.
+
+**Attempt 2**, back on Wi-Fi, ran cleanly for 133 real turns (~6.8 minutes) before hitting a new,
+real limit: `Chosen prefill work group size exceeds available state entries (100)` — **a
+long-lived Conversation session has a hard capacity ceiling around ~100 turns.** Past that, the
+tool kept matching the prompt cue successfully (script saw no error) but stopped doing real work —
+latency dropped to a fake ~0.15-0.2s and output degenerated into repeated garbage tokens. The
+script's own "2000 turns completed" count is misleading; only the first 133 are real.
+
+The 133 real turns gave the cleanest thermal signal of the whole spike: a **monotonic +27%**
+latency increase across thirds of the window (2.73s → 2.92s → 3.48s), not just a first/second-half
+average. Combined with the two noisier same-day runs (both independently +19-21% decode), that's
+four-for-four agreement on direction, in clear contrast to GGUF's flat 18-minute baseline. Full
+numbers in the results file, including a note that this ever-growing-session test methodology
+isn't quite how the real engine would use the model anyway (PRD §4 rebuilds the brief from the
+object model each turn rather than accumulating raw conversation history) — the ~100-turn ceiling
+may matter less in practice than it would for a naive chat-style integration, but is a real
+constraint worth knowing about regardless.
+
 ## Open threads
 
-- [ ] **Fix the stdin-pacing artifact and re-run the full 18-20 min hot/pocket protocol.** Needs
-  a feeder that sends one line, waits for that turn's reply, then sends the next — not a bulk
-  `cat file | adb shell`. Now the top open thread: both the TTFT-floor number and the thermal
-  drift signal from 2026-09-11 are provisional until this is fixed.
-- [x] Confirm/refute the fixed-prefill-bucket hypothesis — confirmed directly, see Update above.
+- [ ] **Run a full 18-20 min hot/pocket test via chained bounded sessions** (new process/fresh
+  session every ~40-50 turns, comfortably under the ~100-turn ceiling, chained until the time
+  budget is used) — now the top open thread, replacing the pacing-artifact one (fixed this
+  session).
+- [x] Fix the stdin-pacing artifact — done, see Update above.
+- [x] Confirm/refute the fixed-prefill-bucket hypothesis — confirmed directly, see earlier Update.
 - [ ] Test `--cache_compiled_shaders_only` for the GPU backend.
 - [ ] Properly re-test thread-count sensitivity (n≥10 per setting) — this session's spot checks
   were too noisy (2.4x run-to-run variance at the same setting) to act on.

@@ -292,6 +292,51 @@ headroom over the GGUF floor," which is not borne out here. GPU backend and NPU 
 this build, see Gotchas) remain untested for thermal behavior — worth doing before treating this
 as final for LiteRT-LM as a whole rather than specifically its CPU backend.
 
+## Update — 2026-09-11 (GPU): full 21-minute run, and the CPU thermal fail does not reproduce
+
+Wired `--backend` through `paced_hotpocket.py` (`--num_cpu_threads` now only applied for
+`--backend=cpu`) and ran the identical full protocol on GPU: 21 minutes, unplugged, in-pocket,
+chained sessions (80 turns each this time — fewer, larger sessions to amortize GPU's cold-start
+cost, still comfortably under the ~100-turn ceiling; not separately re-confirmed for GPU, assumed
+to be a session/state-management property rather than backend-specific).
+
+**GPU cold-start (`Init Executor`) is real but wildly inconsistent run-to-run**, independent of
+sustained-load duration: single spot checks earlier the same day measured 30.8s, 75.7s, and 9.6s
+for what should be comparable cold starts (persistent shader/weight cache files exist on disk —
+`_mldrift_program_cache.bin`, `_mldrift_weight_cache.bin` — but don't obviously explain the
+variance; not root-caused). This run's own 4 session brief-turns were a tight 8.9-9.6s throughout
+— fast and consistent for this particular run, for reasons not fully understood.
+
+**4 sessions, all clean, 307 real follow-up turns, 21m03s wall-clock.**
+
+| Window | n | mean | median | max |
+|---|---|---|---|---|
+| 0-3min | 58 | 3.14s | 3.10s | 4.06s |
+| 3-6min | 48 | 3.36s | 3.44s | 4.34s |
+| 6-9min | 47 | 3.78s | 3.68s | 11.73s* |
+| 9-12min | 24 | 3.22s | 3.13s | 4.19s |
+| 12-15min | 54 | 3.35s | 3.23s | 4.59s |
+| 15-18min | 54 | 2.94s | 2.95s | 4.61s |
+| 18-21min | 22 | 3.14s | 3.15s | 4.18s |
+
+\* one outlier turn mid-run (session 2), not a session boundary or a sustained trend — the window's
+own median (3.68s) isn't dramatically above its neighbors.
+
+**No monotonic climb, unlike CPU.** By thirds: 3.23s → 3.48s → 3.13s — noisy, not trending, and if
+anything slightly *lower* at the end than the middle. Compare directly to the CPU run's 12-21min
+step-up to 4.5-5.1s (from an early-window baseline of 3.6-4.0s): **GPU shows no equivalent
+thermal degradation over the same 21-minute window and pocket conditions.** Combined with flat
+cold-start cost across sessions (vs. CPU's near-doubling), this is a real, meaningful difference
+between the two backends on the same device, same model, same test protocol.
+
+**This changes the overall picture.** GPU's absolute per-turn latency (mean 3.28s) is still well
+over the ~1s TTFT pass mark — the fixed prefill-bucket-style floor problem is not solved by
+switching backends — but the **thermal half of the pass mark, which CPU clearly fails, is not
+failed by GPU** in this test. If the shipping product uses the GPU backend rather than CPU (GPU
+is LiteRT-LM's documented default, worth remembering), the sustained-load concern from the CPU
+runs may not apply. The remaining blocker for GPU is the same TTFT-floor problem CPU has, not an
+additional thermal one.
+
 ## The brief used
 
 Generated fresh via `uv run python3 -c "from engine.scenario import build_cell_and_guard; from
@@ -317,19 +362,27 @@ real guard conversation is made of. Decode speed, the other half of end-to-end l
 roughly comparable-to-favoring LiteRT-LM (6.53 vs 3.87 tok/s mean) — so the gap is specifically in
 prefill-floor overhead, not raw generation speed.
 
-**Thermal/hot-pocket behavior: settled, and it's a fail.** The final 2026-09-11 update ran a full,
-clean, session-chained 21-minute test (7 sessions, all clean, no ceiling hits, no drops) — the
-real equivalent of the GGUF baseline's protocol. Latency stayed flat-to-noisy for the first ~12
-minutes (3.6-4.0s), then stepped up **25-30%** for the remaining 9 minutes (4.5-5.1s), including a
-near-doubling of session cold-start cost (12.3s → 21.1s). The GGUF baseline, over its own full
-18.1-minute run, showed no equivalent trend — flat at 1.3-1.6s throughout. Four earlier,
-methodologically-caveated observations all pointed this direction; this run removes the caveats.
-**Combined with the ~2s fixed prefill-bucket floor (itself already over the ~1s TTFT bar),
-neither half of the PRD §0 pass mark is met by LiteRT-LM CPU on this device at this
-quant/config** — a materially different, and more negative, conclusion than the PRD §0 research's
-working hypothesis that the shipping runtime should have latency headroom over the GGUF floor.
-This is specific to the **CPU backend**; GPU (and NPU, unavailable on this build) sustained-load
-behavior is untested and could change the picture for LiteRT-LM as a whole.
+**Thermal/hot-pocket behavior: settled for CPU (fail), and — importantly — GPU does not reproduce
+the failure.** The 2026-09-11 CPU update ran a full, clean, session-chained 21-minute test (7
+sessions, no ceiling hits, no drops). Latency stayed flat-to-noisy for the first ~12 minutes
+(3.6-4.0s), then stepped up **25-30%** for the remaining 9 minutes (4.5-5.1s), including a
+near-doubling of session cold-start cost (12.3s → 21.1s). Four earlier, methodologically-caveated
+observations all pointed this direction; this run removed the caveats. **The identical 21-minute
+protocol on GPU showed no equivalent trend** — flat cold-start cost across sessions (8.9-9.6s,
+no creep) and noisy-but-flat per-turn latency (by-thirds: 3.23s → 3.48s → 3.13s, no climb). The
+GGUF baseline, for reference, also stayed flat over its own 18.1-minute run (1.3-1.6s throughout).
+
+**Net verdict:** LiteRT-LM's **CPU backend** fails the thermal half of the pass mark outright, and
+combined with the ~2s fixed prefill-bucket floor (itself already over the ~1s TTFT bar), meets
+neither half of the PRD §0 gate on this device at this quant/config — a materially more negative
+result than the PRD §0 research's working hypothesis that the shipping runtime would have latency
+headroom over the GGUF floor. LiteRT-LM's **GPU backend** clears the thermal half cleanly (no
+degradation signature across 21 real minutes) but still fails the TTFT half — the same
+prefill-bucket-shaped floor persists (mean per-turn latency 3.28s, not meaningfully better than
+CPU's early-window numbers). **If the shipping product uses GPU rather than CPU** (GPU is
+LiteRT-LM's documented default), the sustained-load/thermal concern from the CPU testing may not
+apply — but the core ~1s TTFT target is still not met by either backend as tested here. NPU
+remains unavailable on this build (see Gotchas) and untested throughout.
 
 ## Gotchas from this run
 
@@ -376,14 +429,17 @@ behavior is untested and could change the picture for LiteRT-LM as a whole.
 - [x] **Run a full 18-20 min hot/pocket test via chained bounded sessions** — done, see the final
   2026-09-11 Update. 7 sessions × 45 turns, 21 minutes, clean throughout. This settles the
   thermal verdict: fail, ~25-30% latency growth in the back half of the run.
-- [ ] **Test the GPU backend under the same full-duration sustained-load protocol.** The CPU
-  thermal fail is now solid; GPU (and NPU, if it can be made to load) remain untested for
-  sustained behavior and could change the picture for LiteRT-LM as a whole, not just its CPU path.
-  `spike/scripts/paced_hotpocket.py` already supports this — just needs `--backend=gpu` wired
-  through (currently hardcoded to `cpu` in the spawn command) and the GPU `.so` libs are already
-  proven to load (see the earlier single-run GPU result above).
+- [x] **Test the GPU backend under the same full-duration sustained-load protocol** — done, see
+  the GPU Update. GPU does not reproduce CPU's thermal fail (flat cold-start, flat per-turn
+  latency across 21 minutes) but still fails the TTFT-floor half (mean 3.28s/turn).
+- [ ] **Root-cause GPU's wildly inconsistent cold-start time** (9.6s, 30.8s, and 75.7s observed
+  for nominally-comparable cold starts on the same device/model/config). Persistent shader/weight
+  cache files exist but don't obviously explain the variance. Matters for real product startup
+  latency even though it doesn't affect the sustained-load verdict.
 - [ ] Revisit thread-count tuning with a proper batch (n≥10 per setting) — now less urgent given
   the CPU backend's thermal fail is the bigger blocker regardless of thread count.
+- [ ] NPU remains unavailable on this build (`kLiteRtStatusErrorInvalidArgument`, see Gotchas) —
+  getting it to load, if possible on this chipset, is the one backend still fully untested.
 - [ ] Test `--cache_compiled_shaders_only` for the GPU backend to see if the 30.8s one-time init
   amortizes the way the flag's description implies.
 - [ ] Compare against Q4_0 vs Q4_K_M on the GGUF side (carried over from 2026-09-09, still open).

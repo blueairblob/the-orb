@@ -180,15 +180,38 @@ LiteRT-LM's CPU backend at this quant/config — a materially more negative conc
 floor. Specific to CPU; GPU/NPU sustained-load behavior remains untested and is now the natural
 next step before treating this as a verdict on LiteRT-LM as a whole.
 
+## Update — 2026-09-11 (GPU): the CPU thermal fail does not reproduce on GPU
+
+Wired `--backend` through `paced_hotpocket.py` and ran the identical 21-minute chained-session
+protocol on GPU (80 turns/session, 4 sessions). First had to reconnect twice more — the
+Wireless-debugging port died again between test runs (routine at this point, not a new finding)
+and a tunnel process had silently exited on its own between commands.
+
+GPU cold-start time is real but wildly inconsistent independent of anything measured here: three
+spot checks the same session read 30.8s, 75.7s, and 9.6s for nominally-comparable cold starts,
+despite persistent shader/weight cache files existing on disk (`_mldrift_program_cache.bin`,
+`_mldrift_weight_cache.bin`) that don't obviously explain the swing — not root-caused. This run's
+own 4 sessions were a tight, fast 8.9-9.6s throughout, for reasons not fully understood either.
+
+**The result itself is unambiguous: no thermal degradation.** By-thirds per-turn latency: 3.23s
+→ 3.48s → 3.13s — noisy, not climbing, ending *lower* than the middle. Cold-start cost across the
+4 sessions stayed flat (8.9-9.6s, no creep). Directly contrasts with CPU's clear +25-30% climb and
+near-doubled cold-start cost over the identical protocol. GPU still doesn't solve the ~1s TTFT
+problem (mean 3.28s/turn, not meaningfully better than CPU's early-window numbers) but it does not
+carry CPU's additional thermal problem. If the shipping product uses GPU (LiteRT-LM's documented
+default) rather than CPU, the sustained-load concern from the CPU runs may simply not apply.
+
 ## Open threads
 
-- [ ] **Test the GPU backend under the same full-duration protocol** — the CPU thermal fail is
-  solid now; GPU (real OpenCL/Mali, already proven to load) and NPU (unavailable on this build,
-  see Gotchas) sustained-load behavior could change the picture for LiteRT-LM overall. The
-  chained feeder just needs `--backend=gpu` wired through (currently hardcoded to `cpu`).
-- [x] Run a full 18-20 min hot/pocket test via chained bounded sessions — done, see Update above.
+- [ ] **Root-cause GPU's cold-start variance** (9.6s / 30.8s / 75.7s observed for nominally
+  comparable cold starts) — matters for real product startup latency even though it doesn't
+  affect the sustained-load verdict.
+- [x] Test the GPU backend under the same full-duration protocol — done, see Update above.
+- [x] Run a full 18-20 min hot/pocket test via chained bounded sessions — done, see earlier Update.
 - [x] Fix the stdin-pacing artifact — done, see earlier Update.
 - [x] Confirm/refute the fixed-prefill-bucket hypothesis — confirmed directly, see earlier Update.
+- [ ] NPU remains unavailable on this build (`kLiteRtStatusErrorInvalidArgument`) — the one
+  backend still fully untested.
 - [ ] Test `--cache_compiled_shaders_only` for the GPU backend.
 - [ ] Properly re-test thread-count sensitivity (n≥10 per setting) — this session's spot checks
   were too noisy (2.4x run-to-run variance at the same setting) to act on.

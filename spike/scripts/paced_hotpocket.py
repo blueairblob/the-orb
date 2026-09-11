@@ -76,11 +76,15 @@ def flatten_brief():
     return " ".join(text.split("\n"))
 
 
-def spawn_session(turn_timeout, log_path):
+def spawn_session(turn_timeout, log_path, backend="cpu", num_cpu_threads=4):
+    backend_flags = (
+        f"--backend={backend} "
+        + (f"--num_cpu_threads={num_cpu_threads} " if backend == "cpu" else "")
+    )
     cmd = (
         f'{ADB} shell -tt "cd /data/local/tmp && '
         f"LD_LIBRARY_PATH=/data/local/tmp ./litert_lm_advanced_main "
-        f"--backend=cpu --num_cpu_threads=4 "
+        f"{backend_flags}"
         f"--model_path=/data/local/tmp/model.litertlm "
         f'--multi_turns=true --benchmark=true --max_output_tokens=24"'
     )
@@ -131,16 +135,18 @@ def end_session_cleanly(child):
 
 
 def run_one_session(session_idx, brief, turns_per_session, deadline, turn_timeout,
-                     out_base, records):
+                     out_base, records, backend="cpu", num_cpu_threads=4,
+                     startup_timeout=60):
     """Returns "ok", "brief_failed", or "startup_failed" - the caller uses
     this to detect a broken connection (e.g. the phone drops off wifi again
     mid-run) rather than spinning through --max-sessions instantly."""
     log_path = f"{out_base}.session{session_idx:03d}.raw.log"
-    child = spawn_session(turn_timeout, log_path)
+    child = spawn_session(turn_timeout, log_path, backend=backend,
+                           num_cpu_threads=num_cpu_threads)
     try:
         print(f"--- session {session_idx}: waiting for initial prompt cue ---")
         try:
-            child.expect_exact(PROMPT_CUE, timeout=60)
+            child.expect_exact(PROMPT_CUE, timeout=startup_timeout)
         except Exception as e:
             print(f"session {session_idx}: never got initial prompt cue: {e}")
             return "startup_failed"
@@ -173,6 +179,12 @@ def main():
                           "capacity ceiling found on 2026-09-11.")
     ap.add_argument("--out", default="/tmp/paced_hotpocket.jsonl")
     ap.add_argument("--turn-timeout", type=float, default=30.0)
+    ap.add_argument("--startup-timeout", type=float, default=60.0,
+                     help="Timeout for the initial prompt cue, i.e. engine/"
+                          "executor init. GPU cold-start has been observed "
+                          "at 30-76s - pass something like 150 for --backend=gpu.")
+    ap.add_argument("--backend", default="cpu", choices=["cpu", "gpu"])
+    ap.add_argument("--num-cpu-threads", type=int, default=4)
     ap.add_argument("--max-sessions", type=int, default=200)
     ap.add_argument("--seed", type=int, default=123)
     args = ap.parse_args()
@@ -190,6 +202,8 @@ def main():
         status = run_one_session(
             session_idx, brief, args.turns_per_session, deadline,
             args.turn_timeout, args.out, records,
+            backend=args.backend, num_cpu_threads=args.num_cpu_threads,
+            startup_timeout=args.startup_timeout,
         )
         # Persist progress after every session, not just at the very end -
         # today's connectivity/session-ceiling surprises are reason enough.

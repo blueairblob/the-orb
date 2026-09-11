@@ -157,13 +157,37 @@ object model each turn rather than accumulating raw conversation history) — th
 may matter less in practice than it would for a naive chat-style integration, but is a real
 constraint worth knowing about regardless.
 
+## Update — 2026-09-11 (final): full 21-minute run settles the thermal question — it's a fail
+
+Extended `paced_hotpocket.py` (now checked in at `spike/scripts/paced_hotpocket.py`, generates
+its brief live from `engine.brief`/`engine.scenario` rather than a stale copy) to chain multiple
+45-turn sessions back-to-back, comfortably under the ~100-turn ceiling, until a time budget is
+used. Ran the full protocol: 21 minutes, unplugged, in-pocket, 7 sessions, all clean (no ceiling
+hits, no drops, no errors).
+
+**Result, by 3-minute window (directly comparable to the GGUF baseline's own table):** flat/noisy
+for the first ~12 minutes (3.6-4.0s), then a clear **+25-30%** step up for the remaining 9 minutes
+(4.5-5.1s) — including session cold-start cost itself nearly doubling (12.3s → 21.1s, session 1
+vs session 6). GGUF's 18.1-minute baseline showed no equivalent trend anywhere in its run. Four
+earlier, methodologically-caveated observations from earlier this session all pointed the same
+direction; this run has none of those caveats.
+
+**This settles the open question:** LiteRT-LM CPU fails the thermal half of the PRD §0 pass mark
+on this device, plainly, not just "leans that way." Combined with the already-established ~2s
+fixed prefill-bucket floor (over the ~1s TTFT bar on its own), neither half of the gate is met by
+LiteRT-LM's CPU backend at this quant/config — a materially more negative conclusion than the PRD
+§0 research's working assumption that the shipping runtime would have headroom over the GGUF
+floor. Specific to CPU; GPU/NPU sustained-load behavior remains untested and is now the natural
+next step before treating this as a verdict on LiteRT-LM as a whole.
+
 ## Open threads
 
-- [ ] **Run a full 18-20 min hot/pocket test via chained bounded sessions** (new process/fresh
-  session every ~40-50 turns, comfortably under the ~100-turn ceiling, chained until the time
-  budget is used) — now the top open thread, replacing the pacing-artifact one (fixed this
-  session).
-- [x] Fix the stdin-pacing artifact — done, see Update above.
+- [ ] **Test the GPU backend under the same full-duration protocol** — the CPU thermal fail is
+  solid now; GPU (real OpenCL/Mali, already proven to load) and NPU (unavailable on this build,
+  see Gotchas) sustained-load behavior could change the picture for LiteRT-LM overall. The
+  chained feeder just needs `--backend=gpu` wired through (currently hardcoded to `cpu`).
+- [x] Run a full 18-20 min hot/pocket test via chained bounded sessions — done, see Update above.
+- [x] Fix the stdin-pacing artifact — done, see earlier Update.
 - [x] Confirm/refute the fixed-prefill-bucket hypothesis — confirmed directly, see earlier Update.
 - [ ] Test `--cache_compiled_shaders_only` for the GPU backend.
 - [ ] Properly re-test thread-count sensitivity (n≥10 per setting) — this session's spot checks

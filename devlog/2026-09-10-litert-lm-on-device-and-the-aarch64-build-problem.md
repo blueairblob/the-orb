@@ -288,3 +288,16 @@ may matter on other devices/models — but it's not the answer here.
 
 Full write-up and raw traces: `spike/results/2026-09-10-poco-m4-pro-litert-lm.md` (2026-09-12
 Update section) and `spike/results/raw/2026-09-12-poco-m4-pro-gpu-patched/`.
+
+## Update — 2026-09-12: NPU ruled out cheaply
+
+Next open thread: NPU has errored out with `kLiteRtStatusErrorInvalidArgument` since the very
+first run and was never investigated. Cloned google-ai-edge/LiteRT-LM in full and grepped for the
+exact log line (`npu_registry.cc:34`) — it doesn't exist anywhere in the public source tree, and
+there's no NPU accelerator `.so` in `prebuilt/android_arm64/` either (GPU/OpenCL/WebGPU only).
+`docs/getting-started/build-and-run.md` explains why: NPU acceleration requires signing up for a
+separate Early Access Program, not a flag or a build fix. Checked that program's own page — it
+lists MediaTek NeuroPilot as a supported vendor for LiteRT in general, but the only NPU numbers
+published anywhere for this specific model are on Qualcomm Dragonwing, and our device's Helio G96
+is a 2021 budget chipset regardless. Closed as "not a lever available to this spike" rather than
+left dangling — see the results file's Open Threads.

@@ -491,8 +491,15 @@ remains unavailable on this build (see Gotchas) and untested throughout.
   device's GPU (Mali-G57 MC2) being a materially weaker tier than the devices in that literature.
 - [ ] Revisit thread-count tuning with a proper batch (n≥10 per setting) — now less urgent given
   the CPU backend's thermal fail is the bigger blocker regardless of thread count.
-- [ ] NPU remains unavailable on this build (`kLiteRtStatusErrorInvalidArgument`, see Gotchas) —
-  getting it to load, if possible on this chipset, is the one backend still fully untested.
+- [x] **NPU** — ruled out, not fixable from our side. The `npu_registry.cc:34` log line doesn't
+  exist anywhere in the public LiteRT-LM source (confirmed via a full clone + grep); there's no
+  NPU accelerator `.so` in `prebuilt/android_arm64/` either. `docs/getting-started/build-and-run.md`
+  says NPU acceleration requires signing up for a separate Early Access Program
+  (ai.google.dev/edge/litert/next/npu) — it's withheld from the OSS build entirely, not a config
+  bug. That EAP page lists MediaTek NeuroPilot as a supported *LiteRT* vendor in general, but the
+  only published NPU numbers for this specific model are on Qualcomm Dragonwing; our device's
+  MediaTek Helio G96 is also a 2021 budget chipset, an unlikely first target regardless. Not a
+  lever available to this spike.
 - [ ] Test `--cache_compiled_shaders_only` for the GPU backend to see if the 30.8s one-time init
   amortizes the way the flag's description implies.
 - [ ] Compare against Q4_0 vs Q4_K_M on the GGUF side (carried over from 2026-09-09, still open).

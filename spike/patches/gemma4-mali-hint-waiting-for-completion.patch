@@ -1,0 +1,48 @@
+# Extends google-ai-edge/LiteRT-LM's Mali/AMD OpenCL "wait for completion"
+# workaround to Gemma 4 models, not just metadata-tagged "generic" ones.
+# Applied against `main` in the litert-lm-android-build.yml GH Actions build.
+#
+# Upstream auto-enables AdvancedSettings::hint_waiting_for_completion (a
+# known fix for a GPU quality/stability bug on AMD and Mali GPUs, per its own
+# doc comment) only for models whose metadata reports has_generic_model().
+# Gemma 4 gets a different, unrelated auto-setting (disable_delegate_clustering)
+# instead, so it never receives this hint on Mali GPUs.
+#
+# Three independent upstream reports show Gemma 4 E2B hitting exactly the bug
+# class this flag exists to fix, on Mali GPUs, still open as of `main`:
+#   - google-ai-edge/LiteRT-LM#1850 (Pixel 8/Tensor G3): GPU decode crashes
+#     (CL_INVALID_COMMAND_QUEUE); reporter's self-built patch forcing this
+#     hint true fixed it.
+#   - google-ai-edge/LiteRT-LM#2202 (Pixel 10a/Mali-G715): field report,
+#     acknowledged GPU numerical-precision-corruption bug for this exact
+#     model/GPU combo.
+#   - google-ai-edge/LiteRT-LM#2421 (Pixel 9a/Tensor G4/Mali-G715): same
+#     crash, still reproduces on v0.12.0; root-caused to GPU command-queue/
+#     buffer resources not being recycled between turns; proposes defaulting
+#     this hint to true for the GPU executor as fix option #3.
+#
+# Our own spike (spike/results/2026-09-10-poco-m4-pro-litert-lm.md, MediaTek
+# Helio G96 / Mali-G57 MC2) saw the same fingerprint short of an outright
+# crash: wildly inconsistent GPU cold-start (9.6-75.7s) and GPU decode not
+# beating CPU (2.52 tok/s vs CPU's 3.4-3.87 tok/s) despite GPU prefill
+# clearly winning (59.9-66 vs ~47-53 tok/s) -- consistent with this same
+# under-applied fix, not a driver or build misconfiguration.
+--- a/runtime/engine/engine_settings.cc
++++ b/runtime/engine/engine_settings.cc
+@@ -446,10 +446,14 @@
+   }
+ 
+   if (!advanced_settings.hint_waiting_for_completion.has_value()) {
+-    // Enable a hint for waiting for completion for generic models on GPU.
++    // Enable a hint for waiting for completion for generic models on GPU,
++    // and for Gemma 4 too -- same Mali/AMD OpenCL command-queue/quality bug
++    // this flag exists to fix (google-ai-edge/LiteRT-LM #1850, #2202, #2421),
++    // just not gated on has_generic_model() upstream.
+     advanced_settings.hint_waiting_for_completion =
+         metadata.has_llm_model_type() &&
+-        metadata.llm_model_type().has_generic_model();
++        (metadata.llm_model_type().has_generic_model() ||
++         metadata.llm_model_type().has_gemma4());
+     main_executor_settings_.SetAdvancedSettings(advanced_settings);
+   }
+ 

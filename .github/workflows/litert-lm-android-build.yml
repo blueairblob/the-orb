@@ -15,6 +15,10 @@ on:
         description: "google-ai-edge/LiteRT-LM ref to build (branch, tag, or commit)"
         type: string
         default: main
+      apply_local_patches:
+        description: "Apply this repo's spike/patches/*.patch to the LiteRT-LM checkout before building"
+        type: boolean
+        default: true
 
 jobs:
   build-android-arm64:
@@ -29,12 +33,33 @@ jobs:
           sudo docker image prune -a -f || true
           df -h /
 
+      - name: Checkout the-orb (for local patches)
+        uses: actions/checkout@v4
+        with:
+          path: orb-patches
+
       - name: Checkout google-ai-edge/LiteRT-LM
         uses: actions/checkout@v4
         with:
           repository: google-ai-edge/LiteRT-LM
           ref: ${{ inputs.litert_lm_ref }}
           lfs: true
+
+      - name: Apply local patches (spike/patches/*.patch from the-orb)
+        if: ${{ inputs.apply_local_patches }}
+        run: |
+          shopt -s nullglob
+          patches=(orb-patches/spike/patches/*.patch)
+          if [ ${#patches[@]} -eq 0 ]; then
+            echo "No patches found in orb-patches/spike/patches/ — building unpatched."
+          fi
+          mkdir -p out
+          : > out/APPLIED_PATCHES.txt
+          for p in "${patches[@]}"; do
+            echo "Applying $p"
+            git apply --verbose "$p"
+            basename "$p" >> out/APPLIED_PATCHES.txt
+          done
 
       - name: Install system dependencies
         env:

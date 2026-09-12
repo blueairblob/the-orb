@@ -33,17 +33,21 @@ jobs:
           sudo docker image prune -a -f || true
           df -h /
 
-      - name: Checkout the-orb (for local patches)
-        uses: actions/checkout@v4
-        with:
-          path: orb-patches
-
       - name: Checkout google-ai-edge/LiteRT-LM
         uses: actions/checkout@v4
         with:
           repository: google-ai-edge/LiteRT-LM
           ref: ${{ inputs.litert_lm_ref }}
           lfs: true
+
+      - name: Checkout the-orb (for local patches)
+        # Must run AFTER the LiteRT-LM checkout above: actions/checkout
+        # git-cleans its target directory by default, and since that
+        # checkout targets the workspace root (no `path:`), running this
+        # step first just gets it wiped.
+        uses: actions/checkout@v4
+        with:
+          path: orb-patches
 
       - name: Apply local patches (spike/patches/*.patch from the-orb)
         if: ${{ inputs.apply_local_patches }}

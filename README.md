@@ -85,6 +85,9 @@ Current decisions locked:
 
 - **Game rules:** built on the **D&D 5e SRD** under **CC-BY-4.0** (attribution only, commercial
   use permitted). Branded IP is off-limits — invent original creatures, places, names. See PRD §16.
-- **Model:** Gemma is provided under the **Gemma Terms of Use** (not Apache 2.0). Review before
-  redistribution.
+- **Model:** Gemma 4 is provided under **Apache 2.0** — a change from earlier Gemma generations'
+  custom Gemma Terms of Use (confirmed on the model card: `license: apache-2.0`, linking to plain,
+  unmodified Apache 2.0 text at ai.google.dev/gemma/docs/gemma_4_license). Google still layers a
+  separate Prohibited Use Policy / intended-use statement on top of that base license — review it
+  before redistribution, it's not a blanket "no restrictions."
 - **This repo's own code and content:** licence to be chosen by the owner.

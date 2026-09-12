@@ -51,7 +51,11 @@ consistent character inside hard, deterministic rules.
 - **Gemma 4 E2B**, quantised, `.litertlm` format — `litert-community/gemma-4-E2B-it-litert-lm`.
   Runs via **LiteRT-LM** / the MediaPipe LLM Inference API. Native audio + vision + function
   calling; mixed 2/4/8-bit quantisation.
-- Licence: **Gemma Terms of Use** (ai.google.dev/gemma/terms) — *not* Apache 2.0.
+- Licence: **Apache 2.0** (a change from earlier Gemma generations' custom Gemma Terms of Use —
+  confirmed on the model card, `license: apache-2.0`, linking to
+  ai.google.dev/gemma/docs/gemma_4_license, plain unmodified Apache 2.0 text). Google still
+  layers a separate **Prohibited Use Policy** / intended-use statement on top, referenced from
+  that same page — not a blanket "no restrictions," but no longer the old custom licence either.
 - The runner-up (**Gemma 4 E4B**, bigger sibling) is an open question, not a decision. Only the
   spike settles which ships.
 - The model "doesn't need to be clever — it needs to be obedient and consistent." It is never

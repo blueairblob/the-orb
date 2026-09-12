@@ -1,0 +1,80 @@
+name: Gemma 4 E2B custom .litertlm export
+
+# Converts google/gemma-4-E2B-it from Hugging Face to .litertlm via
+# litert-torch's `export_hf`, with a custom small prefill bucket added to
+# shrink the fixed prefill-bucket floor found in the spike (see
+# spike/results/2026-09-10-poco-m4-pro-litert-lm.md — the litert-community
+# pre-converted model only has 128/1024-token buckets, so any real
+# incremental guard turn under 128 tokens pays the full 128-token bucket's
+# compute).
+#
+# Runs on a free x86_64 GitHub-hosted runner because litert-converter (a
+# hard dependency of litert-torch) publishes no linux-aarch64 wheels at all,
+# stable or pre-release — this OCI dev host can't install it, same class of
+# problem as the Android NDK cross-build (see litert-lm-android-build.yml).
+#
+# Requires a repo secret HF_TOKEN: a Hugging Face access token (read scope)
+# from an account that has accepted the Gemma license at
+# https://huggingface.co/google/gemma-4-E2B-it. Set it with:
+#   gh secret set HF_TOKEN --repo blueairblob/the-orb
+on:
+  workflow_dispatch:
+    inputs:
+      hf_model:
+        description: "Source HF model to convert"
+        type: string
+        default: google/gemma-4-E2B-it
+      prefill_lengths:
+        description: "Comma-separated prefill bucket sizes to bake in (the litert-community export only has 128,1024 — our real incremental guard turns run ~17-20 tokens)"
+        type: string
+        default: "32,128,1024"
+      quantization_recipe:
+        description: "Quantization recipe name/path, or empty to use export_hf's own default (dynamic_wi8_afp32)"
+        type: string
+        default: ""
+
+jobs:
+  export:
+    name: Export custom .litertlm (x86_64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk \
+            /usr/local/.ghcup "$AGENT_TOOLSDIRECTORY" || true
+          sudo docker image prune -a -f || true
+          df -h /
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install litert-torch
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install litert-torch
+
+      - name: Export .litertlm
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          mkdir -p out
+          extra_args=()
+          if [ -n "${{ inputs.quantization_recipe }}" ]; then
+            extra_args+=(--quantization_recipe="${{ inputs.quantization_recipe }}")
+          fi
+          litert-torch export_hf \
+            --model="${{ inputs.hf_model }}" \
+            --output_dir=out \
+            --prefill_lengths="${{ inputs.prefill_lengths }}" \
+            "${extra_args[@]}"
+          ls -la out/
+
+      - name: Upload .litertlm artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gemma4-e2b-custom-litertlm
+          path: out/
+          retention-days: 14

@@ -426,11 +426,46 @@ regulating global climate.") — the model itself is sound, not corrupted by the
 own README is explicit that desktop timing flatters latency and doesn't transfer to the phone's ARM/
 mobile GPU path; a CPU architecture switch makes it doubly meaningless here.
 
-**Open thread, unchanged in substance:** the actual question this whole effort is aimed at — does the
-32-token bucket cut the ~2s incremental-turn floor towards the ~1s pass mark on the real device — is
-still untested on `poco-m4-pro`. Needs: push `model.litertlm` to the phone, re-pair Wireless debugging/
-Termux SSH (port changes each time, see Gotchas above), and re-run the same turn-2-latency-by-length
-protocol from the first pass of this file, on both CPU and GPU backends.
+## Update — 2026-09-12/13: on-device test reveals a decode-speed regression, isolated to the export pipeline itself (not the bucket)
+
+Pushed `model.litertlm` to `poco-m4-pro` (direct adb-over-Tailscale to the phone's own Tailscale IP for
+the wireless-debugging port worked immediately — trust from an earlier pairing persisted, no re-pairing
+tunnel-through-Termux needed this time) along with a fresh `android_arm64` build of
+`litert_lm_main`/`litert_lm_advanced_main` (both local patches applied — the Mali hint patch and the new
+minijinja `.get()` patch). Single-shot CPU runs produced correct, coherent text, confirming the template
+fix works on-device too.
+
+**But decode speed is catastrophic and reproducible: ~0.20 tok/s**, against 8 tokens taking 39-131s
+across two different prompts — not a cold-start fluke. Direct comparison, same binary, same device,
+same backend, against the leftover original `litert-community` model already on the phone from the
+2026-09-10 session: **2.27 tok/s** — an **~11x regression**. Prefill and TTFT looked normal by
+comparison (1.4-3.6s prefill, ~6.4-8.5s to first token including cold init), so this is specifically a
+decode-path problem.
+
+**Isolated the cause via a controlled re-export:** built a second export with `--prefill_lengths=128,1024`
+only (dropping the 32-token bucket entirely, matching litert-community's set exactly) — same
+`--externalize_embedder=True`, same quantization recipe, same litert-torch version. Result: **0.21 tok/s**,
+statistically identical to the 3-bucket export. **This proves the regression has nothing to do with the
+custom bucket** — it's present with litert-community's exact bucket configuration too. The cause is
+somewhere else in the public `litert-torch==0.9.4` `export_hf` pipeline (most likely candidate: how it
+quantizes/serves the externalized `per_layer_embedder` table — a Gemma4-specific "per-layer input
+embedding" architecture that `export_hf` requires via `externalize_embedder=True` — since verbose device
+logs show 2 of 5 nodes in that subgraph running un-delegated/un-optimized every decode step; litert-
+community's official model almost certainly uses the same required architecture but was built with
+different internal tooling that doesn't share this bottleneck). No embedder-specific quantization flag
+exists in the public CLI to test a fix directly.
+
+**Net effect: the entire "custom smaller prefill bucket" lever is blocked**, independent of the bucket
+size itself. Any export built with the current public `litert-torch` pipeline for Gemma4 carries this
+~11x decode regression, which would make total reply latency far worse than today's baseline regardless
+of any TTFT improvement from a smaller bucket. This is a real, upstream-tooling-shaped blocker, not
+something fixable by tuning our export flags further — closing this out rather than continuing to spend
+time on it without a specific new fix hypothesis.
+
+**Open thread, changed in nature:** the original question (does a smaller bucket help TTFT) is now
+moot until/unless the decode regression is independently root-caused and fixed — likely needs either a
+newer/different litert-torch release, or reporting upstream. Not re-attempting the bucket-size test
+until that's resolved.
 
 ## The brief used
 
@@ -516,11 +551,13 @@ remains unavailable on this build (see Gotchas) and untested throughout.
 ## Open threads
 
 - [x] **Confirm/refute the fixed-prefill-bucket hypothesis** — confirmed directly, see above.
-- [ ] Whether a differently-exported model (smaller bucket) or the "dynamic executor" mentioned in
+- [x] Whether a differently-exported model (smaller bucket) or the "dynamic executor" mentioned in
   `--prefill_chunk_size`'s help text could shrink the ~2s floor for short incremental turns —
-  **partially done, see 2026-09-12 Update**: custom 32-token-bucket export built, two real upstream
-  bugs found and fixed, correctness validated on x86_64. Still needs the actual on-device timing
-  test against `poco-m4-pro` to confirm/refute the TTFT hypothesis — not yet attempted.
+  **closed, see 2026-09-12/13 Updates**: custom export built and two real upstream bugs fixed, but
+  on-device testing found an ~11x decode-speed regression present with ANY bucket configuration
+  (isolated via a controlled re-export matching litert-community's exact buckets) — a public
+  `litert-torch` export-pipeline problem, not a bucket-size effect. This lever is blocked until that
+  regression is independently root-caused; the original TTFT question is moot until then.
 - [x] Fix the stdin-pacing artifact — done, see the later 2026-09-11 Update (paced `pexpect`
   feeder, verified against a dry run before trusting it).
 - [x] **Run a full 18-20 min hot/pocket test via chained bounded sessions** — done, see the final

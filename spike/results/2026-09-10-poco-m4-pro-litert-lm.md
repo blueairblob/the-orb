@@ -383,6 +383,55 @@ no-op for this one.
 
 Full per-turn records and raw session transcripts: `spike/results/raw/2026-09-12-poco-m4-pro-gpu-patched/`.
 
+## Update — 2026-09-12: custom prefill-bucket export, two real upstream bugs found and fixed, validated on x86_64 (not yet on-device)
+
+Followed up on the open thread ("whether a differently-exported model … could shrink the ~2s floor").
+Custom-exported `google/gemma-4-E2B-it` via `litert-torch export_hf` with `--prefill_lengths=32,128,1024`
+(adding a 32-token bucket next to the litert-community model's 128/1024) — see
+`.github/workflows/gemma4-litertlm-export.yml` and `spike/model-export/README.md`.
+
+**Build-host problem, again, worse this time:** `litert-torch`'s conversion tooling needs the raw,
+uncompressed fp32 checkpoint in memory (~20.5GB for this 5.12B-param model) just to load it before any
+quantization — both this OCI host (aarch64, no wheels at all) and GitHub's free Actions runners (7GB RAM)
+are hard-blocked, not just slow. Ran the export instead on a Tailscale'd x86_64 desktop (WSL2, RAM bumped
+to 47GB via `.wslconfig`) — real infra, not a cloud spend.
+
+**Two real, fixable bugs found in the process, neither a broken-export/pad-token problem:**
+
+1. `export_hf` asserts `externalize_embedder=True` unconditionally for Gemma4's per-layer-embedding
+   architecture, but the `TEXT_GENERATION` task's default config doesn't set it — export fails
+   immediately after weight loading with `AssertionError: External embedder is required for Gemma4.`
+   Fixed by passing `--externalize_embedder=True` explicitly (now in the CI workflow too).
+2. Gemma 4's HF chat template was rewritten 2026-07-09 into a "canonical" template with tool-calling/
+   thinking support, which uses Python's `dict.get(key)` extensively. LiteRT-LM's Minijinja
+   compatibility shim (`runtime/components/prompt_template.cc`, `EditTemplateForMinijinja`) rewrites
+   `.startswith()`, `.split()`, `.replace()` etc. into Minijinja-compatible syntax but has no rule for
+   `.get()` — every inference call failed with `Failed to apply template: unknown method: map has no
+   method named get`. Fixed with a new regex rule (`.get(k)` → `[k] | default(none)`, `.get(k,d)` →
+   `[k] | default(d)`) — see `spike/patches/gemma4-minijinja-dict-get.patch`. This likely explains why
+   Gemma4 exports built from the current HF checkpoint don't Just Work against upstream LiteRT-LM
+   without a local patch, independent of anything specific to our custom bucket export.
+
+**Export result:** `model.litertlm`, ~4.74 GiB — genuinely bigger than the litert-community model's
+~2.6GB, not a bug: a third compiled prefill-bucket graph is extra bundled weight, not a cost paid at
+runtime for the buckets you don't hit.
+
+**Validated on x86_64 (own build, not the phone):** built `litert_lm_main`/`litert_lm_advanced_main`
+natively for `linux_x86_64` on the same desktop (genuine host build, no cross-compile pain — needed
+`git-lfs` and `clang` neither of which were preinstalled; both installable without root). With the
+template patch applied, both a single-shot prompt and a 2-turn session produced real, correct, coherent
+text (e.g. "The ocean covers over seventy percent of the Earth's surface and plays a vital role in
+regulating global climate.") — the model itself is sound, not corrupted by the custom bucket export.
+**Did not** attempt to read anything into the x86_64 timing numbers (1.18 tok/s decode) — this repo's
+own README is explicit that desktop timing flatters latency and doesn't transfer to the phone's ARM/
+mobile GPU path; a CPU architecture switch makes it doubly meaningless here.
+
+**Open thread, unchanged in substance:** the actual question this whole effort is aimed at — does the
+32-token bucket cut the ~2s incremental-turn floor towards the ~1s pass mark on the real device — is
+still untested on `poco-m4-pro`. Needs: push `model.litertlm` to the phone, re-pair Wireless debugging/
+Termux SSH (port changes each time, see Gotchas above), and re-run the same turn-2-latency-by-length
+protocol from the first pass of this file, on both CPU and GPU backends.
+
 ## The brief used
 
 Generated fresh via `uv run python3 -c "from engine.scenario import build_cell_and_guard; from
@@ -469,7 +518,9 @@ remains unavailable on this build (see Gotchas) and untested throughout.
 - [x] **Confirm/refute the fixed-prefill-bucket hypothesis** — confirmed directly, see above.
 - [ ] Whether a differently-exported model (smaller bucket) or the "dynamic executor" mentioned in
   `--prefill_chunk_size`'s help text could shrink the ~2s floor for short incremental turns —
-  not attempted this session, would need investigating how to select/build that executor variant.
+  **partially done, see 2026-09-12 Update**: custom 32-token-bucket export built, two real upstream
+  bugs found and fixed, correctness validated on x86_64. Still needs the actual on-device timing
+  test against `poco-m4-pro` to confirm/refute the TTFT hypothesis — not yet attempted.
 - [x] Fix the stdin-pacing artifact — done, see the later 2026-09-11 Update (paced `pexpect`
   feeder, verified against a dry run before trusting it).
 - [x] **Run a full 18-20 min hot/pocket test via chained bounded sessions** — done, see the final

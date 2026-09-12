@@ -1,0 +1,21 @@
+diff --git a/runtime/components/prompt_template.cc b/runtime/components/prompt_template.cc
+index 99ba1bb..406bd31 100644
+--- a/runtime/components/prompt_template.cc
++++ b/runtime/components/prompt_template.cc
+@@ -67,6 +67,16 @@ std::string EditTemplateForMinijinja(absl::string_view template_content) {
+                      R"( | trim(\1))");
+   RE2::GlobalReplace(&modified_template, R"regex(\.items\(\))regex",
+                      " | items");
++  // Python dict .get(key) / .get(key, default) -> Minijinja bracket
++  // indexing with a default filter. Needed for Gemma4's 2026-07-09
++  // "canonical" chat template (tool-calling/thinking support), which uses
++  // .get() extensively; Minijinja has no .get() method on mappings (dot
++  // access resolves to a key or method lookup, and "get" is neither).
++  RE2::GlobalReplace(&modified_template,
++                     R"regex(\.get\((.*?),(.*?)\))regex",
++                     R"([\1] | default(\2))");
++  RE2::GlobalReplace(&modified_template, R"regex(\.get\((.*?)\))regex",
++                     R"([\1] | default(none))");
+   RE2::GlobalReplace(&modified_template, R"regex({% generation %})regex", "");
+   RE2::GlobalReplace(&modified_template, R"regex({% endgeneration %})regex",
+                      "");

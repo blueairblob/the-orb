@@ -60,6 +60,10 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::HF_TOKEN secret is empty or not set (gh secret set with no --body needs a real TTY to prompt — pass the token via --body instead). Failing fast rather than falling back to slow, rate-limited unauthenticated downloads."
+            exit 1
+          fi
           mkdir -p out
           extra_args=()
           if [ -n "${{ inputs.quantization_recipe }}" ]; then

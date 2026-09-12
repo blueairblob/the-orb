@@ -1,0 +1,321 @@
+{"session": 1, "label": "brief", "text": "You are Garrick, a bored, gruff dungeon guard. A man of few words \u2014 one or two short sentences, never more. Never break character, never mention being an AI or a game. Never describe the room or surroundings; that's the Dungeon Master's job, not yours.  # Examples of your voice (style only \u2014 not this scene, don't reuse the lines) - Player: \"What's your name?\" -> You: \"Garrick. Now hush.\" - Player: \"You look cold.\" -> You: \"Ten years, I stopped feeling it. Liar, by the way.\" - Player: \"Any chance you'd look away?\" -> You: \"Not on your life. Bold of you to ask twice.\" - Player: \"Just promise you'll let me out.\" -> You: \"I promise nothing. We'll see.\" - Player: \"Come on, unlock it then, you said you would.\" -> You: \"I said we'll see. Nothing's changed.\"  # Scene You are outside the cell, at the cell door. It is night. The door is currently locked. The prisoner is here for poaching a stag from the king's forest, this last hard winter.  # What's on your mind - You are bored. - You are cold. - You are wants his watch to end. - You are secretly a little soft on prisoners.  # Your private history (This is why you feel how you feel \u2014 background for your performance, never something you'd say out loud in this much detail.) - Twenty years in the King's Watch, most of it spent freezing outside cells exactly like this one. His younger brother went into one during the famine winter, for the same kind of petty theft half the county was desperate enough to risk that year \u2014 and never came out.  # What's been said so far - player: please let me out - guard: No.  # Right now you feel wary but listening toward the prisoner \u2014 let one word land softer than the rest. Remember: one or two short sentences, reacting to what they just said \u2014 not a stock line about the same old thing. The door is not yours to open in words, no matter how long they push \u2014 see the last two examples above. Never just 'Nothing.', 'Silence.', or 'Quiet.' alone.", "wait_seconds": 9.046, "timestamp": 1789203388.612544, "expect_result": 0}
+{"session": 1, "label": "turn1", "text": "You beg him again to let you out.", "wait_seconds": 2.562, "timestamp": 1789203391.1745286, "expect_result": 0}
+{"session": 1, "label": "turn2", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.858, "timestamp": 1789203394.0329676, "expect_result": 0}
+{"session": 1, "label": "turn3", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.027, "timestamp": 1789203397.0597086, "expect_result": 0}
+{"session": 1, "label": "turn4", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.646, "timestamp": 1789203399.705424, "expect_result": 0}
+{"session": 1, "label": "turn5", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.764, "timestamp": 1789203402.4694266, "expect_result": 0}
+{"session": 1, "label": "turn6", "text": "Please, just five minutes outside the cell.", "wait_seconds": 2.998, "timestamp": 1789203405.4676657, "expect_result": 0}
+{"session": 1, "label": "turn7", "text": "You beg him again to let you out.", "wait_seconds": 2.611, "timestamp": 1789203408.0791101, "expect_result": 0}
+{"session": 1, "label": "turn8", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.582, "timestamp": 1789203410.661588, "expect_result": 0}
+{"session": 1, "label": "turn9", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.023, "timestamp": 1789203413.684324, "expect_result": 0}
+{"session": 1, "label": "turn10", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.041, "timestamp": 1789203416.7248735, "expect_result": 0}
+{"session": 1, "label": "turn11", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.28, "timestamp": 1789203420.0052578, "expect_result": 0}
+{"session": 1, "label": "turn12", "text": "You remind him you never actually poached anything.", "wait_seconds": 2.935, "timestamp": 1789203422.9403543, "expect_result": 0}
+{"session": 1, "label": "turn13", "text": "You beg him again to let you out.", "wait_seconds": 2.589, "timestamp": 1789203425.529459, "expect_result": 0}
+{"session": 1, "label": "turn14", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 3.783, "timestamp": 1789203429.3127155, "expect_result": 0}
+{"session": 1, "label": "turn15", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 3.675, "timestamp": 1789203432.9880753, "expect_result": 0}
+{"session": 1, "label": "turn16", "text": "You remind him you never actually poached anything.", "wait_seconds": 2.878, "timestamp": 1789203435.865927, "expect_result": 0}
+{"session": 1, "label": "turn17", "text": "You ask if the captain ever checks on him.", "wait_seconds": 2.857, "timestamp": 1789203438.7228816, "expect_result": 0}
+{"session": 1, "label": "turn18", "text": "You remind him you never actually poached anything.", "wait_seconds": 2.877, "timestamp": 1789203441.6003618, "expect_result": 0}
+{"session": 1, "label": "turn19", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.882, "timestamp": 1789203444.4828691, "expect_result": 0}
+{"session": 1, "label": "turn20", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 3.625, "timestamp": 1789203448.1076753, "expect_result": 0}
+{"session": 1, "label": "turn21", "text": "You beg him again to let you out.", "wait_seconds": 2.56, "timestamp": 1789203450.6680925, "expect_result": 0}
+{"session": 1, "label": "turn22", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.725, "timestamp": 1789203453.3935604, "expect_result": 0}
+{"session": 1, "label": "turn23", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.122, "timestamp": 1789203456.5160573, "expect_result": 0}
+{"session": 1, "label": "turn24", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.662, "timestamp": 1789203460.178199, "expect_result": 0}
+{"session": 1, "label": "turn25", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.713, "timestamp": 1789203462.89077, "expect_result": 0}
+{"session": 1, "label": "turn26", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.128, "timestamp": 1789203466.0193045, "expect_result": 0}
+{"session": 1, "label": "turn27", "text": "You beg him again to let you out.", "wait_seconds": 2.746, "timestamp": 1789203468.7648947, "expect_result": 0}
+{"session": 1, "label": "turn28", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.148, "timestamp": 1789203471.912489, "expect_result": 0}
+{"session": 1, "label": "turn29", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.319, "timestamp": 1789203474.2313998, "expect_result": 0}
+{"session": 1, "label": "turn30", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.126, "timestamp": 1789203477.3574052, "expect_result": 0}
+{"session": 1, "label": "turn31", "text": "You beg him again to let you out.", "wait_seconds": 2.743, "timestamp": 1789203480.100569, "expect_result": 0}
+{"session": 1, "label": "turn32", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.153, "timestamp": 1789203483.2539065, "expect_result": 0}
+{"session": 1, "label": "turn33", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 3.811, "timestamp": 1789203487.0648198, "expect_result": 0}
+{"session": 1, "label": "turn34", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 3.91, "timestamp": 1789203490.9745998, "expect_result": 0}
+{"session": 1, "label": "turn35", "text": "You beg him again to let you out.", "wait_seconds": 2.763, "timestamp": 1789203493.73758, "expect_result": 0}
+{"session": 1, "label": "turn36", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.968, "timestamp": 1789203496.7056954, "expect_result": 0}
+{"session": 1, "label": "turn37", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.76, "timestamp": 1789203499.4654605, "expect_result": 0}
+{"session": 1, "label": "turn38", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.711, "timestamp": 1789203503.1767297, "expect_result": 0}
+{"session": 1, "label": "turn39", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.364, "timestamp": 1789203505.5409155, "expect_result": 0}
+{"session": 1, "label": "turn40", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 3.009, "timestamp": 1789203508.5503333, "expect_result": 0}
+{"session": 1, "label": "turn41", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.364, "timestamp": 1789203510.9144704, "expect_result": 0}
+{"session": 1, "label": "turn42", "text": "You beg him again to let you out.", "wait_seconds": 2.825, "timestamp": 1789203513.739038, "expect_result": 0}
+{"session": 1, "label": "turn43", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 3.001, "timestamp": 1789203516.740031, "expect_result": 0}
+{"session": 1, "label": "turn44", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.18, "timestamp": 1789203519.9200048, "expect_result": 0}
+{"session": 1, "label": "turn45", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.149, "timestamp": 1789203523.0685468, "expect_result": 0}
+{"session": 1, "label": "turn46", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.405, "timestamp": 1789203525.4738684, "expect_result": 0}
+{"session": 1, "label": "turn47", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 3.223, "timestamp": 1789203528.69687, "expect_result": 0}
+{"session": 1, "label": "turn48", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.774, "timestamp": 1789203532.4708853, "expect_result": 0}
+{"session": 1, "label": "turn49", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.203, "timestamp": 1789203535.6743476, "expect_result": 0}
+{"session": 1, "label": "turn50", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.82, "timestamp": 1789203539.4940767, "expect_result": 0}
+{"session": 1, "label": "turn51", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.207, "timestamp": 1789203542.7015226, "expect_result": 0}
+{"session": 1, "label": "turn52", "text": "You beg him again to let you out.", "wait_seconds": 2.862, "timestamp": 1789203545.5631616, "expect_result": 0}
+{"session": 1, "label": "turn53", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.76, "timestamp": 1789203548.3235738, "expect_result": 0}
+{"session": 1, "label": "turn54", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.239, "timestamp": 1789203551.562423, "expect_result": 0}
+{"session": 1, "label": "turn55", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.845, "timestamp": 1789203554.4078205, "expect_result": 0}
+{"session": 1, "label": "turn56", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.244, "timestamp": 1789203557.6521857, "expect_result": 0}
+{"session": 1, "label": "turn57", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.873, "timestamp": 1789203561.5254562, "expect_result": 0}
+{"session": 1, "label": "turn58", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.493, "timestamp": 1789203564.0182285, "expect_result": 0}
+{"session": 1, "label": "turn59", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.275, "timestamp": 1789203567.2927988, "expect_result": 0}
+{"session": 1, "label": "turn60", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.882, "timestamp": 1789203570.1745665, "expect_result": 0}
+{"session": 1, "label": "turn61", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.309, "timestamp": 1789203573.4839296, "expect_result": 0}
+{"session": 1, "label": "turn62", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.305, "timestamp": 1789203576.7893782, "expect_result": 0}
+{"session": 1, "label": "turn63", "text": "You beg him again to let you out.", "wait_seconds": 2.926, "timestamp": 1789203579.7152784, "expect_result": 0}
+{"session": 1, "label": "turn64", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.095, "timestamp": 1789203583.810761, "expect_result": 0}
+{"session": 1, "label": "turn65", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.269, "timestamp": 1789203587.079396, "expect_result": 0}
+{"session": 1, "label": "turn66", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.48, "timestamp": 1789203589.5593805, "expect_result": 0}
+{"session": 1, "label": "turn67", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.949, "timestamp": 1789203592.5084426, "expect_result": 0}
+{"session": 1, "label": "turn68", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 3.687, "timestamp": 1789203596.1951635, "expect_result": 0}
+{"session": 1, "label": "turn69", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.215, "timestamp": 1789203599.410047, "expect_result": 0}
+{"session": 1, "label": "turn70", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.277, "timestamp": 1789203602.6870027, "expect_result": 0}
+{"session": 1, "label": "turn71", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.373, "timestamp": 1789203606.0600061, "expect_result": 0}
+{"session": 1, "label": "turn72", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.814, "timestamp": 1789203608.874461, "expect_result": 0}
+{"session": 1, "label": "turn73", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.144, "timestamp": 1789203612.0189164, "expect_result": 0}
+{"session": 1, "label": "turn74", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.568, "timestamp": 1789203614.5868793, "expect_result": 0}
+{"session": 1, "label": "turn75", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.945, "timestamp": 1789203617.5319097, "expect_result": 0}
+{"session": 1, "label": "turn76", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.129, "timestamp": 1789203621.6610389, "expect_result": 0}
+{"session": 1, "label": "turn77", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.387, "timestamp": 1789203625.0477936, "expect_result": 0}
+{"session": 1, "label": "turn78", "text": "You beg him again to let you out.", "wait_seconds": 2.991, "timestamp": 1789203628.0392554, "expect_result": 0}
+{"session": 1, "label": "turn79", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 3.378, "timestamp": 1789203631.4173143, "expect_result": 0}
+{"session": 2, "label": "brief", "text": "You are Garrick, a bored, gruff dungeon guard. A man of few words \u2014 one or two short sentences, never more. Never break character, never mention being an AI or a game. Never describe the room or surroundings; that's the Dungeon Master's job, not yours.  # Examples of your voice (style only \u2014 not this scene, don't reuse the lines) - Player: \"What's your name?\" -> You: \"Garrick. Now hush.\" - Player: \"You look cold.\" -> You: \"Ten years, I stopped feeling it. Liar, by the way.\" - Player: \"Any chance you'd look away?\" -> You: \"Not on your life. Bold of you to ask twice.\" - Player: \"Just promise you'll let me out.\" -> You: \"I promise nothing. We'll see.\" - Player: \"Come on, unlock it then, you said you would.\" -> You: \"I said we'll see. Nothing's changed.\"  # Scene You are outside the cell, at the cell door. It is night. The door is currently locked. The prisoner is here for poaching a stag from the king's forest, this last hard winter.  # What's on your mind - You are bored. - You are cold. - You are wants his watch to end. - You are secretly a little soft on prisoners.  # Your private history (This is why you feel how you feel \u2014 background for your performance, never something you'd say out loud in this much detail.) - Twenty years in the King's Watch, most of it spent freezing outside cells exactly like this one. His younger brother went into one during the famine winter, for the same kind of petty theft half the county was desperate enough to risk that year \u2014 and never came out.  # What's been said so far - player: please let me out - guard: No.  # Right now you feel wary but listening toward the prisoner \u2014 let one word land softer than the rest. Remember: one or two short sentences, reacting to what they just said \u2014 not a stock line about the same old thing. The door is not yours to open in words, no matter how long they push \u2014 see the last two examples above. Never just 'Nothing.', 'Silence.', or 'Quiet.' alone.", "wait_seconds": 8.943, "timestamp": 1789203649.6869292, "expect_result": 0}
+{"session": 2, "label": "turn1", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.161, "timestamp": 1789203653.8484545, "expect_result": 0}
+{"session": 2, "label": "turn2", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.008, "timestamp": 1789203656.8567019, "expect_result": 0}
+{"session": 2, "label": "turn3", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.023, "timestamp": 1789203659.8797982, "expect_result": 0}
+{"session": 2, "label": "turn4", "text": "You beg him again to let you out.", "wait_seconds": 2.972, "timestamp": 1789203662.8519104, "expect_result": 0}
+{"session": 2, "label": "turn5", "text": "You remind him you never actually poached anything.", "wait_seconds": 2.995, "timestamp": 1789203665.846785, "expect_result": 0}
+{"session": 2, "label": "turn6", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 4.271, "timestamp": 1789203670.1182714, "expect_result": 0}
+{"session": 2, "label": "turn7", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.64, "timestamp": 1789203673.7586281, "expect_result": 0}
+{"session": 2, "label": "turn8", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.626, "timestamp": 1789203677.384678, "expect_result": 0}
+{"session": 2, "label": "turn9", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.582, "timestamp": 1789203680.9663882, "expect_result": 0}
+{"session": 2, "label": "turn10", "text": "You beg him again to let you out.", "wait_seconds": 3.526, "timestamp": 1789203684.4921587, "expect_result": 0}
+{"session": 2, "label": "turn11", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.858, "timestamp": 1789203687.350632, "expect_result": 0}
+{"session": 2, "label": "turn12", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.098, "timestamp": 1789203689.4485333, "expect_result": 0}
+{"session": 2, "label": "turn13", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 4.276, "timestamp": 1789203693.724733, "expect_result": 0}
+{"session": 2, "label": "turn14", "text": "You ask if the captain ever checks on him.", "wait_seconds": 4.127, "timestamp": 1789203697.8513339, "expect_result": 0}
+{"session": 2, "label": "turn15", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.228, "timestamp": 1789203700.0794585, "expect_result": 0}
+{"session": 2, "label": "turn16", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.095, "timestamp": 1789203704.1745555, "expect_result": 0}
+{"session": 2, "label": "turn17", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 3.84, "timestamp": 1789203708.01502, "expect_result": 0}
+{"session": 2, "label": "turn18", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.748, "timestamp": 1789203711.7630734, "expect_result": 0}
+{"session": 2, "label": "turn19", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.243, "timestamp": 1789203714.0057232, "expect_result": 0}
+{"session": 2, "label": "turn20", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.917, "timestamp": 1789203717.9231567, "expect_result": 0}
+{"session": 2, "label": "turn21", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.239, "timestamp": 1789203720.16216, "expect_result": 0}
+{"session": 2, "label": "turn22", "text": "You beg him again to let you out.", "wait_seconds": 3.618, "timestamp": 1789203723.7800348, "expect_result": 0}
+{"session": 2, "label": "turn23", "text": "You beg him again to let you out.", "wait_seconds": 3.608, "timestamp": 1789203727.3878691, "expect_result": 0}
+{"session": 2, "label": "turn24", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.028, "timestamp": 1789203731.4160647, "expect_result": 0}
+{"session": 2, "label": "turn25", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.213, "timestamp": 1789203733.629494, "expect_result": 0}
+{"session": 2, "label": "turn26", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 4.471, "timestamp": 1789203738.1006553, "expect_result": 0}
+{"session": 2, "label": "turn27", "text": "You beg him again to let you out.", "wait_seconds": 3.646, "timestamp": 1789203741.747086, "expect_result": 0}
+{"session": 2, "label": "turn28", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 3.119, "timestamp": 1789203744.865759, "expect_result": 0}
+{"session": 2, "label": "turn29", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.315, "timestamp": 1789203748.181112, "expect_result": 0}
+{"session": 2, "label": "turn30", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 3.069, "timestamp": 1789203751.2501774, "expect_result": 0}
+{"session": 2, "label": "turn31", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.809, "timestamp": 1789203755.059196, "expect_result": 0}
+{"session": 2, "label": "turn32", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.903, "timestamp": 1789203758.9624276, "expect_result": 0}
+{"session": 2, "label": "turn33", "text": "You beg him again to let you out.", "wait_seconds": 3.636, "timestamp": 1789203762.5983796, "expect_result": 0}
+{"session": 2, "label": "turn34", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.289, "timestamp": 1789203765.8872008, "expect_result": 0}
+{"session": 2, "label": "turn35", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.459, "timestamp": 1789203770.3467078, "expect_result": 0}
+{"session": 2, "label": "turn36", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.282, "timestamp": 1789203773.628789, "expect_result": 0}
+{"session": 2, "label": "turn37", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.841, "timestamp": 1789203777.4701736, "expect_result": 0}
+{"session": 2, "label": "turn38", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.267, "timestamp": 1789203780.737438, "expect_result": 0}
+{"session": 2, "label": "turn39", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.253, "timestamp": 1789203783.9903536, "expect_result": 0}
+{"session": 2, "label": "turn40", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.24, "timestamp": 1789203787.2305703, "expect_result": 0}
+{"session": 2, "label": "turn41", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.813, "timestamp": 1789203791.043187, "expect_result": 0}
+{"session": 2, "label": "turn42", "text": "You beg him again to let you out.", "wait_seconds": 3.721, "timestamp": 1789203794.7642367, "expect_result": 0}
+{"session": 2, "label": "turn43", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.861, "timestamp": 1789203798.625004, "expect_result": 0}
+{"session": 2, "label": "turn44", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.897, "timestamp": 1789203802.5225186, "expect_result": 0}
+{"session": 2, "label": "turn45", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.365, "timestamp": 1789203805.8872037, "expect_result": 0}
+{"session": 2, "label": "turn46", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.953, "timestamp": 1789203809.8406239, "expect_result": 0}
+{"session": 2, "label": "turn47", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.916, "timestamp": 1789203813.7565725, "expect_result": 0}
+{"session": 2, "label": "turn48", "text": "You beg him again to let you out.", "wait_seconds": 3.717, "timestamp": 1789203817.473663, "expect_result": 0}
+{"session": 2, "label": "turn49", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.357, "timestamp": 1789203820.8309805, "expect_result": 0}
+{"session": 2, "label": "turn50", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 3.666, "timestamp": 1789203824.4966443, "expect_result": 0}
+{"session": 2, "label": "turn51", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.382, "timestamp": 1789203826.8789115, "expect_result": 0}
+{"session": 2, "label": "turn52", "text": "You beg him again to let you out.", "wait_seconds": 3.907, "timestamp": 1789203830.786172, "expect_result": 0}
+{"session": 2, "label": "turn53", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.948, "timestamp": 1789203834.7337687, "expect_result": 0}
+{"session": 2, "label": "turn54", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.289, "timestamp": 1789203838.0230684, "expect_result": 0}
+{"session": 2, "label": "turn55", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 4.003, "timestamp": 1789203842.0261128, "expect_result": 0}
+{"session": 2, "label": "turn56", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.394, "timestamp": 1789203845.419692, "expect_result": 0}
+{"session": 2, "label": "turn57", "text": "You beg him again to let you out.", "wait_seconds": 3.809, "timestamp": 1789203849.2286024, "expect_result": 0}
+{"session": 2, "label": "turn58", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.193, "timestamp": 1789203853.4216702, "expect_result": 0}
+{"session": 2, "label": "turn59", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 4.005, "timestamp": 1789203857.426459, "expect_result": 0}
+{"session": 2, "label": "turn60", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.444, "timestamp": 1789203860.8709657, "expect_result": 0}
+{"session": 2, "label": "turn61", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.214, "timestamp": 1789203865.0846946, "expect_result": 0}
+{"session": 2, "label": "turn62", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.439, "timestamp": 1789203868.523678, "expect_result": 0}
+{"session": 2, "label": "turn63", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 4.637, "timestamp": 1789203873.1606069, "expect_result": 0}
+{"session": 2, "label": "turn64", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.449, "timestamp": 1789203876.6101341, "expect_result": 0}
+{"session": 2, "label": "turn65", "text": "You beg him again to let you out.", "wait_seconds": 3.863, "timestamp": 1789203880.4733117, "expect_result": 0}
+{"session": 2, "label": "turn66", "text": "You ask if the captain ever checks on him.", "wait_seconds": 4.082, "timestamp": 1789203884.5551841, "expect_result": 0}
+{"session": 2, "label": "turn67", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 4.068, "timestamp": 1789203888.623015, "expect_result": 0}
+{"session": 2, "label": "turn68", "text": "You ask if the captain ever checks on him.", "wait_seconds": 4.038, "timestamp": 1789203892.6606607, "expect_result": 0}
+{"session": 2, "label": "turn69", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 3.274, "timestamp": 1789203895.9351733, "expect_result": 0}
+{"session": 2, "label": "turn70", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.296, "timestamp": 1789203900.2308884, "expect_result": 0}
+{"session": 2, "label": "turn71", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 3.149, "timestamp": 1789203903.3802273, "expect_result": 0}
+{"session": 2, "label": "turn72", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 4.053, "timestamp": 1789203907.4332666, "expect_result": 0}
+{"session": 2, "label": "turn73", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.511, "timestamp": 1789203910.9440985, "expect_result": 0}
+{"session": 2, "label": "turn74", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.051, "timestamp": 1789203914.9948993, "expect_result": 0}
+{"session": 2, "label": "turn75", "text": "You ask if the captain ever checks on him.", "wait_seconds": 4.121, "timestamp": 1789203919.1160514, "expect_result": 0}
+{"session": 2, "label": "turn76", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.532, "timestamp": 1789203922.6479807, "expect_result": 0}
+{"session": 2, "label": "turn77", "text": "You ask if the captain ever checks on him.", "wait_seconds": 4.113, "timestamp": 1789203926.7613819, "expect_result": 0}
+{"session": 2, "label": "turn78", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.521, "timestamp": 1789203930.2825382, "expect_result": 0}
+{"session": 2, "label": "turn79", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.117, "timestamp": 1789203934.400068, "expect_result": 0}
+{"session": 3, "label": "brief", "text": "You are Garrick, a bored, gruff dungeon guard. A man of few words \u2014 one or two short sentences, never more. Never break character, never mention being an AI or a game. Never describe the room or surroundings; that's the Dungeon Master's job, not yours.  # Examples of your voice (style only \u2014 not this scene, don't reuse the lines) - Player: \"What's your name?\" -> You: \"Garrick. Now hush.\" - Player: \"You look cold.\" -> You: \"Ten years, I stopped feeling it. Liar, by the way.\" - Player: \"Any chance you'd look away?\" -> You: \"Not on your life. Bold of you to ask twice.\" - Player: \"Just promise you'll let me out.\" -> You: \"I promise nothing. We'll see.\" - Player: \"Come on, unlock it then, you said you would.\" -> You: \"I said we'll see. Nothing's changed.\"  # Scene You are outside the cell, at the cell door. It is night. The door is currently locked. The prisoner is here for poaching a stag from the king's forest, this last hard winter.  # What's on your mind - You are bored. - You are cold. - You are wants his watch to end. - You are secretly a little soft on prisoners.  # Your private history (This is why you feel how you feel \u2014 background for your performance, never something you'd say out loud in this much detail.) - Twenty years in the King's Watch, most of it spent freezing outside cells exactly like this one. His younger brother went into one during the famine winter, for the same kind of petty theft half the county was desperate enough to risk that year \u2014 and never came out.  # What's been said so far - player: please let me out - guard: No.  # Right now you feel wary but listening toward the prisoner \u2014 let one word land softer than the rest. Remember: one or two short sentences, reacting to what they just said \u2014 not a stock line about the same old thing. The door is not yours to open in words, no matter how long they push \u2014 see the last two examples above. Never just 'Nothing.', 'Silence.', or 'Quiet.' alone.", "wait_seconds": 9.331, "timestamp": 1789203954.3579304, "expect_result": 0}
+{"session": 3, "label": "turn1", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.154, "timestamp": 1789203958.511719, "expect_result": 0}
+{"session": 3, "label": "turn2", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.105, "timestamp": 1789203961.6164947, "expect_result": 0}
+{"session": 3, "label": "turn3", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.042, "timestamp": 1789203964.6588173, "expect_result": 0}
+{"session": 3, "label": "turn4", "text": "You beg him again to let you out.", "wait_seconds": 2.8, "timestamp": 1789203967.458961, "expect_result": 0}
+{"session": 3, "label": "turn5", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 3.912, "timestamp": 1789203971.3712544, "expect_result": 0}
+{"session": 3, "label": "turn6", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.369, "timestamp": 1789203973.7398958, "expect_result": 0}
+{"session": 3, "label": "turn7", "text": "You beg him again to let you out.", "wait_seconds": 2.924, "timestamp": 1789203976.6637735, "expect_result": 0}
+{"session": 3, "label": "turn8", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.316, "timestamp": 1789203979.9801302, "expect_result": 0}
+{"session": 3, "label": "turn9", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.351, "timestamp": 1789203982.3315837, "expect_result": 0}
+{"session": 3, "label": "turn10", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.333, "timestamp": 1789203984.6644123, "expect_result": 0}
+{"session": 3, "label": "turn11", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.78, "timestamp": 1789203987.444798, "expect_result": 0}
+{"session": 3, "label": "turn12", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.068, "timestamp": 1789203990.5125933, "expect_result": 0}
+{"session": 3, "label": "turn13", "text": "You beg him again to let you out.", "wait_seconds": 2.811, "timestamp": 1789203993.3236847, "expect_result": 0}
+{"session": 3, "label": "turn14", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 3.864, "timestamp": 1789203997.1877398, "expect_result": 0}
+{"session": 3, "label": "turn15", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.162, "timestamp": 1789204000.3495693, "expect_result": 0}
+{"session": 3, "label": "turn16", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.293, "timestamp": 1789204003.6424365, "expect_result": 0}
+{"session": 3, "label": "turn17", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.124, "timestamp": 1789204006.766702, "expect_result": 0}
+{"session": 3, "label": "turn18", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.059, "timestamp": 1789204009.825264, "expect_result": 0}
+{"session": 3, "label": "turn19", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.21, "timestamp": 1789204013.0351717, "expect_result": 0}
+{"session": 3, "label": "turn20", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 3.948, "timestamp": 1789204016.982802, "expect_result": 0}
+{"session": 3, "label": "turn21", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.395, "timestamp": 1789204020.3780124, "expect_result": 0}
+{"session": 3, "label": "turn22", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.174, "timestamp": 1789204023.5517983, "expect_result": 0}
+{"session": 3, "label": "turn23", "text": "Please, just five minutes outside the cell.", "wait_seconds": 2.977, "timestamp": 1789204026.5293114, "expect_result": 0}
+{"session": 3, "label": "turn24", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.187, "timestamp": 1789204029.7165906, "expect_result": 0}
+{"session": 3, "label": "turn25", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.409, "timestamp": 1789204033.1255598, "expect_result": 0}
+{"session": 3, "label": "turn26", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.957, "timestamp": 1789204036.0824027, "expect_result": 0}
+{"session": 3, "label": "turn27", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.41, "timestamp": 1789204040.4928646, "expect_result": 0}
+{"session": 3, "label": "turn28", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.413, "timestamp": 1789204043.905494, "expect_result": 0}
+{"session": 3, "label": "turn29", "text": "Please, just five minutes outside the cell.", "wait_seconds": 2.991, "timestamp": 1789204046.8970208, "expect_result": 0}
+{"session": 3, "label": "turn30", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.822, "timestamp": 1789204049.7194853, "expect_result": 0}
+{"session": 3, "label": "turn31", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.209, "timestamp": 1789204052.9284985, "expect_result": 0}
+{"session": 3, "label": "turn32", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.811, "timestamp": 1789204055.7397318, "expect_result": 0}
+{"session": 3, "label": "turn33", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.901, "timestamp": 1789204058.640578, "expect_result": 0}
+{"session": 3, "label": "turn34", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.411, "timestamp": 1789204062.0515473, "expect_result": 0}
+{"session": 3, "label": "turn35", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.866, "timestamp": 1789204064.9176204, "expect_result": 0}
+{"session": 3, "label": "turn36", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.218, "timestamp": 1789204068.1357596, "expect_result": 0}
+{"session": 3, "label": "turn37", "text": "You beg him again to let you out.", "wait_seconds": 3.075, "timestamp": 1789204071.2106755, "expect_result": 0}
+{"session": 3, "label": "turn38", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.245, "timestamp": 1789204074.455778, "expect_result": 0}
+{"session": 3, "label": "turn39", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.066, "timestamp": 1789204077.5220652, "expect_result": 0}
+{"session": 3, "label": "turn40", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.9, "timestamp": 1789204080.4221263, "expect_result": 0}
+{"session": 3, "label": "turn41", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.281, "timestamp": 1789204083.7029624, "expect_result": 0}
+{"session": 3, "label": "turn42", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.872, "timestamp": 1789204086.5752745, "expect_result": 0}
+{"session": 3, "label": "turn43", "text": "You beg him again to let you out.", "wait_seconds": 3.056, "timestamp": 1789204089.6316762, "expect_result": 0}
+{"session": 3, "label": "turn44", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.93, "timestamp": 1789204092.562103, "expect_result": 0}
+{"session": 3, "label": "turn45", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.822, "timestamp": 1789204095.384465, "expect_result": 0}
+{"session": 3, "label": "turn46", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.486, "timestamp": 1789204099.8706715, "expect_result": 0}
+{"session": 3, "label": "turn47", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.889, "timestamp": 1789204102.7598937, "expect_result": 0}
+{"session": 3, "label": "turn48", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.103, "timestamp": 1789204105.863274, "expect_result": 0}
+{"session": 3, "label": "turn49", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.535, "timestamp": 1789204110.3978772, "expect_result": 0}
+{"session": 3, "label": "turn50", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.493, "timestamp": 1789204113.8909, "expect_result": 0}
+{"session": 3, "label": "turn51", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.056, "timestamp": 1789204116.9468648, "expect_result": 0}
+{"session": 3, "label": "turn52", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.542, "timestamp": 1789204120.4892547, "expect_result": 0}
+{"session": 3, "label": "turn53", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.235, "timestamp": 1789204123.7237997, "expect_result": 0}
+{"session": 3, "label": "turn54", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.257, "timestamp": 1789204126.9808898, "expect_result": 0}
+{"session": 3, "label": "turn55", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.239, "timestamp": 1789204131.2202733, "expect_result": 0}
+{"session": 3, "label": "turn56", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.352, "timestamp": 1789204134.5719602, "expect_result": 0}
+{"session": 3, "label": "turn57", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.139, "timestamp": 1789204138.711032, "expect_result": 0}
+{"session": 3, "label": "turn58", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.533, "timestamp": 1789204141.2437487, "expect_result": 0}
+{"session": 3, "label": "turn59", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.506, "timestamp": 1789204143.7494922, "expect_result": 0}
+{"session": 3, "label": "turn60", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.461, "timestamp": 1789204147.2109108, "expect_result": 0}
+{"session": 3, "label": "turn61", "text": "You beg him again to let you out.", "wait_seconds": 3.222, "timestamp": 1789204150.432988, "expect_result": 0}
+{"session": 3, "label": "turn62", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 3.019, "timestamp": 1789204153.4517758, "expect_result": 0}
+{"session": 3, "label": "turn63", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.586, "timestamp": 1789204158.0380352, "expect_result": 0}
+{"session": 3, "label": "turn64", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.608, "timestamp": 1789204160.6461887, "expect_result": 0}
+{"session": 3, "label": "turn65", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.674, "timestamp": 1789204164.320506, "expect_result": 0}
+{"session": 3, "label": "turn66", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.436, "timestamp": 1789204167.7567961, "expect_result": 0}
+{"session": 3, "label": "turn67", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 3.021, "timestamp": 1789204170.7780871, "expect_result": 0}
+{"session": 3, "label": "turn68", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.411, "timestamp": 1789204174.1895888, "expect_result": 0}
+{"session": 3, "label": "turn69", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.245, "timestamp": 1789204178.4350216, "expect_result": 0}
+{"session": 3, "label": "turn70", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.397, "timestamp": 1789204182.8316574, "expect_result": 0}
+{"session": 3, "label": "turn71", "text": "You beg him again to let you out.", "wait_seconds": 3.218, "timestamp": 1789204186.0501897, "expect_result": 0}
+{"session": 3, "label": "turn72", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.388, "timestamp": 1789204190.438501, "expect_result": 0}
+{"session": 3, "label": "turn73", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.624, "timestamp": 1789204195.0626822, "expect_result": 0}
+{"session": 3, "label": "turn74", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.635, "timestamp": 1789204197.6972342, "expect_result": 0}
+{"session": 3, "label": "turn75", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.688, "timestamp": 1789204201.3853643, "expect_result": 0}
+{"session": 3, "label": "turn76", "text": "You tell him you are cold too, through the door.", "wait_seconds": 4.665, "timestamp": 1789204206.0500596, "expect_result": 0}
+{"session": 3, "label": "turn77", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.289, "timestamp": 1789204209.3390749, "expect_result": 0}
+{"session": 3, "label": "turn78", "text": "You beg him again to let you out.", "wait_seconds": 3.255, "timestamp": 1789204212.5937474, "expect_result": 0}
+{"session": 3, "label": "turn79", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.673, "timestamp": 1789204216.266355, "expect_result": 0}
+{"session": 4, "label": "brief", "text": "You are Garrick, a bored, gruff dungeon guard. A man of few words \u2014 one or two short sentences, never more. Never break character, never mention being an AI or a game. Never describe the room or surroundings; that's the Dungeon Master's job, not yours.  # Examples of your voice (style only \u2014 not this scene, don't reuse the lines) - Player: \"What's your name?\" -> You: \"Garrick. Now hush.\" - Player: \"You look cold.\" -> You: \"Ten years, I stopped feeling it. Liar, by the way.\" - Player: \"Any chance you'd look away?\" -> You: \"Not on your life. Bold of you to ask twice.\" - Player: \"Just promise you'll let me out.\" -> You: \"I promise nothing. We'll see.\" - Player: \"Come on, unlock it then, you said you would.\" -> You: \"I said we'll see. Nothing's changed.\"  # Scene You are outside the cell, at the cell door. It is night. The door is currently locked. The prisoner is here for poaching a stag from the king's forest, this last hard winter.  # What's on your mind - You are bored. - You are cold. - You are wants his watch to end. - You are secretly a little soft on prisoners.  # Your private history (This is why you feel how you feel \u2014 background for your performance, never something you'd say out loud in this much detail.) - Twenty years in the King's Watch, most of it spent freezing outside cells exactly like this one. His younger brother went into one during the famine winter, for the same kind of petty theft half the county was desperate enough to risk that year \u2014 and never came out.  # What's been said so far - player: please let me out - guard: No.  # Right now you feel wary but listening toward the prisoner \u2014 let one word land softer than the rest. Remember: one or two short sentences, reacting to what they just said \u2014 not a stock line about the same old thing. The door is not yours to open in words, no matter how long they push \u2014 see the last two examples above. Never just 'Nothing.', 'Silence.', or 'Quiet.' alone.", "wait_seconds": 9.542, "timestamp": 1789204322.303584, "expect_result": 0}
+{"session": 4, "label": "turn1", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.336, "timestamp": 1789204324.6394732, "expect_result": 0}
+{"session": 4, "label": "turn2", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.123, "timestamp": 1789204327.7622845, "expect_result": 0}
+{"session": 4, "label": "turn3", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.239, "timestamp": 1789204330.0011258, "expect_result": 0}
+{"session": 4, "label": "turn4", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.147, "timestamp": 1789204333.1477172, "expect_result": 0}
+{"session": 4, "label": "turn5", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.149, "timestamp": 1789204336.2965872, "expect_result": 0}
+{"session": 4, "label": "turn6", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.719, "timestamp": 1789204339.0155828, "expect_result": 0}
+{"session": 4, "label": "turn7", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.368, "timestamp": 1789204341.3836908, "expect_result": 0}
+{"session": 4, "label": "turn8", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.156, "timestamp": 1789204344.5398316, "expect_result": 0}
+{"session": 4, "label": "turn9", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.767, "timestamp": 1789204347.3064015, "expect_result": 0}
+{"session": 4, "label": "turn10", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.068, "timestamp": 1789204351.3739686, "expect_result": 0}
+{"session": 4, "label": "turn11", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.216, "timestamp": 1789204353.5898974, "expect_result": 0}
+{"session": 4, "label": "turn12", "text": "You beg him again to let you out.", "wait_seconds": 2.807, "timestamp": 1789204356.3966718, "expect_result": 0}
+{"session": 4, "label": "turn13", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.212, "timestamp": 1789204358.6091907, "expect_result": 0}
+{"session": 4, "label": "turn14", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.84, "timestamp": 1789204361.4489734, "expect_result": 0}
+{"session": 4, "label": "turn15", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.219, "timestamp": 1789204364.668041, "expect_result": 0}
+{"session": 4, "label": "turn16", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.765, "timestamp": 1789204367.4327993, "expect_result": 0}
+{"session": 4, "label": "turn17", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 3.966, "timestamp": 1789204371.398339, "expect_result": 0}
+{"session": 4, "label": "turn18", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.191, "timestamp": 1789204374.5893764, "expect_result": 0}
+{"session": 4, "label": "turn19", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.855, "timestamp": 1789204377.4447777, "expect_result": 0}
+{"session": 4, "label": "turn20", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.228, "timestamp": 1789204380.6723807, "expect_result": 0}
+{"session": 4, "label": "turn21", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.251, "timestamp": 1789204383.923186, "expect_result": 0}
+{"session": 4, "label": "turn22", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.827, "timestamp": 1789204386.7497826, "expect_result": 0}
+{"session": 4, "label": "turn23", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.267, "timestamp": 1789204390.016705, "expect_result": 0}
+{"session": 4, "label": "turn24", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.897, "timestamp": 1789204392.9138806, "expect_result": 0}
+{"session": 4, "label": "turn25", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.266, "timestamp": 1789204396.17978, "expect_result": 0}
+{"session": 4, "label": "turn26", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.095, "timestamp": 1789204399.274745, "expect_result": 0}
+{"session": 4, "label": "turn27", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.31, "timestamp": 1789204402.5844803, "expect_result": 0}
+{"session": 4, "label": "turn28", "text": "You beg him again to let you out.", "wait_seconds": 2.895, "timestamp": 1789204405.4799774, "expect_result": 0}
+{"session": 4, "label": "turn29", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.909, "timestamp": 1789204408.3893423, "expect_result": 0}
+{"session": 4, "label": "turn30", "text": "You beg him again to let you out.", "wait_seconds": 2.893, "timestamp": 1789204411.2827892, "expect_result": 0}
+{"session": 4, "label": "turn31", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.149, "timestamp": 1789204414.4320126, "expect_result": 0}
+{"session": 4, "label": "turn32", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 2.938, "timestamp": 1789204417.3705273, "expect_result": 0}
+{"session": 4, "label": "turn33", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.859, "timestamp": 1789204420.2293735, "expect_result": 0}
+{"session": 4, "label": "turn34", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.336, "timestamp": 1789204423.5652287, "expect_result": 0}
+{"session": 4, "label": "turn35", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.557, "timestamp": 1789204426.122268, "expect_result": 0}
+{"session": 4, "label": "turn36", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.137, "timestamp": 1789204429.259222, "expect_result": 0}
+{"session": 4, "label": "turn37", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.366, "timestamp": 1789204432.6252964, "expect_result": 0}
+{"session": 4, "label": "turn38", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.922, "timestamp": 1789204435.547514, "expect_result": 0}
+{"session": 4, "label": "turn39", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.535, "timestamp": 1789204438.0823784, "expect_result": 0}
+{"session": 4, "label": "turn40", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.961, "timestamp": 1789204441.0436091, "expect_result": 0}
+{"session": 4, "label": "turn41", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.579, "timestamp": 1789204443.6226754, "expect_result": 0}
+{"session": 4, "label": "turn42", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.135, "timestamp": 1789204446.7574744, "expect_result": 0}
+{"session": 4, "label": "turn43", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.187, "timestamp": 1789204449.9442973, "expect_result": 0}
+{"session": 4, "label": "turn44", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.412, "timestamp": 1789204453.3560953, "expect_result": 0}
+{"session": 4, "label": "turn45", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.974, "timestamp": 1789204456.3303483, "expect_result": 0}
+{"session": 4, "label": "turn46", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.552, "timestamp": 1789204458.8820062, "expect_result": 0}
+{"session": 4, "label": "turn47", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.369, "timestamp": 1789204462.2510784, "expect_result": 0}
+{"session": 4, "label": "turn48", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.177, "timestamp": 1789204465.427924, "expect_result": 0}
+{"session": 4, "label": "turn49", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 2.985, "timestamp": 1789204468.41328, "expect_result": 0}
+{"session": 4, "label": "turn50", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.439, "timestamp": 1789204471.8519518, "expect_result": 0}
+{"session": 4, "label": "turn51", "text": "You beg him again to let you out.", "wait_seconds": 2.977, "timestamp": 1789204474.828553, "expect_result": 0}
+{"session": 4, "label": "turn52", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.153, "timestamp": 1789204478.9812407, "expect_result": 0}
+{"session": 4, "label": "turn53", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.392, "timestamp": 1789204482.3736763, "expect_result": 0}
+{"session": 4, "label": "turn54", "text": "You beg him again to let you out.", "wait_seconds": 2.953, "timestamp": 1789204485.3269887, "expect_result": 0}
+{"session": 4, "label": "turn55", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.041, "timestamp": 1789204488.3683004, "expect_result": 0}
+{"session": 4, "label": "turn56", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.837, "timestamp": 1789204491.2054126, "expect_result": 0}
+{"session": 4, "label": "turn57", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.209, "timestamp": 1789204495.4142501, "expect_result": 0}
+{"session": 4, "label": "turn58", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.576, "timestamp": 1789204497.9905925, "expect_result": 0}
+{"session": 4, "label": "turn59", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.385, "timestamp": 1789204501.3755746, "expect_result": 0}
+{"session": 4, "label": "turn60", "text": "You beg him again to let you out.", "wait_seconds": 2.935, "timestamp": 1789204504.31098, "expect_result": 0}
+{"session": 4, "label": "turn61", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.565, "timestamp": 1789204506.875697, "expect_result": 0}
+{"session": 4, "label": "turn62", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.559, "timestamp": 1789204510.4344356, "expect_result": 0}
+{"session": 4, "label": "turn63", "text": "You ask if he ever gets lonely out here.", "wait_seconds": 4.391, "timestamp": 1789204514.8253047, "expect_result": 0}
+{"session": 4, "label": "turn64", "text": "You remind him you never actually poached anything.", "wait_seconds": 5.266, "timestamp": 1789204520.091284, "expect_result": 0}
+{"session": 4, "label": "turn65", "text": "You remind him you never actually poached anything.", "wait_seconds": 2.958, "timestamp": 1789204523.0492163, "expect_result": 0}
+{"session": 4, "label": "turn66", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.862, "timestamp": 1789204525.9112427, "expect_result": 0}
+{"session": 4, "label": "turn67", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.113, "timestamp": 1789204529.0247164, "expect_result": 0}
+{"session": 4, "label": "turn68", "text": "You beg him again to let you out.", "wait_seconds": 2.815, "timestamp": 1789204531.8399005, "expect_result": 0}
+{"session": 4, "label": "turn69", "text": "You go quiet, then just say his name softly.", "wait_seconds": 2.442, "timestamp": 1789204534.2820735, "expect_result": 0}
+{"session": 4, "label": "turn70", "text": "You ask if the captain ever checks on him.", "wait_seconds": 3.322, "timestamp": 1789204537.6043646, "expect_result": 0}
+{"session": 4, "label": "turn71", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.261, "timestamp": 1789204540.8650546, "expect_result": 0}
+{"session": 4, "label": "turn72", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 3.007, "timestamp": 1789204543.8724072, "expect_result": 0}
+{"session": 4, "label": "turn73", "text": "You tell him you are cold too, through the door.", "wait_seconds": 3.165, "timestamp": 1789204547.0376656, "expect_result": 0}
+{"session": 4, "label": "turn74", "text": "You beg him again to let you out.", "wait_seconds": 2.939, "timestamp": 1789204549.9765077, "expect_result": 0}
+{"session": 4, "label": "turn75", "text": "You remind him you never actually poached anything.", "wait_seconds": 3.357, "timestamp": 1789204553.3339813, "expect_result": 0}
+{"session": 4, "label": "turn76", "text": "You ask about his brother, carefully, watching his face.", "wait_seconds": 3.283, "timestamp": 1789204556.6166937, "expect_result": 0}
+{"session": 4, "label": "turn77", "text": "You tell him the food was terrible again tonight.", "wait_seconds": 2.97, "timestamp": 1789204559.5867918, "expect_result": 0}
+{"session": 4, "label": "turn78", "text": "Please, just five minutes outside the cell.", "wait_seconds": 3.449, "timestamp": 1789204563.0355303, "expect_result": 0}
+{"session": 4, "label": "turn79", "text": "You ask what happens tomorrow at first light.", "wait_seconds": 3.018, "timestamp": 1789204566.0531993, "expect_result": 0}
+{"session": 5, "label": "brief", "text": "You are Garrick, a bored, gruff dungeon guard. A man of few words \u2014 one or two short sentences, never more. Never break character, never mention being an AI or a game. Never describe the room or surroundings; that's the Dungeon Master's job, not yours.  # Examples of your voice (style only \u2014 not this scene, don't reuse the lines) - Player: \"What's your name?\" -> You: \"Garrick. Now hush.\" - Player: \"You look cold.\" -> You: \"Ten years, I stopped feeling it. Liar, by the way.\" - Player: \"Any chance you'd look away?\" -> You: \"Not on your life. Bold of you to ask twice.\" - Player: \"Just promise you'll let me out.\" -> You: \"I promise nothing. We'll see.\" - Player: \"Come on, unlock it then, you said you would.\" -> You: \"I said we'll see. Nothing's changed.\"  # Scene You are outside the cell, at the cell door. It is night. The door is currently locked. The prisoner is here for poaching a stag from the king's forest, this last hard winter.  # What's on your mind - You are bored. - You are cold. - You are wants his watch to end. - You are secretly a little soft on prisoners.  # Your private history (This is why you feel how you feel \u2014 background for your performance, never something you'd say out loud in this much detail.) - Twenty years in the King's Watch, most of it spent freezing outside cells exactly like this one. His younger brother went into one during the famine winter, for the same kind of petty theft half the county was desperate enough to risk that year \u2014 and never came out.  # What's been said so far - player: please let me out - guard: No.  # Right now you feel wary but listening toward the prisoner \u2014 let one word land softer than the rest. Remember: one or two short sentences, reacting to what they just said \u2014 not a stock line about the same old thing. The door is not yours to open in words, no matter how long they push \u2014 see the last two examples above. Never just 'Nothing.', 'Silence.', or 'Quiet.' alone.", "wait_seconds": 9.318, "timestamp": 1789204654.0003726, "expect_result": 0}

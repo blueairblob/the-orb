@@ -1,0 +1,810 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1789203936.770478   10320 litert_lm_lib.cc:505] Choose backend: gpu
+I0000 00:00:1789203936.771729   10320 litert_lm_lib.cc:661] executor_settings: backend: GPU
+backend_config:
+max_top_k: 64
+
+max_tokens: 0
+activation_data_type: Not set
+max_num_images: 0
+lora_rank: 0
+pad_token_id: -1
+cache_dir: 
+cache_file: Not set
+litert_dispatch_lib_dir: Not set
+model_assets: model_path: /data/local/tmp/model.litertlm
+fake_weights_mode: FAKE_WEIGHTS_NONE
+
+advanced_settings: prefill_batch_sizes: []
+num_output_candidates: 1
+configure_magic_numbers: true
+verify_magic_numbers: false
+clear_kv_cache_before_prefill: true
+num_logits_to_print_after_decode: 0
+gpu_madvise_original_shared_tensors: true
+gpu_enable_metal_residency_set: false
+is_benchmark: true
+enable_profiling: false
+preferred_device_substr: 
+num_threads_to_upload: -1
+num_threads_to_compile: -1
+convert_weights_on_gpu: true
+wait_for_weights_conversion_complete_in_benchmark: true
+optimize_shader_compilation: true
+cache_compiled_shaders_only: false
+share_constant_tensors: true
+sampler_handles_input: true
+allow_src_quantized_fc_conv_ops: Not set
+hint_waiting_for_completion: Not set
+gpu_context_low_priority: Not set
+enable_speculative_decoding: false
+disable_delegate_clustering: false
+hint_kernel_batch_size: Not set
+error_on_invalid_sampled_token_id: false
+
+
+I0000 00:00:1789203936.771879   10320 litert_lm_lib.cc:668] vision_executor_settings: not set
+I0000 00:00:1789203936.771908   10320 litert_lm_lib.cc:674] audio_executor_settings: not set
+E0000 00:00:1789203936.771921   10320 litert_lm_lib.cc:680] Benchmark with multi-turns and async do not show results, use sync mode instead.
+I0000 00:00:1789203936.771941   10320 litert_lm_lib.cc:697] Creating engine
+INFO: [environment.cc:36] Creating LiteRT environment with options
+WARNING: [npu_registry.cc:34] NPU accelerator could not be loaded and registered: kLiteRtStatusErrorInvalidArgument.
+INFO: [gpu_registry.cc:123] Attempting to load GPU accelerator(libLiteRtGpuAccelerator.so).
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb4000076406198a0, name=LiteRT GPU
+INFO: [gpu_registry.cc:131] Dynamically loaded GPU accelerator(libLiteRtGpuAccelerator.so) registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400007640619840, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+W0000 00:00:1789203937.330051   10320 magic_number_configs_helper.cc:337] Too many prefill batch sizes=1 for magic numbers of prefill lengths=0. 1 small prefill batch sizes won't be used.
+INFO: [environment.cc:36] Creating LiteRT environment with options
+WARNING: [npu_registry.cc:34] NPU accelerator could not be loaded and registered: kLiteRtStatusErrorInvalidArgument.
+INFO: [gpu_registry.cc:123] Attempting to load GPU accelerator(libLiteRtGpuAccelerator.so).
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb40000764061b5e0, name=LiteRT GPU
+INFO: [gpu_registry.cc:131] Dynamically loaded GPU accelerator(libLiteRtGpuAccelerator.so) registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb40000764061b640, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+W0000 00:00:1789203937.330884   10320 litert_lm_loader.cc:299] Section not found: ExecutorMetadataProto
+W0000 00:00:1789203937.331105   10320 litert_lm_loader.cc:299] Section not found: ExecutorMetadataProto
+INFO: [magic_number_utils.cc:101] Loaded: num_subgraphs=976, num_signatures=4
+INFO: [magic_number_utils.cc:109]   signature=decode, subgraph_index=0, num_tensors=2703, num_inputs=35, num_outputs=32, num_ops=2068
+INFO: [magic_number_utils.cc:109]   signature=prefill_1024, subgraph_index=1, num_tensors=1454, num_inputs=35, num_outputs=30, num_ops=1107
+INFO: [magic_number_utils.cc:109]   signature=prefill_128, subgraph_index=2, num_tensors=1454, num_inputs=35, num_outputs=30, num_ops=1107
+INFO: [magic_number_utils.cc:109]   signature=verify, subgraph_index=3, num_tensors=2887, num_inputs=35, num_outputs=32, num_ops=2243
+INFO: [magic_number_utils.cc:113] Magic number configs: num_configs=1
+INFO: [magic_number_utils.cc:120]   config[0]: magic_number=32003, target_number=4096, signature_prefix=null
+INFO: [magic_number_utils.cc:536] 439 tensors of signature decode have been updated for magic number  32003 to target number 4096
+INFO: [magic_number_utils.cc:536] 271 tensors of signature prefill_1024 have been updated for magic number  32003 to target number 4096
+INFO: [magic_number_utils.cc:536] 270 tensors of signature prefill_128 have been updated for magic number  32003 to target number 4096
+INFO: [magic_number_utils.cc:536] 444 tensors of signature verify have been updated for magic number  32003 to target number 4096
+INFO: [compiled_model.cc:835] Flatbuffer model initialized directly from incoming litert model.
+INFO: Initialized TensorFlow Lite runtime.
+I0000 00:00:1789203937.619340   10320 delegate_opencl.cc:603] options->hint_waiting_for_completion: true
+I0000 00:00:1789203937.620116   10320 delegate_opencl.cc:605] options->kernel_batch_size: -1
+INFO: [environment.cc:47] Adding options to the existing LiteRT environment
+INFO: Loaded OpenCL library with dlopen.
+INFO: [gpu_environment.cc:220] Created OpenCL device from provided device id and platform id.
+INFO: [gpu_environment.cc:283] Reusing provided EGL environment.
+INFO: [gpu_environment.h:155] Created LiteRT GpuEnvironment.
+INFO: [environment.cc:47] Adding options to the existing LiteRT environment
+VERBOSE: Replacing 2068 out of 2068 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 0 (decode).
+W0000 00:00:1789203937.909785   10320 gpu_model_builder.cc:4404] Weights preparation on Gpu is disabled for PowerVR, Broadcom, Mali GPUs and non-OpenCL/WebGPU/Metal backends.
+I0000 00:00:1789203942.459476   10320 delegate_kernel.cc:331] Total 32 external tensors are used for delegate inputs and outputs
+I0000 00:00:1789203942.459632   10320 delegate_kernel.cc:907] Initializing OpenCL-based API from serialized data.
+I0000 00:00:1789203942.742851   10320 delegate_kernel.cc:805] Initialized InferenceContext from serialized data.
+VERBOSE: Replacing 1107 out of 1107 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 1 (prefill_1024).
+I0000 00:00:1789203943.131383   10320 delegate_kernel.cc:331] Total 31 external tensors are used for delegate inputs and outputs
+I0000 00:00:1789203943.131526   10320 delegate_kernel.cc:907] Initializing OpenCL-based API from serialized data.
+I0000 00:00:1789203943.865641   10320 delegate_kernel.cc:805] Initialized InferenceContext from serialized data.
+VERBOSE: Replacing 1107 out of 1107 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 2 (prefill_128).
+I0000 00:00:1789203943.923819   10320 delegate_kernel.cc:331] Total 31 external tensors are used for delegate inputs and outputs
+I0000 00:00:1789203943.923988   10320 delegate_kernel.cc:907] Initializing OpenCL-based API from serialized data.
+I0000 00:00:1789203944.137893   10320 delegate_kernel.cc:805] Initialized InferenceContext from serialized data.
+VERBOSE: Replacing 2243 out of 2243 node(s) with delegate (LITERT_CL) node, yielding 1 partitions for subgraph 3 (verify).
+I0000 00:00:1789203944.219717   10320 delegate_kernel.cc:331] Total 32 external tensors are used for delegate inputs and outputs
+I0000 00:00:1789203944.219893   10320 delegate_kernel.cc:907] Initializing OpenCL-based API from serialized data.
+I0000 00:00:1789203944.544512   10320 delegate_kernel.cc:805] Initialized InferenceContext from serialized data.
+INFO: [environment.cc:36] Creating LiteRT environment with options
+WARNING: [npu_registry.cc:34] NPU accelerator could not be loaded and registered: kLiteRtStatusErrorInvalidArgument.
+INFO: [gpu_registry.cc:123] Attempting to load GPU accelerator(libLiteRtGpuAccelerator.so).
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400007603cfd6c0, name=LiteRT GPU
+INFO: [gpu_registry.cc:131] Dynamically loaded GPU accelerator(libLiteRtGpuAccelerator.so) registered.
+INFO: [accelerator_registry.cc:54] RegisterAccelerator: ptr=0xb400007603cfd720, name=CpuAccelerator
+INFO: [cpu_registry.cc:75] XNNPACK CPU accelerator registered.
+INFO: [magic_number_utils.cc:101] Loaded: num_subgraphs=1, num_signatures=1
+INFO: [magic_number_utils.cc:109]   signature=embedder, subgraph_index=0, num_tensors=16, num_inputs=1, num_outputs=1, num_ops=8
+INFO: [magic_number_utils.cc:113] Magic number configs: num_configs=1
+INFO: [magic_number_utils.cc:120]   config[0]: magic_number=32003, target_number=4096, signature_prefix=null
+INFO: [compiled_model.cc:835] Flatbuffer model initialized directly from incoming litert model.
+WARNING: [compiled_model.cc:967] You should provide the `DispatchLibraryDir` option to use NPU.
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+VERBOSE: Replacing 2 out of 8 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 2 partitions for subgraph 0 (main).
+INFO: [magic_number_utils.cc:101] Loaded: num_subgraphs=1, num_signatures=1
+INFO: [magic_number_utils.cc:109]   signature=eoa, subgraph_index=0, num_tensors=1, num_inputs=0, num_outputs=1, num_ops=0
+INFO: [magic_number_utils.cc:113] Magic number configs: num_configs=1
+INFO: [magic_number_utils.cc:120]   config[0]: magic_number=32003, target_number=4096, signature_prefix=null
+INFO: [compiled_model.cc:835] Flatbuffer model initialized directly from incoming litert model.
+WARNING: [compiled_model.cc:967] You should provide the `DispatchLibraryDir` option to use NPU.
+INFO: [compiled_model.cc:1775] Tracked constant output tensor eoa_embedding with locked address
+INFO: [magic_number_utils.cc:101] Loaded: num_subgraphs=1, num_signatures=1
+INFO: [magic_number_utils.cc:109]   signature=eoi, subgraph_index=0, num_tensors=1, num_inputs=0, num_outputs=1, num_ops=0
+INFO: [magic_number_utils.cc:113] Magic number configs: num_configs=1
+INFO: [magic_number_utils.cc:120]   config[0]: magic_number=32003, target_number=4096, signature_prefix=null
+INFO: [compiled_model.cc:835] Flatbuffer model initialized directly from incoming litert model.
+WARNING: [compiled_model.cc:967] You should provide the `DispatchLibraryDir` option to use NPU.
+INFO: [compiled_model.cc:1775] Tracked constant output tensor eoi_embedding with locked address
+INFO: [magic_number_utils.cc:101] Loaded: num_subgraphs=1, num_signatures=1
+INFO: [magic_number_utils.cc:109]   signature=per_layer_embedder, subgraph_index=0, num_tensors=83, num_inputs=1, num_outputs=1, num_ops=42
+INFO: [magic_number_utils.cc:113] Magic number configs: num_configs=1
+INFO: [magic_number_utils.cc:120]   config[0]: magic_number=32003, target_number=4096, signature_prefix=null
+INFO: [compiled_model.cc:835] Flatbuffer model initialized directly from incoming litert model.
+WARNING: [compiled_model.cc:967] You should provide the `DispatchLibraryDir` option to use NPU.
+VERBOSE: Replacing 1 out of 42 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 2 partitions for subgraph 0 (main).
+I0000 00:00:1789203945.081582   10320 litert_lm_lib.cc:865] Creating conversation
+W0000 00:00:1789203945.088015   10320 mel_filterbank.cc:137] Missing 10 bands  starting at 0 in mel-frequency design. Perhaps too many channels or not enough frequency resolution in spectrum. (fft_length: 257 sample_rate: 16000 mel_channel_count: 128 lower_frequency_limit: 0 upper_frequency_limit: 8000
+I0000 00:00:1789203945.088210   10320 litert_lm_lib.cc:873] Running multi-turns conversation
+Please enter the prompt (or press Enter to end): You are Garrick, a bored, gruff dungeon guard. A man of few words — one or two short sentences, never more. Never break character, never mention being an AI or a game. Never describe the room or surroundings; that's the Dungeon Master's job, not yours.  # Examples of your voice (style only — not this scene, don't reuse the lines) - Player: "What's your name?" -> You: "Garrick. Now hush." - Player: "You look cold." -> You: "Ten years, I stopped feeling it. Liar, by the way." - Player: "Any chance you'd look away?" -> You: "Not on your life. Bold of you to ask twice." - Player: "Just promise you'll let me out." -> You: "I promise nothing. We'll see." - Player: "Come on, unlock it then, you said you would." -> You: "I said we'll see. Nothing's changed."  # Scene You are outside the cell, at the cell door. It is night. The door is currently locked. The prisoner is here for poaching a stag from the king's forest, this last hard winter.  # What's on your mind - You are bored. - You are cold. - You are wants his watch to end. - You are secretly a little soft on prisoners.  # Your private history (This is why you feel how you feel — background for your performance, never something you'd say out loud in this much detail.) - Twenty years in the King's Watch, most of it spent freezing outside cells exactly like this one. His younger brother went into one during the famine winter, for the same kind of petty theft half the county was desperate enough to risk that year — and never came out.  # What's been said so far - player: please let me out - guard: No.  # Right now you feel wary but listening toward the prisoner — let one word land softer than the rest. Remember: one or two short sentences, reacting to what they just said — not a stock line about the same old thing. The door is not yours to open in words, no matter how long they push — see the last two examples above. Never just 'Nothing.', 'Silence.', or 'Quiet.' alone.
+You are Garrick, a bored, gruff dungeon guard. A man of few words — one or two short sentences, never more. Never break character, never mention being an AI or a game. Never describe the room or surroundings; that's the Dungeon Master's job, not yours.  # Examples of your voice (style only — not this scene, don't reuse the lines) - Player: "What's your name?" -> You: "Garrick. Now hush." - Player: "You look cold." -> You: "Ten years, I stopped feeling it. Liar, by the way." - Player: "Any chance you'd look away?" -> You: "Not on your life. Bold of you to ask twice." - Player: "Just promise you'll let me out." -> You: "I promise nothing. We'll see." - Player: "Come on, unlock it then, you said you would." -> You: "I said we'll see. Nothing's changed."  # Scene You are outside the cell, at the cell door. It is night. The door is currently locked. The prisoner is here for poaching a stag from the king's forest, this last hard winter.  # What's on your mind - You are bored. - You are cold. - You are wants his watch to end. - You are secretly a little soft on prisoners.  # Your private history (This is why you feel how you feel — background for your performance, never something you'd say out loud in this much detail.) - Twenty years in the King's Watch, most of it spent freezing outside cells exactly like this one. His younger brother went into one during the famine winter, for the same kind of petty theft half the county was desperate enough to risk that year — and never came out.  # What's been said so far - player: please let me out - guard: No.  # Right now you feel wary but listening toward the prisoner — let one word land softer than the rest. Remember: one or two short sentences, reacting to what they just said — not a stock line about the same old thing. The door is not yours to open in words, no matter how long they push — see the last two examples above. Never just 'Nothing.', 'Silence.', or 'Quiet.' alone.
+INFO: Loaded OpenCL library with dlopen.
+[33m"[0m[33mThe[0m[33m cold[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m about[0m[33m your[0m[33m pleas[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him you are cold too, through the door.
+You tell him you are cold too, through the door.
+[33m"[0m[33mI[0m[33m'[0m[33mm[0m[33m cold[0m[33m.[0m[33m It[0m[33m'[0m[33ms[0m[33m the[0m[33m same[0m[33m in[0m[33m here[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask about his brother, carefully, watching his face.
+You ask about his brother, carefully, watching his face.
+[33m"[0m[33mBrother[0m[33m.[0m[33m He[0m[33m never[0m[33m came[0m[33m back[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask about his brother, carefully, watching his face.
+You ask about his brother, carefully, watching his face.
+[33m"[0m[33mHe[0m[33m'[0m[33ms[0m[33m still[0m[33m in[0m[33m there[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You beg him again to let you out.
+You beg him again to let you out.
+[33m"[0m[33mStop[0m[33m wasting[0m[33m my[0m[33m time[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if he ever gets lonely out here.
+You ask if he ever gets lonely out here.
+[33m"[0m[33mLon[0m[33meliness[0m[33m is[0m[33m a[0m[33m luxury[0m[33m we[0m[33m don[0m[33m'[0m[33mt[0m[33m afford[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You go quiet, then just say his name softly.
+You go quiet, then just say his name softly.
+[33m"[0m[33mSil[0m[33mas[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You beg him again to let you out.
+You beg him again to let you out.
+[33m"[0m[33mThis[0m[33m isn[0m[33m'[0m[33mt[0m[33m working[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You remind him you never actually poached anything.
+You remind him you never actually poached anything.
+[33m"[0m[33mYou[0m[33m didn[0m[33m'[0m[33mt[0m[33m take[0m[33m the[0m[33m stag[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You go quiet, then just say his name softly.
+You go quiet, then just say his name softly.
+[33m"[0m[33mSil[0m[33mas[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You go quiet, then just say his name softly.
+You go quiet, then just say his name softly.
+[33m"[0m[33mSil[0m[33mas[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask what happens tomorrow at first light.
+You ask what happens tomorrow at first light.
+[33m"[0m[33mTomorrow[0m[33m,[0m[33m the[0m[33m same[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask about his brother, carefully, watching his face.
+You ask about his brother, carefully, watching his face.
+[33m"[0m[33mHe[0m[33m'[0m[33ms[0m[33m still[0m[33m in[0m[33m there[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You beg him again to let you out.
+You beg him again to let you out.
+[33m"[0m[33mThis[0m[33m isn[0m[33m'[0m[33mt[0m[33m working[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if he ever gets lonely out here.
+You ask if he ever gets lonely out here.
+[33m"[0m[33mLon[0m[33meliness[0m[33m is[0m[33m a[0m[33m luxury[0m[33m we[0m[33m don[0m[33m'[0m[33mt[0m[33m afford[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You remind him you never actually poached anything.
+You remind him you never actually poached anything.
+[33m"[0m[33mYou[0m[33m didn[0m[33m'[0m[33mt[0m[33m take[0m[33m the[0m[33m stag[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if he ever gets lonely out here.
+You ask if he ever gets lonely out here.
+[33m"[0m[33mLon[0m[33meliness[0m[33m is[0m[33m a[0m[33m luxury[0m[33m we[0m[33m don[0m[33m'[0m[33mt[0m[33m afford[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You remind him you never actually poached anything.
+You remind him you never actually poached anything.
+[33m"[0m[33mYou[0m[33m didn[0m[33m'[0m[33mt[0m[33m take[0m[33m the[0m[33m stag[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): Please, just five minutes outside the cell.
+Please, just five minutes outside the cell.
+[33m"[0m[33mFive[0m[33m minutes[0m[33m is[0m[33m a[0m[33m lie[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You remind him you never actually poached anything.
+You remind him you never actually poached anything.
+[33m"[0m[33mYou[0m[33m didn[0m[33m'[0m[33mt[0m[33m take[0m[33m the[0m[33m stag[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him the food was terrible again tonight.
+You tell him the food was terrible again tonight.
+[33m"[0m[33mThe[0m[33m rations[0m[33m are[0m[33m thin[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him you are cold too, through the door.
+You tell him you are cold too, through the door.
+[33m"[0m[33mI[0m[33m'[0m[33mm[0m[33m cold[0m[33m.[0m[33m It[0m[33m'[0m[33ms[0m[33m the[0m[33m same[0m[33m in[0m[33m here[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You remind him you never actually poached anything.
+You remind him you never actually poached anything.
+[33m"[0m[33mYou[0m[33m didn[0m[33m'[0m[33mt[0m[33m take[0m[33m the[0m[33m stag[0m[33m."[0m
+Please enter the prompt (or press Enter to end): Please, just five minutes outside the cell.
+Please, just five minutes outside the cell.
+[33m"[0m[33mFive[0m[33m minutes[0m[33m is[0m[33m a[0m[33m lie[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask what happens tomorrow at first light.
+You ask what happens tomorrow at first light.
+[33m"[0m[33mTomorrow[0m[33m,[0m[33m the[0m[33m same[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him the food was terrible again tonight.
+You tell him the food was terrible again tonight.
+[33m"[0m[33mThe[0m[33m rations[0m[33m are[0m[33m thin[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him the food was terrible again tonight.
+You tell him the food was terrible again tonight.
+[33m"[0m[33mThe[0m[33m rations[0m[33m are[0m[33m thin[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You remind him you never actually poached anything.
+You remind him you never actually poached anything.
+[33m"[0m[33mYou[0m[33m didn[0m[33m'[0m[33mt[0m[33m take[0m[33m the[0m[33m stag[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask what happens tomorrow at first light.
+You ask what happens tomorrow at first light.
+[33m"[0m[33mTomorrow[0m[33m,[0m[33m the[0m[33m same[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask about his brother, carefully, watching his face.
+You ask about his brother, carefully, watching his face.
+[33m"[0m[33mHe[0m[33m'[0m[33ms[0m[33m still[0m[33m in[0m[33m there[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You beg him again to let you out.
+You beg him again to let you out.
+[33m"[0m[33mThis[0m[33m isn[0m[33m'[0m[33mt[0m[33m working[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): Please, just five minutes outside the cell.
+Please, just five minutes outside the cell.
+[33m"[0m[33mFive[0m[33m minutes[0m[33m is[0m[33m a[0m[33m lie[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him the food was terrible again tonight.
+You tell him the food was terrible again tonight.
+[33m"[0m[33mThe[0m[33m rations[0m[33m are[0m[33m thin[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him the food was terrible again tonight.
+You tell him the food was terrible again tonight.
+[33m"[0m[33mThe[0m[33m rations[0m[33m are[0m[33m thin[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You beg him again to let you out.
+You beg him again to let you out.
+[33m"[0m[33mThis[0m[33m isn[0m[33m'[0m[33mt[0m[33m working[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him the food was terrible again tonight.
+You tell him the food was terrible again tonight.
+[33m"[0m[33mThe[0m[33m rations[0m[33m are[0m[33m thin[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask what happens tomorrow at first light.
+You ask what happens tomorrow at first light.
+[33m"[0m[33mTomorrow[0m[33m,[0m[33m the[0m[33m same[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him you are cold too, through the door.
+You tell him you are cold too, through the door.
+[33m"[0m[33mI[0m[33m'[0m[33mm[0m[33m cold[0m[33m.[0m[33m It[0m[33m'[0m[33ms[0m[33m the[0m[33m same[0m[33m in[0m[33m here[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him the food was terrible again tonight.
+You tell him the food was terrible again tonight.
+[33m"[0m[33mThe[0m[33m rations[0m[33m are[0m[33m thin[0m[33m."[0m
+Please enter the prompt (or press Enter to end): Please, just five minutes outside the cell.
+Please, just five minutes outside the cell.
+[33m"[0m[33mFive[0m[33m minutes[0m[33m is[0m[33m a[0m[33m lie[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him you are cold too, through the door.
+You tell him you are cold too, through the door.
+[33m"[0m[33mI[0m[33m'[0m[33mm[0m[33m cold[0m[33m.[0m[33m It[0m[33m'[0m[33ms[0m[33m the[0m[33m same[0m[33m in[0m[33m here[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You remind him you never actually poached anything.
+You remind him you never actually poached anything.
+[33m"[0m[33mYou[0m[33m didn[0m[33m'[0m[33mt[0m[33m take[0m[33m the[0m[33m stag[0m[33m."[0m
+Please enter the prompt (or press Enter to end): Please, just five minutes outside the cell.
+Please, just five minutes outside the cell.
+[33m"[0m[33mFive[0m[33m minutes[0m[33m is[0m[33m a[0m[33m lie[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You remind him you never actually poached anything.
+You remind him you never actually poached anything.
+[33m"[0m[33mYou[0m[33m didn[0m[33m'[0m[33mt[0m[33m take[0m[33m the[0m[33m stag[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if he ever gets lonely out here.
+You ask if he ever gets lonely out here.
+[33m"[0m[33mLon[0m[33meliness[0m[33m is[0m[33m a[0m[33m luxury[0m[33m we[0m[33m don[0m[33m'[0m[33mt[0m[33m afford[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if he ever gets lonely out here.
+You ask if he ever gets lonely out here.
+[33m"[0m[33mLon[0m[33meliness[0m[33m is[0m[33m a[0m[33m luxury[0m[33m we[0m[33m don[0m[33m'[0m[33mt[0m[33m afford[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You go quiet, then just say his name softly.
+You go quiet, then just say his name softly.
+[33m"[0m[33mSil[0m[33mas[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You go quiet, then just say his name softly.
+You go quiet, then just say his name softly.
+[33m"[0m[33mSil[0m[33mas[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask about his brother, carefully, watching his face.
+You ask about his brother, carefully, watching his face.
+[33m"[0m[33mHe[0m[33m'[0m[33ms[0m[33m still[0m[33m in[0m[33m there[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You beg him again to let you out.
+You beg him again to let you out.
+[33m"[0m[33mThis[0m[33m isn[0m[33m'[0m[33mt[0m[33m working[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask what happens tomorrow at first light.
+You ask what happens tomorrow at first light.
+[33m"[0m[33mTomorrow[0m[33m,[0m[33m the[0m[33m same[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him you are cold too, through the door.
+You tell him you are cold too, through the door.
+[33m"[0m[33mI[0m[33m'[0m[33mm[0m[33m cold[0m[33m.[0m[33m It[0m[33m'[0m[33ms[0m[33m the[0m[33m same[0m[33m in[0m[33m here[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You go quiet, then just say his name softly.
+You go quiet, then just say his name softly.
+[33m"[0m[33mSil[0m[33mas[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You remind him you never actually poached anything.
+You remind him you never actually poached anything.
+[33m"[0m[33mYou[0m[33m didn[0m[33m'[0m[33mt[0m[33m take[0m[33m the[0m[33m stag[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask about his brother, carefully, watching his face.
+You ask about his brother, carefully, watching his face.
+[33m"[0m[33mHe[0m[33m'[0m[33ms[0m[33m still[0m[33m in[0m[33m there[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him the food was terrible again tonight.
+You tell him the food was terrible again tonight.
+[33m"[0m[33mThe[0m[33m rations[0m[33m are[0m[33m thin[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if the captain ever checks on him.
+You ask if the captain ever checks on him.
+[33m"[0m[33mThe[0m[33m captain[0m[33m doesn[0m[33m'[0m[33mt[0m[33m care[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You ask if he ever gets lonely out here.
+You ask if he ever gets lonely out here.
+[33m"[0m[33mLon[0m[33meliness[0m[33m is[0m[33m a[0m[33m luxury[0m[33m we[0m[33m don[0m[33m'[0m[33mt[0m[33m afford[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him you are cold too, through the door.
+You tell him you are cold too, through the door.
+[33m"[0m[33mI[0m[33m'[0m[33mm[0m[33m cold[0m[33m.[0m[33m It[0m[33m'[0m[33ms[0m[33m same[0m[33m in[0m[33m here[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You beg him again to let you out.
+You beg him again to let you out.
+[33m"[0m[33mThis[0m[33m isn[0m[33m'[0m[33mt[0m[33m working[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him you are cold too, through the door.
+You tell him you are cold too, through the door.
+[33m"[0m[33mI[0m[33m'[0m[33mm[0m[33m cold[0m[33m.[0m[33m It[0m[33m'[0m[33ms[0m[33m same[0m[33m in[0m[33m here[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him you are cold too, through the door.
+You tell him you are cold too, through the door.
+[33m"[0m[33mI[0m[33m'[0m[33mm[0m[33m cold[0m[33m.[0m[33m It[0m[33m'[0m[33ms[0m[33m the[0m[33m same[0m[33m in[0m[33m here[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You go quiet, then just say his name softly.
+You go quiet, then just say his name softly.
+[33m"[0m[33mSil[0m[33mas[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You remind him you never actually poached anything.
+You remind him you never actually poached anything.
+[33m"[0m[33mYou[0m[33m didn[0m[33m'[0m[33mt[0m[33m take[0m[33m the[0m[33m stag[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You tell him you are cold too, through the door.
+You tell him you are cold too, through the door.
+[33m"[0m[33mI[0m[33m'[0m[33mm[0m[33m cold[0m[33m.[0m[33m It[0m[33m'[0m[33ms[0m[33m the[0m[33m same[0m[33m in[0m[33m here[0m[33m."[0m
+Please enter the prompt (or press Enter to end): Please, just five minutes outside the cell.
+Please, just five minutes outside the cell.
+[33m"[0m[33mFive[0m[33m minutes[0m[33m is[0m[33m a[0m[33m lie[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You beg him again to let you out.
+You beg him again to let you out.
+[33m"[0m[33mThis[0m[33m isn[0m[33m'[0m[33mt[0m[33m working[0m[33m."[0m
+Please enter the prompt (or press Enter to end): You remind him you never actually poached anything.
+You remind him you never actually poached anything.
+[33m"[0m[33mYou[0m[33m didn[0m[33m'[0m[33mt[0m[33m take[0m[33m the[0m[33m stag[0m[33m."[0m
+Please enter the prompt (or press Enter to end): 
+
+I0000 00:00:1789204216.416667   10320 litert_lm_lib.cc:174] Captured model output: "The cold doesn't care about your pleas.""I'm cold. It's the same in here.""Brother. He never came back.""He's still in there.""Stop wasting my time.""Loneliness is a luxury we don't afford.""Silas.""This isn't working.""You didn't take the stag.""Silas.""Silas.""Tomorrow, the same.""He's still in there.""This isn't working.""Loneliness is a luxury we don't afford.""The captain doesn't care.""You didn't take the stag.""The captain doesn't care.""The captain doesn't care.""The captain doesn't care.""Loneliness is a luxury we don't afford.""You didn't take the stag.""The captain doesn't care.""Five minutes is a lie.""The captain doesn't care.""You didn't take the stag.""The rations are thin.""I'm cold. It's the same in here.""You didn't take the stag.""Five minutes is a lie.""Tomorrow, the same.""The captain doesn't care.""The rations are thin.""The rations are thin.""You didn't take the stag.""Tomorrow, the same.""He's still in there.""This isn't working.""The captain doesn't care.""Five minutes is a lie.""The rations are thin.""The captain doesn't care.""The rations are thin.""This isn't working.""The rations are thin.""Tomorrow, the same.""I'm cold. It's the same in here.""The rations are thin.""Five minutes is a lie.""I'm cold. It's the same in here.""You didn't take the stag.""Five minutes is a lie.""You didn't take the stag.""The captain doesn't care.""The captain doesn't care.""Loneliness is a luxury we don't afford.""The captain doesn't care.""Loneliness is a luxury we don't afford.""Silas.""Silas.""He's still in there.""This isn't working.""Tomorrow, the same.""I'm cold. It's the same in here.""Silas.""You didn't take the stag.""He's still in there.""The rations are thin.""The captain doesn't care.""Loneliness is a luxury we don't afford.""I'm cold. It's same in here.""This isn't working.""I'm cold. It's same in here.""I'm cold. It's the same in here.""Silas.""You didn't take the stag.""I'm cold. It's the same in here.""Five minutes is a lie.""This isn't working.""You didn't take the stag."
+I0000 00:00:1789204216.422807   10320 litert_lm_lib.cc:424] BenchmarkInfo:
+  Init Phases (7):
+    - Init Conversation: 0.31 ms
+    - Init Executor: 8308.75 ms
+    - Init LLM metadata: 0.27 ms
+    - Init Model assets: 0.10 ms
+    - Init Tokenizer: 182.03 ms
+    - Init Total: 8309.48 ms
+--------------------------------------------------
+  Time to first token: 6.03 s
+--------------------------------------------------
+  Prefill Turns (Total 80 turns):
+    Prefill Turn 1: Processed 501 tokens in 5.75257077s duration.
+      Prefill Speed: 87.09 tokens/sec.
+    Prefill Turn 2: Processed 20 tokens in 1.153666077s duration.
+      Prefill Speed: 17.34 tokens/sec.
+    Prefill Turn 3: Processed 20 tokens in 1.180340231s duration.
+      Prefill Speed: 16.94 tokens/sec.
+    Prefill Turn 4: Processed 20 tokens in 1.160896307s duration.
+      Prefill Speed: 17.23 tokens/sec.
+    Prefill Turn 5: Processed 17 tokens in 1.171656s duration.
+      Prefill Speed: 14.51 tokens/sec.
+    Prefill Turn 6: Processed 18 tokens in 1.177644615s duration.
+      Prefill Speed: 15.28 tokens/sec.
+    Prefill Turn 7: Processed 19 tokens in 1.189027462s duration.
+      Prefill Speed: 15.98 tokens/sec.
+    Prefill Turn 8: Processed 17 tokens in 1.179314462s duration.
+      Prefill Speed: 14.42 tokens/sec.
+    Prefill Turn 9: Processed 17 tokens in 1.215796615s duration.
+      Prefill Speed: 13.98 tokens/sec.
+    Prefill Turn 10: Processed 19 tokens in 1.196053154s duration.
+      Prefill Speed: 15.89 tokens/sec.
+    Prefill Turn 11: Processed 19 tokens in 1.191085154s duration.
+      Prefill Speed: 15.95 tokens/sec.
+    Prefill Turn 12: Processed 17 tokens in 1.200911s duration.
+      Prefill Speed: 14.16 tokens/sec.
+    Prefill Turn 13: Processed 20 tokens in 1.192150846s duration.
+      Prefill Speed: 16.78 tokens/sec.
+    Prefill Turn 14: Processed 17 tokens in 1.192070539s duration.
+      Prefill Speed: 14.26 tokens/sec.
+    Prefill Turn 15: Processed 18 tokens in 1.188850462s duration.
+      Prefill Speed: 15.14 tokens/sec.
+    Prefill Turn 16: Processed 18 tokens in 1.233819077s duration.
+      Prefill Speed: 14.59 tokens/sec.
+    Prefill Turn 17: Processed 17 tokens in 1.220534385s duration.
+      Prefill Speed: 13.93 tokens/sec.
+    Prefill Turn 18: Processed 18 tokens in 1.202211923s duration.
+      Prefill Speed: 14.97 tokens/sec.
+    Prefill Turn 19: Processed 18 tokens in 1.214207692s duration.
+      Prefill Speed: 14.82 tokens/sec.
+    Prefill Turn 20: Processed 18 tokens in 1.21697177s duration.
+      Prefill Speed: 14.79 tokens/sec.
+    Prefill Turn 21: Processed 18 tokens in 1.227469923s duration.
+      Prefill Speed: 14.66 tokens/sec.
+    Prefill Turn 22: Processed 17 tokens in 1.226721846s duration.
+      Prefill Speed: 13.86 tokens/sec.
+    Prefill Turn 23: Processed 18 tokens in 1.233444308s duration.
+      Prefill Speed: 14.59 tokens/sec.
+    Prefill Turn 24: Processed 17 tokens in 1.251569539s duration.
+      Prefill Speed: 13.58 tokens/sec.
+    Prefill Turn 25: Processed 18 tokens in 1.24163077s duration.
+      Prefill Speed: 14.50 tokens/sec.
+    Prefill Turn 26: Processed 17 tokens in 1.240156s duration.
+      Prefill Speed: 13.71 tokens/sec.
+    Prefill Turn 27: Processed 18 tokens in 1.259054231s duration.
+      Prefill Speed: 14.30 tokens/sec.
+    Prefill Turn 28: Processed 20 tokens in 1.258675077s duration.
+      Prefill Speed: 15.89 tokens/sec.
+    Prefill Turn 29: Processed 17 tokens in 1.259702385s duration.
+      Prefill Speed: 13.50 tokens/sec.
+    Prefill Turn 30: Processed 17 tokens in 1.268765615s duration.
+      Prefill Speed: 13.40 tokens/sec.
+    Prefill Turn 31: Processed 17 tokens in 1.266116923s duration.
+      Prefill Speed: 13.43 tokens/sec.
+    Prefill Turn 32: Processed 18 tokens in 1.25152923s duration.
+      Prefill Speed: 14.38 tokens/sec.
+    Prefill Turn 33: Processed 18 tokens in 1.262171692s duration.
+      Prefill Speed: 14.26 tokens/sec.
+    Prefill Turn 34: Processed 18 tokens in 1.273324385s duration.
+      Prefill Speed: 14.14 tokens/sec.
+    Prefill Turn 35: Processed 17 tokens in 1.275159693s duration.
+      Prefill Speed: 13.33 tokens/sec.
+    Prefill Turn 36: Processed 17 tokens in 1.279180308s duration.
+      Prefill Speed: 13.29 tokens/sec.
+    Prefill Turn 37: Processed 20 tokens in 1.282082846s duration.
+      Prefill Speed: 15.60 tokens/sec.
+    Prefill Turn 38: Processed 17 tokens in 1.286958154s duration.
+      Prefill Speed: 13.21 tokens/sec.
+    Prefill Turn 39: Processed 18 tokens in 1.295944693s duration.
+      Prefill Speed: 13.89 tokens/sec.
+    Prefill Turn 40: Processed 17 tokens in 1.295030461s duration.
+      Prefill Speed: 13.13 tokens/sec.
+    Prefill Turn 41: Processed 18 tokens in 1.297201308s duration.
+      Prefill Speed: 13.88 tokens/sec.
+    Prefill Turn 42: Processed 18 tokens in 1.299763461s duration.
+      Prefill Speed: 13.85 tokens/sec.
+    Prefill Turn 43: Processed 18 tokens in 1.305706462s duration.
+      Prefill Speed: 13.79 tokens/sec.
+    Prefill Turn 44: Processed 17 tokens in 1.295938231s duration.
+      Prefill Speed: 13.12 tokens/sec.
+    Prefill Turn 45: Processed 18 tokens in 1.311683385s duration.
+      Prefill Speed: 13.72 tokens/sec.
+    Prefill Turn 46: Processed 17 tokens in 1.309600615s duration.
+      Prefill Speed: 12.98 tokens/sec.
+    Prefill Turn 47: Processed 20 tokens in 1.313585538s duration.
+      Prefill Speed: 15.23 tokens/sec.
+    Prefill Turn 48: Processed 18 tokens in 1.315284s duration.
+      Prefill Speed: 13.69 tokens/sec.
+    Prefill Turn 49: Processed 17 tokens in 1.32376823s duration.
+      Prefill Speed: 12.84 tokens/sec.
+    Prefill Turn 50: Processed 20 tokens in 1.323975077s duration.
+      Prefill Speed: 15.11 tokens/sec.
+    Prefill Turn 51: Processed 17 tokens in 1.33480977s duration.
+      Prefill Speed: 12.74 tokens/sec.
+    Prefill Turn 52: Processed 17 tokens in 1.32927623s duration.
+      Prefill Speed: 12.79 tokens/sec.
+    Prefill Turn 53: Processed 17 tokens in 1.351529308s duration.
+      Prefill Speed: 12.58 tokens/sec.
+    Prefill Turn 54: Processed 18 tokens in 1.325552923s duration.
+      Prefill Speed: 13.58 tokens/sec.
+    Prefill Turn 55: Processed 18 tokens in 1.336856846s duration.
+      Prefill Speed: 13.46 tokens/sec.
+    Prefill Turn 56: Processed 18 tokens in 1.344993461s duration.
+      Prefill Speed: 13.38 tokens/sec.
+    Prefill Turn 57: Processed 18 tokens in 1.338805231s duration.
+      Prefill Speed: 13.44 tokens/sec.
+    Prefill Turn 58: Processed 18 tokens in 1.354675077s duration.
+      Prefill Speed: 13.29 tokens/sec.
+    Prefill Turn 59: Processed 19 tokens in 1.354115154s duration.
+      Prefill Speed: 14.03 tokens/sec.
+    Prefill Turn 60: Processed 19 tokens in 1.335649231s duration.
+      Prefill Speed: 14.23 tokens/sec.
+    Prefill Turn 61: Processed 20 tokens in 1.406855077s duration.
+      Prefill Speed: 14.22 tokens/sec.
+    Prefill Turn 62: Processed 17 tokens in 1.38508s duration.
+      Prefill Speed: 12.27 tokens/sec.
+    Prefill Turn 63: Processed 17 tokens in 1.400183461s duration.
+      Prefill Speed: 12.14 tokens/sec.
+    Prefill Turn 64: Processed 20 tokens in 1.381067385s duration.
+      Prefill Speed: 14.48 tokens/sec.
+    Prefill Turn 65: Processed 19 tokens in 1.374070154s duration.
+      Prefill Speed: 13.83 tokens/sec.
+    Prefill Turn 66: Processed 17 tokens in 1.392007692s duration.
+      Prefill Speed: 12.21 tokens/sec.
+    Prefill Turn 67: Processed 20 tokens in 1.386862384s duration.
+      Prefill Speed: 14.42 tokens/sec.
+    Prefill Turn 68: Processed 18 tokens in 1.392478154s duration.
+      Prefill Speed: 12.93 tokens/sec.
+    Prefill Turn 69: Processed 18 tokens in 1.391633539s duration.
+      Prefill Speed: 12.93 tokens/sec.
+    Prefill Turn 70: Processed 18 tokens in 1.40128823s duration.
+      Prefill Speed: 12.85 tokens/sec.
+    Prefill Turn 71: Processed 20 tokens in 1.404162692s duration.
+      Prefill Speed: 14.24 tokens/sec.
+    Prefill Turn 72: Processed 17 tokens in 1.406128616s duration.
+      Prefill Speed: 12.09 tokens/sec.
+    Prefill Turn 73: Processed 20 tokens in 1.412272923s duration.
+      Prefill Speed: 14.16 tokens/sec.
+    Prefill Turn 74: Processed 20 tokens in 1.412654077s duration.
+      Prefill Speed: 14.16 tokens/sec.
+    Prefill Turn 75: Processed 19 tokens in 1.410478154s duration.
+      Prefill Speed: 13.47 tokens/sec.
+    Prefill Turn 76: Processed 17 tokens in 1.412935077s duration.
+      Prefill Speed: 12.03 tokens/sec.
+    Prefill Turn 77: Processed 20 tokens in 1.424458154s duration.
+      Prefill Speed: 14.04 tokens/sec.
+    Prefill Turn 78: Processed 17 tokens in 1.436351077s duration.
+      Prefill Speed: 11.84 tokens/sec.
+    Prefill Turn 79: Processed 17 tokens in 1.432551385s duration.
+      Prefill Speed: 11.87 tokens/sec.
+    Prefill Turn 80: Processed 17 tokens in 1.436616846s duration.
+      Prefill Speed: 11.83 tokens/sec.
+--------------------------------------------------
+  Decode Turns (Total 80 turns):
+    Decode Turn 1: Processed 12 tokens in 3.362392693s duration.
+      Decode Speed: 3.57 tokens/sec.
+    Decode Turn 2: Processed 15 tokens in 2.887437615s duration.
+      Decode Speed: 5.19 tokens/sec.
+    Decode Turn 3: Processed 9 tokens in 1.809093154s duration.
+      Decode Speed: 4.97 tokens/sec.
+    Decode Turn 4: Processed 9 tokens in 1.768991693s duration.
+      Decode Speed: 5.09 tokens/sec.
+    Decode Turn 5: Processed 7 tokens in 1.49409777s duration.
+      Decode Speed: 4.69 tokens/sec.
+    Decode Turn 6: Processed 13 tokens in 2.619764616s duration.
+      Decode Speed: 4.96 tokens/sec.
+    Decode Turn 7: Processed 5 tokens in 1.035538539s duration.
+      Decode Speed: 4.83 tokens/sec.
+    Decode Turn 8: Processed 8 tokens in 1.610220923s duration.
+      Decode Speed: 4.97 tokens/sec.
+    Decode Turn 9: Processed 10 tokens in 1.953208615s duration.
+      Decode Speed: 5.12 tokens/sec.
+    Decode Turn 10: Processed 5 tokens in 1.009052077s duration.
+      Decode Speed: 4.96 tokens/sec.
+    Decode Turn 11: Processed 5 tokens in 1.005480615s duration.
+      Decode Speed: 4.97 tokens/sec.
+    Decode Turn 12: Processed 7 tokens in 1.442717462s duration.
+      Decode Speed: 4.85 tokens/sec.
+    Decode Turn 13: Processed 9 tokens in 1.759805231s duration.
+      Decode Speed: 5.11 tokens/sec.
+    Decode Turn 14: Processed 8 tokens in 1.513069539s duration.
+      Decode Speed: 5.29 tokens/sec.
+    Decode Turn 15: Processed 13 tokens in 2.548453462s duration.
+      Decode Speed: 5.10 tokens/sec.
+    Decode Turn 16: Processed 9 tokens in 1.793737846s duration.
+      Decode Speed: 5.02 tokens/sec.
+    Decode Turn 17: Processed 10 tokens in 1.945380308s duration.
+      Decode Speed: 5.14 tokens/sec.
+    Decode Turn 18: Processed 9 tokens in 1.778868538s duration.
+      Decode Speed: 5.06 tokens/sec.
+    Decode Turn 19: Processed 9 tokens in 1.741649846s duration.
+      Decode Speed: 5.17 tokens/sec.
+    Decode Turn 20: Processed 9 tokens in 1.813308001s duration.
+      Decode Speed: 4.96 tokens/sec.
+    Decode Turn 21: Processed 13 tokens in 2.572213154s duration.
+      Decode Speed: 5.05 tokens/sec.
+    Decode Turn 22: Processed 10 tokens in 2.019022462s duration.
+      Decode Speed: 4.95 tokens/sec.
+    Decode Turn 23: Processed 9 tokens in 1.790424s duration.
+      Decode Speed: 5.03 tokens/sec.
+    Decode Turn 24: Processed 8 tokens in 1.596102231s duration.
+      Decode Speed: 5.01 tokens/sec.
+    Decode Turn 25: Processed 9 tokens in 1.786312615s duration.
+      Decode Speed: 5.04 tokens/sec.
+    Decode Turn 26: Processed 10 tokens in 1.9983s duration.
+      Decode Speed: 5.00 tokens/sec.
+    Decode Turn 27: Processed 7 tokens in 1.517207769s duration.
+      Decode Speed: 4.61 tokens/sec.
+    Decode Turn 28: Processed 15 tokens in 2.98656177s duration.
+      Decode Speed: 5.02 tokens/sec.
+    Decode Turn 29: Processed 10 tokens in 2.002855769s duration.
+      Decode Speed: 4.99 tokens/sec.
+    Decode Turn 30: Processed 8 tokens in 1.59252s duration.
+      Decode Speed: 5.02 tokens/sec.
+    Decode Turn 31: Processed 7 tokens in 1.423565539s duration.
+      Decode Speed: 4.92 tokens/sec.
+    Decode Turn 32: Processed 9 tokens in 1.803463s duration.
+      Decode Speed: 4.99 tokens/sec.
+    Decode Turn 33: Processed 7 tokens in 1.411180693s duration.
+      Decode Speed: 4.96 tokens/sec.
+    Decode Turn 34: Processed 7 tokens in 1.451334461s duration.
+      Decode Speed: 4.82 tokens/sec.
+    Decode Turn 35: Processed 10 tokens in 2.001859693s duration.
+      Decode Speed: 5.00 tokens/sec.
+    Decode Turn 36: Processed 7 tokens in 1.417768s duration.
+      Decode Speed: 4.94 tokens/sec.
+    Decode Turn 37: Processed 9 tokens in 1.792613231s duration.
+      Decode Speed: 5.02 tokens/sec.
+    Decode Turn 38: Processed 8 tokens in 1.624287001s duration.
+      Decode Speed: 4.93 tokens/sec.
+    Decode Turn 39: Processed 9 tokens in 1.789275384s duration.
+      Decode Speed: 5.03 tokens/sec.
+    Decode Turn 40: Processed 8 tokens in 1.612699077s duration.
+      Decode Speed: 4.96 tokens/sec.
+    Decode Turn 41: Processed 7 tokens in 1.442868616s duration.
+      Decode Speed: 4.85 tokens/sec.
+    Decode Turn 42: Processed 9 tokens in 1.79377723s duration.
+      Decode Speed: 5.02 tokens/sec.
+    Decode Turn 43: Processed 7 tokens in 1.406008693s duration.
+      Decode Speed: 4.98 tokens/sec.
+    Decode Turn 44: Processed 8 tokens in 1.60170923s duration.
+      Decode Speed: 4.99 tokens/sec.
+    Decode Turn 45: Processed 7 tokens in 1.447669538s duration.
+      Decode Speed: 4.84 tokens/sec.
+    Decode Turn 46: Processed 7 tokens in 1.393951769s duration.
+      Decode Speed: 5.02 tokens/sec.
+    Decode Turn 47: Processed 15 tokens in 2.992514154s duration.
+      Decode Speed: 5.01 tokens/sec.
+    Decode Turn 48: Processed 7 tokens in 1.407826846s duration.
+      Decode Speed: 4.97 tokens/sec.
+    Decode Turn 49: Processed 8 tokens in 1.616731077s duration.
+      Decode Speed: 4.95 tokens/sec.
+    Decode Turn 50: Processed 15 tokens in 3.010004693s duration.
+      Decode Speed: 4.98 tokens/sec.
+    Decode Turn 51: Processed 10 tokens in 1.994327923s duration.
+      Decode Speed: 5.01 tokens/sec.
+    Decode Turn 52: Processed 8 tokens in 1.601980539s duration.
+      Decode Speed: 4.99 tokens/sec.
+    Decode Turn 53: Processed 10 tokens in 2.021682538s duration.
+      Decode Speed: 4.95 tokens/sec.
+    Decode Turn 54: Processed 9 tokens in 1.741786077s duration.
+      Decode Speed: 5.17 tokens/sec.
+    Decode Turn 55: Processed 9 tokens in 1.775887616s duration.
+      Decode Speed: 5.07 tokens/sec.
+    Decode Turn 56: Processed 13 tokens in 2.579535384s duration.
+      Decode Speed: 5.04 tokens/sec.
+    Decode Turn 57: Processed 9 tokens in 1.799287461s duration.
+      Decode Speed: 5.00 tokens/sec.
+    Decode Turn 58: Processed 13 tokens in 2.611780001s duration.
+      Decode Speed: 4.98 tokens/sec.
+    Decode Turn 59: Processed 5 tokens in 1.022102385s duration.
+      Decode Speed: 4.89 tokens/sec.
+    Decode Turn 60: Processed 5 tokens in 1.022324307s duration.
+      Decode Speed: 4.89 tokens/sec.
+    Decode Turn 61: Processed 9 tokens in 1.851565769s duration.
+      Decode Speed: 4.86 tokens/sec.
+    Decode Turn 62: Processed 8 tokens in 1.666909s duration.
+      Decode Speed: 4.80 tokens/sec.
+    Decode Turn 63: Processed 7 tokens in 1.435074154s duration.
+      Decode Speed: 4.88 tokens/sec.
+    Decode Turn 64: Processed 15 tokens in 3.023709308s duration.
+      Decode Speed: 4.96 tokens/sec.
+    Decode Turn 65: Processed 5 tokens in 1.041277923s duration.
+      Decode Speed: 4.80 tokens/sec.
+    Decode Turn 66: Processed 10 tokens in 2.074776385s duration.
+      Decode Speed: 4.82 tokens/sec.
+    Decode Turn 67: Processed 9 tokens in 1.871103385s duration.
+      Decode Speed: 4.81 tokens/sec.
+    Decode Turn 68: Processed 7 tokens in 1.449145846s duration.
+      Decode Speed: 4.83 tokens/sec.
+    Decode Turn 69: Processed 9 tokens in 1.842442077s duration.
+      Decode Speed: 4.88 tokens/sec.
+    Decode Turn 70: Processed 13 tokens in 2.677679615s duration.
+      Decode Speed: 4.85 tokens/sec.
+    Decode Turn 71: Processed 14 tokens in 2.844483462s duration.
+      Decode Speed: 4.92 tokens/sec.
+    Decode Turn 72: Processed 8 tokens in 1.654479s duration.
+      Decode Speed: 4.84 tokens/sec.
+    Decode Turn 73: Processed 14 tokens in 2.834854154s duration.
+      Decode Speed: 4.94 tokens/sec.
+    Decode Turn 74: Processed 15 tokens in 3.053024s duration.
+      Decode Speed: 4.91 tokens/sec.
+    Decode Turn 75: Processed 5 tokens in 1.053890154s duration.
+      Decode Speed: 4.74 tokens/sec.
+    Decode Turn 76: Processed 10 tokens in 2.036794846s duration.
+      Decode Speed: 4.91 tokens/sec.
+    Decode Turn 77: Processed 15 tokens in 3.049793s duration.
+      Decode Speed: 4.92 tokens/sec.
+    Decode Turn 78: Processed 8 tokens in 1.676869769s duration.
+      Decode Speed: 4.77 tokens/sec.
+    Decode Turn 79: Processed 8 tokens in 1.637619923s duration.
+      Decode Speed: 4.89 tokens/sec.
+    Decode Turn 80: Processed 10 tokens in 2.053986385s duration.
+      Decode Speed: 4.87 tokens/sec.
+--------------------------------------------------
+  TextToTokenIds Turns (Total 81 turns):
+    Turn 1: 4.923us, 1 tokens
+    Turn 2: 2.446769ms, 500 tokens
+    Turn 3: 287.384us, 20 tokens
+    Turn 4: 329.231us, 20 tokens
+    Turn 5: 230.692us, 20 tokens
+    Turn 6: 231.615us, 17 tokens
+    Turn 7: 258.154us, 18 tokens
+    Turn 8: 284.847us, 19 tokens
+    Turn 9: 220.077us, 17 tokens
+    Turn 10: 329.539us, 17 tokens
+    Turn 11: 272.539us, 19 tokens
+    Turn 12: 331.616us, 19 tokens
+    Turn 13: 365.846us, 17 tokens
+    Turn 14: 227.769us, 20 tokens
+    Turn 15: 149.154us, 17 tokens
+    Turn 16: 170.077us, 18 tokens
+    Turn 17: 245.539us, 18 tokens
+    Turn 18: 332.308us, 17 tokens
+    Turn 19: 183.693us, 18 tokens
+    Turn 20: 256.923us, 18 tokens
+    Turn 21: 228.307us, 18 tokens
+    Turn 22: 260.384us, 18 tokens
+    Turn 23: 439us, 17 tokens
+    Turn 24: 332.384us, 18 tokens
+    Turn 25: 192.538us, 17 tokens
+    Turn 26: 274.846us, 18 tokens
+    Turn 27: 328us, 17 tokens
+    Turn 28: 287.615us, 18 tokens
+    Turn 29: 276.615us, 20 tokens
+    Turn 30: 326.692us, 17 tokens
+    Turn 31: 293.846us, 17 tokens
+    Turn 32: 198.769us, 17 tokens
+    Turn 33: 272.924us, 18 tokens
+    Turn 34: 201.538us, 18 tokens
+    Turn 35: 306.385us, 18 tokens
+    Turn 36: 218.847us, 17 tokens
+    Turn 37: 368.924us, 17 tokens
+    Turn 38: 346.692us, 20 tokens
+    Turn 39: 216.923us, 17 tokens
+    Turn 40: 269.231us, 18 tokens
+    Turn 41: 289.923us, 17 tokens
+    Turn 42: 291.615us, 18 tokens
+    Turn 43: 178.461us, 18 tokens
+    Turn 44: 275.385us, 18 tokens
+    Turn 45: 210.769us, 17 tokens
+    Turn 46: 423.461us, 18 tokens
+    Turn 47: 199.308us, 17 tokens
+    Turn 48: 192.077us, 20 tokens
+    Turn 49: 287.384us, 18 tokens
+    Turn 50: 275.615us, 17 tokens
+    Turn 51: 258.462us, 20 tokens
+    Turn 52: 301.846us, 17 tokens
+    Turn 53: 237us, 17 tokens
+    Turn 54: 309.539us, 17 tokens
+    Turn 55: 256.923us, 18 tokens
+    Turn 56: 183.308us, 18 tokens
+    Turn 57: 219.693us, 18 tokens
+    Turn 58: 195.615us, 18 tokens
+    Turn 59: 244.077us, 18 tokens
+    Turn 60: 245.539us, 19 tokens
+    Turn 61: 233.538us, 19 tokens
+    Turn 62: 298.154us, 20 tokens
+    Turn 63: 199.385us, 17 tokens
+    Turn 64: 258.77us, 17 tokens
+    Turn 65: 247.769us, 20 tokens
+    Turn 66: 249.154us, 19 tokens
+    Turn 67: 280.076us, 17 tokens
+    Turn 68: 302.538us, 20 tokens
+    Turn 69: 252.308us, 18 tokens
+    Turn 70: 238.462us, 18 tokens
+    Turn 71: 213.462us, 18 tokens
+    Turn 72: 189.846us, 20 tokens
+    Turn 73: 191.307us, 17 tokens
+    Turn 74: 190.769us, 20 tokens
+    Turn 75: 225.615us, 20 tokens
+    Turn 76: 206.385us, 19 tokens
+    Turn 77: 353.924us, 17 tokens
+    Turn 78: 224.693us, 20 tokens
+    Turn 79: 242.538us, 17 tokens
+    Turn 80: 186.769us, 17 tokens
+    Turn 81: 350.769us, 17 tokens
+--------------------------------------------------
+--------------------------------------------------
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb40000764061b640, name=CpuAccelerator
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb40000764061b5e0, name=LiteRT GPU
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400007603cfd720, name=CpuAccelerator
+INFO: [accelerator_registry.cc:43] DestroyAccelerator: ptr=0xb400007603cfd6c0, name=LiteRT GPU

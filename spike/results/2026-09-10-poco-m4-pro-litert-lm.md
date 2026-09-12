@@ -337,6 +337,52 @@ is LiteRT-LM's documented default, worth remembering), the sustained-load concer
 runs may not apply. The remaining blocker for GPU is the same TTFT-floor problem CPU has, not an
 additional thermal one.
 
+## Update — 2026-09-12 (GPU): tested a real upstream-bug hypothesis, ruled it out
+
+Prompted by GPU decode looking worse than published LiteRT-LM numbers suggested it should, found
+three independent open google-ai-edge/LiteRT-LM issues (#1850, #2202, #2421) describing a real,
+still-unfixed bug: `AdvancedSettings::hint_waiting_for_completion` — a documented OpenCL
+quality/stability fix for AMD and Mali GPUs — is auto-enabled by `engine_settings.cc` only for
+metadata-tagged "generic" models, never for Gemma 4 (which gets a different, unrelated
+auto-setting instead). All three reports are Gemma 4 E2B crashing or corrupting output on Mali
+GPUs — exactly our model/GPU family. Patched the condition to also cover `has_gemma4()`
+(`spike/patches/gemma4-mali-hint-waiting-for-completion.patch`), wired it into
+`litert-lm-android-build.yml`, rebuilt, and re-ran the identical 21-minute chained-session
+hot/pocket GPU protocol (unplugged, in-pocket, 80 turns/session) for a direct comparison.
+
+**Result: no crash either time, and no measurable difference from the patch**, once compared
+correctly (sustained run vs. sustained run — the single-shot desk sample of 2.52 tok/s decode
+from the very first GPU pass above, already flagged there as "don't read too much into it," is
+*not* a fair baseline, and the "GPU decode roughly comparable-to-worse than CPU" framing that
+prompted this whole investigation leaned on it more than it should have):
+
+| Metric | Unpatched (2026-09-11, n=311 turns) | Patched (2026-09-12, n=321 turns) |
+|---|---|---|
+| Decode speed, mean | 4.94 tok/s | 4.89 tok/s |
+| Prefill speed (incremental turn), mean | 14.97 tok/s | 15.37 tok/s |
+| Cold-start (`Init Executor`) range | 8.9-9.6s | 8.94-9.54s |
+| By-thirds turn latency | 3.23s → 3.48s → 3.13s | 3.15s → 3.45s → 3.20s |
+| Overall mean turn latency | 3.28s | 3.27s |
+| Crashes / non-clean turns | 0 / 307 | 0 / 316 |
+
+Both runs were already flat (no thermal climb), already crash-free, and already cold-start-stable
+before the patch — this device/workload apparently doesn't trigger the resource-accumulation bug
+those issues describe (likely because our text-only guard brief carries none of the extra GPU
+memory pressure — vision encoder, speculative decoding, larger KV window — present in the heavier
+configs that reproduced it upstream).
+
+**Conclusion: the gap against "way better" literature numbers is not a driver or build problem,
+and not this particular runtime bug either — both are now directly ruled out by experiment.** The
+literature figures that set that expectation (Samsung S26 Ultra ~52 tok/s prefill-class numbers;
+Pixel 8's patched decode of 11.94 tok/s) come from meaningfully more capable GPUs (flagship
+Xclipse/Mali-G715-class) than this device's Mali-G57 MC2 (2 cores, budget SoC tier). The most
+likely remaining explanation is a straightforward hardware-tier ceiling, not a fixable
+misconfiguration on our end. The patch is kept in the repo regardless — it's a real, defensible
+fix for upstream's own stated intent and may matter on other devices/models even though it's a
+no-op for this one.
+
+Full per-turn records and raw session transcripts: `spike/results/raw/2026-09-12-poco-m4-pro-gpu-patched/`.
+
 ## The brief used
 
 Generated fresh via `uv run python3 -c "from engine.scenario import build_cell_and_guard; from
@@ -434,8 +480,15 @@ remains unavailable on this build (see Gotchas) and untested throughout.
   latency across 21 minutes) but still fails the TTFT-floor half (mean 3.28s/turn).
 - [ ] **Root-cause GPU's wildly inconsistent cold-start time** (9.6s, 30.8s, and 75.7s observed
   for nominally-comparable cold starts on the same device/model/config). Persistent shader/weight
-  cache files exist but don't obviously explain the variance. Matters for real product startup
-  latency even though it doesn't affect the sustained-load verdict.
+  cache files exist but don't obviously explain the variance. Still open for isolated single
+  spot-checks; downgraded in urgency since both full sustained-load runs (2026-09-11 unpatched,
+  2026-09-12 patched) independently saw tight, consistent cold-starts (8.9-9.6s) within-run —
+  whatever drives the spot-check variance isn't showing up in the sustained protocol.
+- [x] **Test the Gemma4/Mali `hint_waiting_for_completion` upstream-bug hypothesis** — done, see
+  the 2026-09-12 Update. Patched and re-ran the full 21-minute sustained protocol; no measurable
+  difference vs. unpatched (both already crash-free, thermal-flat, and ~4.9 tok/s decode). Ruled
+  out as the explanation for the gap against literature GPU numbers; most likely just this
+  device's GPU (Mali-G57 MC2) being a materially weaker tier than the devices in that literature.
 - [ ] Revisit thread-count tuning with a proper batch (n≥10 per setting) — now less urgent given
   the CPU backend's thermal fail is the bigger blocker regardless of thread count.
 - [ ] NPU remains unavailable on this build (`kLiteRtStatusErrorInvalidArgument`, see Gotchas) —

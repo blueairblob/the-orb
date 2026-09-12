@@ -218,3 +218,73 @@ default) rather than CPU, the sustained-load concern from the CPU runs may simpl
 - [ ] Carried over from 2026-09-09, still untouched: Q4_0 vs Q4_K_M comparison on the GGUF side;
   confirm whether `termux-speech-to-text` is on-device or network; build the
   STT → inference → TTS glue script.
+
+## Update — 2026-09-12: chased "GPU should be way better," patched a real upstream bug, and it
+wasn't the answer
+
+Prompted by a fair question: published LiteRT-LM numbers make our GPU decode look bad by
+comparison — was that a wrong driver, or a bad build? Driver was already ruled out (real Mali
+OpenCL, confirmed 2026-09-10). Build was already the stock upstream `--config=android_arm64 -c
+opt` with no missing flags. So went looking at the LiteRT-LM issue tracker instead, and found
+something real: three independent open reports (google-ai-edge/LiteRT-LM#1850, #2202, #2421) of
+Gemma 4 E2B crashing or corrupting output on Mali GPUs specifically, all pointing at the same
+root cause — `AdvancedSettings::hint_waiting_for_completion`, a documented OpenCL quality fix for
+AMD/Mali GPUs, is auto-enabled by `runtime/engine/engine_settings.cc` only for metadata-tagged
+"generic" models. Gemma 4 gets a different, unrelated auto-setting instead (`disable_delegate_
+clustering`) and never receives this hint. Confirmed via `gh api` that all three issues are still
+open and that no release through v0.17.0 (2026-09-09, essentially what we'd already built)
+mentions a fix.
+
+**What we did:**
+1. Wrote `spike/patches/gemma4-mali-hint-waiting-for-completion.patch` extending the upstream
+   condition to also cover `has_gemma4()`.
+2. Wired it into `litert-lm-android-build.yml` via a new `apply_local_patches` input — checkout
+   this repo alongside LiteRT-LM, `git apply` before the Bazel build. First attempt silently
+   built *unpatched*: `actions/checkout` git-cleans its target directory by default, and the
+   LiteRT-LM checkout (no `path:`, targets workspace root) ran after the patches checkout and
+   wiped it. Fixed by reordering — LiteRT-LM checkout first, then the patches checkout into a
+   `path: orb-patches` subdirectory that nothing cleans afterward.
+3. Rebuilt (confirmed via CI log: "Applied patch runtime/engine/engine_settings.cc cleanly"),
+   downloaded the artifact, pushed the new `litert_lm_main`/`litert_lm_advanced_main` and all
+   `lib*.so` to `/data/local/tmp/` on `poco-m4-pro` over the still-live adb-over-Tailscale
+   connection from the 09-11 session (no `pexpect` was installed for `paced_hotpocket.py` this
+   time — `uv add --dev pexpect` fixed that).
+4. A 3-minute desk-bound sanity run (3 sessions × 20 turns, GPU) looked dramatically better at
+   first glance: decode ~5.0-5.8 tok/s vs. the 2026-09-10 single-shot figure of 2.52 tok/s, no
+   crashes past the turn-2-4 window the GitHub issues describe.
+5. Re-ran the *real* comparison: the identical 21-minute chained-session hot/pocket protocol
+   (unplugged, in-pocket, 80 turns/session) used for the original 2026-09-11 GPU result, this
+   time with the patched binary.
+
+**The honest result — and a correction to what I told the user mid-session:** pulling the
+2026-09-11 unpatched run's own raw per-turn benchmark logs (still on disk from the prior session)
+for a proper sustained-vs-sustained comparison showed **no measurable difference**:
+
+| Metric | Unpatched (09-11) | Patched (09-12) |
+|---|---|---|
+| Decode speed, mean | 4.94 tok/s | 4.89 tok/s |
+| Prefill speed, mean | 14.97 tok/s | 15.37 tok/s |
+| Cold-start range | 8.9-9.6s | 8.94-9.54s |
+| By-thirds latency | 3.23→3.48→3.13s | 3.15→3.45→3.20s |
+| Crashes | 0/307 | 0/316 |
+
+The "2.52 tok/s, worse than CPU" figure that kicked off this whole investigation was a single
+desk-bound cold sample from 2026-09-10, already flagged in that file as "don't read too much into
+it" — the *actual* sustained-load decode speed was already ~4.9 tok/s even unpatched, matching
+the patched result almost exactly. I'd reported the 3-minute sanity check's improvement to the
+user as if it were the real finding before running the properly-matched comparison; the full
+21-minute retest overturned that. Worth remembering: a short isolated sanity check against a
+flagged-unreliable baseline is not the same evidence as a matched sustained-load comparison —
+don't report the former as a conclusion.
+
+**Actual conclusion:** this device/workload (text-only guard brief, no vision encoder, no
+speculative decoding) doesn't trigger the resource-accumulation bug those three issues describe —
+plausibly because it carries none of the extra GPU memory pressure the upstream repro configs
+had. The literature numbers that set the "way better" expectation (Samsung S26 Ultra, Pixel 8
+post-patch) come from meaningfully stronger GPUs than this device's Mali-G57 MC2 (2 cores, budget
+tier). Most likely explanation left standing: a hardware-tier ceiling, not a fixable
+misconfiguration. Patch stays in the repo — real fix for upstream's own stated intent, harmless,
+may matter on other devices/models — but it's not the answer here.
+
+Full write-up and raw traces: `spike/results/2026-09-10-poco-m4-pro-litert-lm.md` (2026-09-12
+Update section) and `spike/results/raw/2026-09-12-poco-m4-pro-gpu-patched/`.

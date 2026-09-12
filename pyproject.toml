@@ -19,6 +19,7 @@ orb-web = "experiments.web.server:main"
 [dependency-groups]
 dev = [
     "httpx>=0.27",
+    "pexpect>=4.9.0",
     "pytest>=8.0",
     "ruff>=0.6",
 ]

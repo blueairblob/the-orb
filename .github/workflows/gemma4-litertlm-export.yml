@@ -65,6 +65,9 @@ jobs:
             exit 1
           fi
           mkdir -p out
+          # Gemma4's per-layer embedding architecture asserts externalize_embedder=True
+          # unconditionally (litert_torch/generative/export_hf/model_ext/exportables.py);
+          # export_hf's TEXT_GENERATION task default doesn't set it.
           extra_args=()
           if [ -n "${{ inputs.quantization_recipe }}" ]; then
             extra_args+=(--quantization_recipe="${{ inputs.quantization_recipe }}")
@@ -73,6 +76,7 @@ jobs:
             --model="${{ inputs.hf_model }}" \
             --output_dir=out \
             --prefill_lengths="${{ inputs.prefill_lengths }}" \
+            --externalize_embedder=True \
             "${extra_args[@]}"
           ls -la out/
 

@@ -217,7 +217,12 @@ default) rather than CPU, the sustained-load concern from the CPU runs may simpl
   were too noisy (2.4x run-to-run variance at the same setting) to act on.
 - [ ] Carried over from 2026-09-09, still untouched: Q4_0 vs Q4_K_M comparison on the GGUF side;
   confirm whether `termux-speech-to-text` is on-device or network; build the
-  STT → inference → TTS glue script.
+  STT → inference → TTS glue script. **Now higher priority, not moot** — see the 2026-09-12/13
+  Update below: GGUF is the chosen shipping runtime (ADR 0003), and this is exactly the tuning
+  needed to push its 1.33s median TTFT under the ~1s bar for a clean (not just pass-leaning) §0.
+- [ ] The remaining LiteRT-LM-specific threads above (GPU cold-start variance, `--cache_compiled_
+  shaders_only`, thread-count retest) are moot now that ADR 0003 has moved the shipping runtime to
+  GGUF — not worth chasing further absent a reason to revisit that decision.
 
 ## Update — 2026-09-12: chased "GPU should be way better," patched a real upstream bug, and it
 wasn't the answer
@@ -301,3 +306,56 @@ lists MediaTek NeuroPilot as a supported vendor for LiteRT in general, but the o
 published anywhere for this specific model are on Qualcomm Dragonwing, and our device's Helio G96
 is a 2021 budget chipset regardless. Closed as "not a lever available to this spike" rather than
 left dangling — see the results file's Open Threads.
+
+## Update — 2026-09-12/13 (final): the last lever closes, and the runtime decision flips
+
+The one remaining open thread from the top of this file — a custom re-export with a smaller
+prefill bucket to fix the ~2s floor — got a full attempt, and closed as a dead end for a reason
+that has nothing to do with buckets.
+
+**What we did:** got the raw fp32 Gemma 4 E2B checkpoint (~20.5GB in memory) converting at all —
+this OCI host (aarch64) and GitHub's free Actions runners (7GB RAM) are both hard-blocked, not
+just slow — by running `litert-torch export_hf` on the user's Tailscale'd desktop (WSL2, RAM
+bumped to 47GB via `.wslconfig`). Two real, fixable bugs surfaced and got patched along the way:
+`export_hf` requires `--externalize_embedder=True` for Gemma4 (undocumented default gap), and
+LiteRT-LM's Minijinja chat-template shim has no rule for Python's `.get()`, which Gemma 4's
+2026-07-09 "canonical" template (tool-calling/thinking support) uses throughout —
+`spike/patches/gemma4-minijinja-dict-get.patch`. Built `litert_lm_main`/`litert_lm_advanced_main`
+natively for `linux_x86_64` (real host build, no cross-compile pain — just needed `git-lfs` and
+`clang`, neither preinstalled, both installable without root) to validate correctness before
+touching the phone: single-shot and multi-turn sessions both produced real, coherent text.
+
+**Then the phone told a different story.** Pushed the export to `poco-m4-pro` (adb-over-Tailscale
+straight to the phone's own Tailscale IP worked immediately this time — no Termux-tunnel
+workaround needed, trust from the 2026-09-10 pairing had persisted) along with a fresh
+`android_arm64` build carrying both local patches. Decode speed was catastrophic and reproducible:
+**~0.20 tok/s**, against the original litert-community model's 2.27 tok/s on the same
+binary/device/backend — an ~11x regression. Isolated the cause with a second, controlled export
+matching litert-community's exact bucket set (128,1024, no custom 32-token addition): **identical
+regression**. This proves it's a bug in the public `litert-torch==0.9.4` export pipeline itself
+(most likely how it handles the externalized `per_layer_embedder` table Gemma4 requires — device
+logs show that subgraph running partly un-delegated every decode step), not anything caused by the
+bucket customization. No embedder-specific quantization flag exists in the public CLI to try a
+fix directly.
+
+**The actual conclusion is bigger than "this lever is closed."** Zooming out across every session
+in this file plus 2026-09-09's GGUF baseline: LiteRT-LM — the runtime assumed at spike-design time
+to be the shipping path — has now failed the pass mark on both backends, and the one attempt to
+fix its remaining TTFT gap hit an unrelated, unfixable-by-us upstream bug. Meanwhile GGUF/
+llama.cpp, tested only as "the pessimistic stand-in," was already closer to passing on both TTFT
+(1.33s median) and thermal (flat over 18.1 real minutes) than the runtime that was supposed to
+ship. Recorded as **[ADR 0003](../docs/decisions/0003-shipping-llm-runtime-gguf.md)**: the engine
+ships on llama.cpp/GGUF, not LiteRT-LM. README status section and the PRD §11 tech-stack table
+updated to match.
+
+**What survives from all this LiteRT-LM work, even though it's no longer the shipping path:** the
+native `linux_x86_64` and `android_arm64` build pipelines, both upstream patches (the Mali hint fix
+and the minijinja `.get()` fix — the second will bite *any* future Gemma4 LiteRT-LM export, not
+just ours), and the custom-export toolchain knowledge, all stay in the repo as a record in case
+this decision is ever revisited. Not the active path, not deleted either.
+
+Full write-up: `spike/results/2026-09-10-poco-m4-pro-litert-lm.md` (2026-09-12/13 Updates).
+
+This closes out the LiteRT-LM investigation thread that this whole devlog file has followed since
+2026-09-10. Next devlog entry on this project should be Phase 1 engine work against llama.cpp's
+API, not further LiteRT-LM tuning.

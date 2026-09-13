@@ -27,6 +27,7 @@ leave it here if it's closer to "here's what we tried and found."
 
 ## Entries
 
+- [2026-09-10 — LiteRT-LM on real hardware, the aarch64 build problem, and the final call to ship on GGUF instead (ADR 0003)](2026-09-10-litert-lm-on-device-and-the-aarch64-build-problem.md)
 - [2026-09-09 — Running the real engine loop against the phone](2026-09-09-real-loop-against-the-phone.md)
 - [2026-09-09 — Spike: the LLM half comes alive on real hardware (`poco-m4-pro`)](2026-09-09-spike-llm-alive-on-poco-m4-pro.md)
 - [2026-09-08 — NPC Minds on Gemma 4 E2B (reference doc, not a session log — shared externally, saved here for the LiteRT-LM/prompting specifics)](2026-09-08-npc-gemma-e2b-android-dnd-guide.md)

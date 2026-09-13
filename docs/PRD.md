@@ -427,8 +427,8 @@ hardware, not an app.)*
 | Prototype language | **Python** | Fast to think in. Where the engine gets designed |
 | World model | **Evennia** (candidate — see below) | Python-native. Could save months of plumbing |
 | App shell (later) | React Native | Familiar; native modules needed for the heavy lifting. **Deferred** |
-| LLM runtime | MediaPipe LLM Inference API / LiteRT, or llama.cpp for ARM | **GPU is *not* automatically the answer — see §0.** Measure CPU and GPU |
-| Model | Gemma 4 E2B (quantised `.litertlm`) | Doesn't need to be clever. Needs to be *obedient and consistent* |
+| LLM runtime | **llama.cpp (GGUF)** — see [ADR 0003](decisions/0003-shipping-llm-runtime-gguf.md) | Chosen after §0: LiteRT-LM failed the pass mark on both backends on the test device; GGUF was closer on both TTFT and thermal |
+| Model | Gemma 4 E2B (GGUF-quantised) | Doesn't need to be clever. Needs to be *obedient and consistent* |
 | SRD rules index (later) | Lightweight embedding model + on-device vector store | SRD chunked and embedded once. *Store not yet chosen — see open questions.* |
 | STT | Google on-device | Solid, fast, free |
 | TTS (v0.1) | Google on-device | Placeholder. Clear but neutral |

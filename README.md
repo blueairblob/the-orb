@@ -25,36 +25,38 @@ real Android on-device STT/TTS backend is Phase 2, on a device that actually has
 and a speaker.
 
 The **one piece of genuine uncertainty** is the hardware spike (§0) — does a small model run
-acceptably on a warm mid-range Android phone? That question has moved from open to **mostly
-answered, and not favorably, on this device (`poco-m4-pro`, MediaTek Helio G96)**:
+acceptably on a warm mid-range Android phone? That question is now **resolved as a qualified
+pass-leaning result, on the runtime the engine will actually ship on** (`poco-m4-pro`, MediaTek
+Helio G96):
 
-- **CPU backend: fails outright.** Real thermal degradation under sustained load (+25-30% latency
-  after ~12 minutes) *and* a ~2s fixed prefill-bucket floor that's already over the ~1s TTFT pass
-  mark on its own.
-- **GPU backend: passes the thermal half, fails the TTFT half.** No thermal degradation across a
-  full 21-minute hot/pocket run — but the same ~1-1.3s prefill-bucket floor plus decode leaves it
-  at ~3.2s/turn, still well over the ~1s bar. Investigated whether this was a driver, build, or
-  runtime-bug problem (it's none of those — see `spike/results/2026-09-10-poco-m4-pro-litert-lm.md`
-  for a patched-vs-unpatched retest that ruled out a real, still-open upstream Mali/Gemma-4 GPU
-  bug as the cause). Most likely a hardware-tier ceiling, not a fixable misconfiguration.
-- **NPU: not a usable lever, for two independent reasons.** LiteRT-LM's NPU acceleration is gated
-  behind a separate vendor Early Access Program and isn't in the public build at all, regardless
-  of device; separately, this chip's own AI block is an older, camera-oriented APU, not one aimed
-  at LLM-class workloads.
-- **One real lever left, untried:** the prefill-bucket floor comes from how the model was
-  exported (fixed static buckets at 128/1024 tokens); a custom re-export with a smaller bucket
-  (e.g. via `litert-torch`'s `--prefill_lengths` flag) could plausibly fix it, but needs the raw
-  Gemma weights (Gemma Terms of Use), real conversion/quantization time, and carries a known
-  real-world risk of producing a broken model (a sibling Gemma export has a documented bug that
-  silently emits only pad tokens).
+- **LiteRT-LM (the runtime originally assumed to ship) fails.** CPU fails both halves outright
+  (~2s fixed prefill-bucket floor over the ~1s TTFT bar, *and* +25-30% thermal latency growth over
+  21 minutes). GPU clears the thermal half cleanly but still fails TTFT (~3.2s/turn, same
+  prefill-bucket floor). Chased the floor via a custom re-export with a smaller bucket — a dead
+  end: it surfaced an unrelated ~11x decode-speed regression in the public `litert-torch` export
+  pipeline, confirmed independent of the bucket via a controlled re-export. No fix found. NPU is
+  not a usable lever either way (gated behind a separate vendor program, and this chip's AI block
+  isn't aimed at LLM workloads regardless).
+- **llama.cpp/GGUF — originally tested only as "the pessimistic stand-in" — is closer to passing
+  than the runtime that was supposed to ship**, and is now the chosen runtime
+  ([ADR 0003](docs/decisions/0003-shipping-llm-runtime-gguf.md)): **1.33s median TTFT** with real
+  session/KV-cache reuse, and **flat latency across a full 18.1-minute hot/pocket run** — no
+  thermal degradation at all.
+- **Still open:** 1.33s is close to the ~1s bar but not yet confirmed under it — one more focused
+  round of GGUF tuning (quantisation, thread count) is the natural next step before calling §0 a
+  clean pass rather than "pass-leaning."
 
 Everything built so far is desktop engine logic, deliberately kept separate from the spike (see
 `CLAUDE.md`, "This dev host vs the phone"). Full detail, raw traces, and the open-threads list:
-`spike/results/2026-09-10-poco-m4-pro-litert-lm.md`.
+`spike/results/2026-09-09-poco-m4-pro.md` (the GGUF baseline) and
+`spike/results/2026-09-10-poco-m4-pro-litert-lm.md` (LiteRT-LM, and why it was dropped).
 
 Current decisions locked:
 
-- **Spike benchmark model: Gemma 4 E2B** (`litert-community/gemma-4-E2B-it-litert-lm`, `.litertlm`).
+- **Spike benchmark model: Gemma 4 E2B** (ADR 0001) — model family unchanged; only the runtime
+  packaging changed (see below).
+- **Shipping LLM runtime: llama.cpp / GGUF, not LiteRT-LM.** See
+  [ADR 0003](docs/decisions/0003-shipping-llm-runtime-gguf.md).
 - **Prototype language: Python**, desktop-first. The phone shell is a deliberately separate,
   later phase.
 - **World model: build fresh, not on Evennia.** Evaluated hands-on and declined — its object

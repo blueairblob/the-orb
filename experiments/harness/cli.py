@@ -25,12 +25,15 @@ def _print_result(name: str, result: llm.PromptResult) -> None:
     click.echo(click.style(f"[{name}]", fg="cyan", bold=True))
     click.echo(f"  prompt:   {result.prompt}")
     click.echo(f"  response: {result.response}")
+    cache_n = result.raw_response.get("timings", {}).get("cache_n", 0)
     click.echo(
         click.style(
             "  desktop CPU timing (NOT the phone spike, PRD §0): "
             f"ttft={result.time_to_first_token_s:.3f}s "
+            f"prefill={result.prefill_tokens_per_second:.1f} tok/s "
             f"decode={result.decode_tokens_per_second:.1f} tok/s "
-            f"total={result.total_time_s:.3f}s",
+            f"total={result.total_time_s:.3f}s "
+            f"cached_prefix={cache_n} tok",
             fg="bright_black",
         )
     )
@@ -49,7 +52,7 @@ def main() -> None:
     help="Skip the download confirmation prompt.",
 )
 def setup(model_id: str, yes: bool) -> None:
-    """Downloads and imports Gemma 4 E2B (~2.5 GB) via the litert-lm CLI."""
+    """Downloads Gemma 4 E2B's official GGUF quant (~3.3 GB) from Hugging Face."""
     if llm.is_model_ready(model_id):
         click.echo(f"Model '{model_id}' already imported at "
                    f"{llm.resolve_model_path(model_id)}.")
@@ -57,8 +60,8 @@ def setup(model_id: str, yes: bool) -> None:
 
     if not yes:
         click.confirm(
-            f"This downloads ~2.5 GB from Hugging Face "
-            f"({llm.DEFAULT_HF_REPO}) to {llm.litert_lm_base_dir()}. Continue?",
+            f"This downloads ~3.3 GB from Hugging Face "
+            f"({llm.DEFAULT_HF_REPO}) to {llm.orb_models_base_dir()}. Continue?",
             abort=True,
         )
 
@@ -70,7 +73,7 @@ def setup(model_id: str, yes: bool) -> None:
 @click.argument("prompt")
 @click.option("--system", "system_message", default=None, help="System message / brief.")
 @click.option("--model-id", default=llm.DEFAULT_MODEL_ID, show_default=True)
-@click.option("--verbose", is_flag=True, help="Show native LiteRT-LM engine logs.")
+@click.option("--verbose", is_flag=True, help="Show llama-server subprocess output instead of logging it to a file.")
 def prompt(prompt: str, system_message: str | None, model_id: str, verbose: bool) -> None:
     """Sends a single prompt and prints the reply plus desktop timing."""
     if not llm.is_model_ready(model_id):
@@ -93,7 +96,7 @@ def prompt(prompt: str, system_message: str | None, model_id: str, verbose: bool
     default=None,
     help="Override the dated output directory (default: experiments/<date>-<cases-file-stem>).",
 )
-@click.option("--verbose", is_flag=True, help="Show native LiteRT-LM engine logs.")
+@click.option("--verbose", is_flag=True, help="Show llama-server subprocess output instead of logging it to a file.")
 def batch(cases_file: Path, model_id: str, out_dir: Path | None, verbose: bool) -> None:
     """Runs every named case in a YAML file and logs full I/O traces.
 
@@ -141,7 +144,7 @@ def batch(cases_file: Path, model_id: str, out_dir: Path | None, verbose: bool) 
 @main.command()
 @click.option("--system", "system_message", default=None, help="System message / brief.")
 @click.option("--model-id", default=llm.DEFAULT_MODEL_ID, show_default=True)
-@click.option("--verbose", is_flag=True, help="Show native LiteRT-LM engine logs.")
+@click.option("--verbose", is_flag=True, help="Show llama-server subprocess output instead of logging it to a file.")
 def repl(system_message: str | None, model_id: str, verbose: bool) -> None:
     """Interactive free-form prompting against a running model instance."""
     if not llm.is_model_ready(model_id):
@@ -167,7 +170,7 @@ def repl(system_message: str | None, model_id: str, verbose: bool) -> None:
 def train() -> None:
     """Fine-tuning: not implemented.
 
-    LiteRT-LM is an inference runtime, not a training framework, and this
+    llama.cpp is an inference runtime, not a training framework, and this
     host is CPU-only ARM64 with no GPU — real LoRA/PEFT fine-tuning would be
     impractical here. For now, "training" Gemma's behaviour means iterating
     on the system message / brief via `prompt` and `batch`, per PRD §15

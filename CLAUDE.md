@@ -48,9 +48,13 @@ consistent character inside hard, deterministic rules.
 
 ## The model
 
-- **Gemma 4 E2B**, quantised, `.litertlm` format — `litert-community/gemma-4-E2B-it-litert-lm`.
-  Runs via **LiteRT-LM** / the MediaPipe LLM Inference API. Native audio + vision + function
-  calling; mixed 2/4/8-bit quantisation.
+- **Gemma 4 E2B**, quantised as **GGUF**, runs via **llama.cpp** (`ADR 0003`
+  — after the phone spike found LiteRT-LM failed the pass mark on both backends on the test
+  device, while llama.cpp/GGUF came closer on both TTFT and thermal). Official quant:
+  `google/gemma-4-E2B-it-qat-q4_0-gguf`. Gemma 4's chat template defaults to a chain-of-thought
+  "thinking" pass — pass `--reasoning off` to `llama-server`, or its whole token budget gets
+  consumed by reasoning with nothing left for the actual reply (found the hard way, see devlog
+  2026-09-13).
 - Licence: **Apache 2.0** (a change from earlier Gemma generations' custom Gemma Terms of Use —
   confirmed on the model card, `license: apache-2.0`, linking to
   ai.google.dev/gemma/docs/gemma_4_license, plain unmodified Apache 2.0 text). Google still
@@ -66,7 +70,7 @@ consistent character inside hard, deterministic rules.
 This host is a **Linux dev box**, ideal for:
 
 - Phase 1 Python engine work (object model, state machine, brief-builder, voice loop).
-- Running Gemma 4 E2B on desktop (LiteRT-LM, or llama.cpp / Ollama for iteration) to tune the
+- Running Gemma 4 E2B on desktop via llama.cpp (the engine's actual runtime, ADR 0003) to tune the
   *brief* and *prompt* quality — how a small model behaves on the engine's actual output.
 - Automated AI playtesting: pointing a **frontier** model at the engine to fuzz it (PRD §14).
 

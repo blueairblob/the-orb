@@ -74,16 +74,49 @@ Both fixes confirmed against the real backend afterward, not just unit tests: re
 ("You look cold out here") now correctly gets a guard reply instead of a DM narration line. 5 new
 regression tests added, 51 total, all passing; `ruff check` clean.
 
+## Update — same day: fixed #2 and #4 too, at the user's "what are we waiting for?"
+
+Both fixed, following the same rigor as #1/#3 — real model testing, not assumption.
+
+**#2 (bland-dismissal gap)**: widened `is_bland_dismissal` from exact-match to a first-word +
+word-count-capped check, so "Nothing worth mentioning." and "Nothing matters now." are caught as
+padded versions of the same non-answer. This deliberately overturned an existing test
+(`test_fuller_line_is_not_flagged` asserted "Nothing worth saying." should *not* be flagged) —
+there's no text-only way to tell that phrase apart from the two real failures, so treating all
+three the same is the more honest reading, not a regression. Flagged the tension directly before
+changing it rather than silently picking a side.
+
+**#4 (room description)**: same investigation shape as #1. Tried the prompt-only fix first
+(restating the rule in `RULE_REMINDER`, the highest-attention position) — tested directly against
+the real model for "Tell me about this place": still named the room 4/4 times. A targeted retry
+nudge alone: still 3/4. Landed on the same pattern as #1 — a new `guardrail.is_room_description`
+check (driven by the room's own `name` + `description` vocabulary, not hardcoded to "cell", so it
+generalises past this one scenario), retry with a nudge, fall back to `guardrail.FALLBACK_LINE` if
+the retry also fails.
+
+**Honest limitation, found in the final end-to-end re-check and not chased further**: a third
+playtest run showed turn 9 slipping through anyway — *"It's a dark hole. Stay quiet."* — using
+neither the room's name ("cell") nor any word from its description ("cold stone cell"). Keyword
+matching against an open-ended set of synonyms a small model can invent has a real, structural
+ceiling; expanding the word list further has diminishing returns and the same brittleness. This is
+a genuine, acknowledged gap, not a claim that #4 is fully solved — consistent with this file's own
+stated philosophy ("last-resort net, not the primary mechanism"). #2's new check, similarly, wasn't
+exercised by this final run's own randomness (the model didn't happen to produce a "nothing worth
+X" reply that time) — backed by direct reasoning and unit tests, not re-confirmed live this session.
+
+8 new/updated regression tests, 58 total, all passing.
+
 ## Open threads
 
-- [ ] **#2, still open**: the guardrail's bland-dismissal check only catches exact short phrases
-  ("Nothing.", "Silence.", "Quiet."), not paraphrased non-answers ("Nothing worth mentioning.",
-  "Nothing matters now.") that dodge a real question just as flatly. Reproduced again in this
-  session's second playtest run (turn 5: "What did you do before you became a guard?" ->
-  "Nothing worth mentioning."). Needs a real fix, not just noting.
-- [ ] **#4, still open**: the guard described the room directly ("It's stone. Cold.") despite
-  `PERSONA` explicitly forbidding it — reproduced again this session (turn 9). `PERSONA` states the
-  rule but nothing enforces it the way the repeat/bland checks enforce theirs.
+- [x] **#2**: fixed, see Update above. Residual: only as strong as the model's actual phrasing
+  matches the (now broader, but still finite) pattern — a genuinely novel bland phrasing could
+  still slip through.
+- [x] **#4**: fixed for the two originally-observed cases, see Update above. **Not fully closed**:
+  keyword-matching against arbitrary room-descriptive synonyms has a real ceiling — "a dark hole"
+  slipped through in the same session's own verification run. Worth revisiting if it keeps
+  recurring in future play, but not with more enumerated words — a different approach (semantic
+  similarity? a second small classification pass?) would be needed to meaningfully close this,
+  and that's real new scope, not a quick follow-up.
 - [ ] The fallback-line approach for voice-example reuse trades a characterful line for a generic
   one when it triggers. Worth watching how often it actually fires in longer/varied play — if it's
   rare, fine; if it's common, the underlying voice-examples themselves may need rewriting (less

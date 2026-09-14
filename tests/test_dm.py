@@ -25,6 +25,20 @@ def test_environment_query_words_dont_false_positive_inside_longer_words():
     assert classify_utterance("Have you ever thought about looking the other way?") == "dialogue"
 
 
+def test_look_as_appearance_verb_stays_dialogue():
+    # Regression (real playtest 2026-09-14): "look" as a whole word still
+    # false-positived on its *other* sense -- "you look cold", an appearance
+    # copula addressed at the guard (also his own VOICE_EXAMPLES line in
+    # brief.py), got misrouted to narration.
+    assert classify_utterance("You look cold out here.") == "dialogue"
+    assert classify_utterance("You look tired.") == "dialogue"
+
+
+def test_look_as_perception_command_still_routes_to_narration():
+    assert classify_utterance("Let me look around.") == "narration"
+    assert classify_utterance("Can I take a look?") == "narration"
+
+
 def test_combat_flavoured_threats_stay_dialogue_not_refusal():
     # Aggressive dialogue toward the guard is handled by the guard's own
     # mood heuristic, not routed to a DM refusal — only clearly nonexistent

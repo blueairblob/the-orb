@@ -109,6 +109,37 @@ def test_verbatim_self_repeat_triggers_one_retry():
     assert llm.calls[1][2] == "retry"
 
 
+def test_verbatim_voice_example_reuse_triggers_one_retry():
+    # Regression (real playtest 2026-09-14): asked "What's your name?", got
+    # back "Garrick. Now hush." verbatim -- brief.py's own VOICE_EXAMPLES
+    # line, not a fresh reply. Never actually said by this guard before, so
+    # only checking guard.own_lines() wouldn't have caught it.
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Garrick. Now hush.", "Names don't matter in here."])
+
+    reply, _, _ = run_turn(scenario, llm, "what's your name?")
+
+    assert reply == "Names don't matter in here."
+    assert len(llm.calls) == 2
+    assert "examples" in llm.calls[1][1].lower()  # the specific nudge, not the generic repeat one
+    assert llm.calls[1][2] == "retry"
+
+
+def test_voice_example_reuse_falls_back_to_safe_line_if_retry_also_fails():
+    # Regression (real playtest 2026-09-14): unlike bland/self-repeat, a
+    # resample at retry temperature reproduced the exact voice-example line
+    # 4/4 times against the real model — resampling alone doesn't reliably
+    # escape this one. Ship the guardrail's own safe line rather than a
+    # second verbatim copy.
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Garrick. Now hush.", "Garrick. Now hush."])
+
+    reply, _, _ = run_turn(scenario, llm, "what's your name?")
+
+    assert reply == "The guard grunts, and says nothing more."
+    assert len(llm.calls) == 2
+
+
 def test_repeat_retry_gives_up_if_still_repeated():
     scenario = build_cell_and_guard()
     scenario.guard.remember("player", "earlier line")

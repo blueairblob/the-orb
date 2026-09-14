@@ -42,17 +42,31 @@ UNGROUNDED_WORDS = {"cast", "spell", "wand", "potion", "scroll", "sword"}
 # substring match here false-positived on "look" inside "looking" (devlog
 # 2026-09-09: "Have you ever thought about looking the other way?", clearly
 # guard dialogue, got misrouted to the DM).
-ENVIRONMENT_QUERY_WORDS = {"look", "describe", "surroundings"}
+ENVIRONMENT_QUERY_WORDS = {"describe", "surroundings"}
 
 # Multi-word phrases, matched as substrings — safe as substrings since a
 # space-containing phrase can't hide inside a single unrelated word the way
 # a bare word like "look" can.
+#
+# "look" itself deliberately isn't a bare word above (regression, real
+# playtest 2026-09-14): "You look cold out here" — dialogue addressed at the
+# guard, "look" used as an appearance-copula ("you appear cold"), not a
+# perception command — got misrouted to narration. That's a different
+# collision than the "looking" substring bug: same word, two unrelated
+# senses, whole-word matching alone can't tell them apart. Anchoring "look"
+# to specific environment-inspection phrasings instead catches the real
+# "let me look around" intent without swallowing "you look X" dialogue.
 ENVIRONMENT_QUERY_PHRASES = (
     "what do i see",
     "what does",
     "where am i",
     "what's around",
     "whats around",
+    "look around",
+    "take a look",
+    "let me look",
+    "can i look",
+    "could i look",
 )
 
 Route = Literal["refusal", "narration", "dialogue"]

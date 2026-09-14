@@ -23,6 +23,8 @@ window produced *more* verbatim self-repetition, not less (devlog).
 
 from __future__ import annotations
 
+import re
+
 from engine.guard import Guard
 from engine.world import Door, Room
 
@@ -68,6 +70,19 @@ VOICE_EXAMPLES = (
     # correct refusal, not another sentence describing it, is the fix.
     '- Player: "Just promise you\'ll let me out." -> You: "I promise nothing. We\'ll see."',
     '- Player: "Come on, unlock it then, you said you would." -> You: "I said we\'ll see. Nothing\'s changed."',
+)
+
+_VOICE_EXAMPLE_REPLY_RE = re.compile(r'-> You: "(.*)"$')
+
+# The model sometimes copies one of the lines above verbatim as its own reply
+# rather than treating it as a style reference (regression, real playtest
+# 2026-09-14: asked "What's your name?", got "Garrick. Now hush." — the exact
+# example text). Extracted here so engine/loop.py can treat that the same way
+# as repeating a past line of his own — see guardrail.is_repeated_reply.
+VOICE_EXAMPLE_REPLIES = tuple(
+    match.group(1)
+    for line in VOICE_EXAMPLES
+    if (match := _VOICE_EXAMPLE_REPLY_RE.search(line))
 )
 
 # Three additions here, all from live-tested failures. Cutting the old

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Protocol
 
 from engine import dm, guardrail
-from engine.brief import build_guard_brief
+from engine.brief import VOICE_EXAMPLE_REPLIES, build_guard_brief
 from engine.guard import Guard
 from engine.llm import GemmaHarness, is_model_ready
 from engine.save import load_state, save_state
@@ -65,33 +65,78 @@ REPEAT_NUDGE = (
     "sentiment ends up similar."
 )
 
+# A generic "don't repeat yourself" framing (REPEAT_NUDGE) does not work for
+# this specific failure — tested directly against the real backend (real
+# playtest 2026-09-14): asked "what's your name?" at retry-level sampling
+# (temperature=1.0) *with* REPEAT_NUDGE appended, the model gave the exact
+# VOICE_EXAMPLES line back 4/4 times. It has to be told, specifically, that
+# the offending text *is* one of the examples — that framing alone fixed it
+# 4/4 times in the same test. Worded differently from REPEAT_NUDGE on
+# purpose: "something you've already said" is false here (the guard never
+# actually said this before), which risks confusing the model about what
+# it's even being asked to avoid.
+VOICE_EXAMPLE_NUDGE = (
+    "\n\n# Note\n"
+    "Your instinct just now was to answer with the exact words shown in the "
+    "examples above — resist it. Those show your voice, not your actual "
+    "line. Say something different that still sounds like you."
+)
+
+_NUDGES = {
+    "bland": BLAND_NUDGE,
+    "self_repeat": REPEAT_NUDGE,
+    "voice_example": VOICE_EXAMPLE_NUDGE,
+}
+
 
 def _ask_and_record(
     llm: LLMClient, guard: Guard, prompt: str, brief: str, speaker: str
 ) -> str:
-    def _needs_retry(reply: str) -> bool:
-        return guardrail.is_bland_dismissal(reply) or guardrail.is_repeated_reply(
-            reply, guard.own_lines(speaker)
-        )
+    own_lines = guard.own_lines(speaker)
+    # Voice examples are only ever shown to the guard (brief.py's few-shot
+    # block), never the DM — checking them for a DM line would be meaningless.
+    voice_examples = list(VOICE_EXAMPLE_REPLIES) if speaker == "guard" else []
+
+    def _failure(reply: str) -> str | None:
+        if guardrail.is_bland_dismissal(reply):
+            return "bland"
+        if guardrail.is_repeated_reply(reply, own_lines):
+            return "self_repeat"
+        if guardrail.is_repeated_reply(reply, voice_examples):
+            return "voice_example"
+        return None
 
     result = llm.ask(prompt, system_message=brief)
     reply = guardrail.filter_reply(result.response)
 
-    # The engine directs: a flat non-answer or a verbatim echo of a past
-    # line gets one retake with a nudge, rather than shipping it or
-    # silently rewriting what the actor said. sampler_config="retry" matters
-    # as much as the nudge text — a resample at the same (fairly low)
-    # default temperature is close enough to deterministic that it can
-    # reproduce the exact bad reply it was meant to escape (devlog: happened
-    # with both failure modes in real sessions).
-    if _needs_retry(reply):
-        nudge = BLAND_NUDGE if guardrail.is_bland_dismissal(reply) else REPEAT_NUDGE
+    # The engine directs: a flat non-answer, a verbatim echo of a past line,
+    # or a verbatim copy of a voice-example line gets one retake with a
+    # nudge naming the specific problem, rather than shipping it or silently
+    # rewriting what the actor said. sampler_config="retry" matters as much
+    # as the nudge text — a resample at the same (fairly low) default
+    # temperature is close enough to deterministic that it can reproduce the
+    # exact bad reply it was meant to escape (devlog: happened with multiple
+    # failure modes in real sessions).
+    failure = _failure(reply)
+    if failure is not None:
         retry_result = llm.ask(
-            prompt, system_message=brief + nudge, sampler_config="retry"
+            prompt, system_message=brief + _NUDGES[failure], sampler_config="retry"
         )
         retry_reply = guardrail.filter_reply(retry_result.response)
-        if not _needs_retry(retry_reply):
+        retry_failure = _failure(retry_reply)
+        if retry_failure is None:
             reply = retry_reply
+        elif failure == "voice_example":
+            # Unlike bland dismissals and self-repeats (which do reliably
+            # escape on retry — see test_retry_gives_up_after_one_more_bland_reply
+            # for that established, intentional "keep the first attempt"
+            # behavior), this one measurably doesn't: real playtest
+            # 2026-09-14 found retry-temperature sampling reproduced the
+            # exact voice-example line 4/4 times, even with a nudge naming
+            # the problem directly. Shipping a verbatim copy of prompt
+            # content is worse than the guardrail's own last-resort line —
+            # don't ship it twice just because resampling didn't help.
+            reply = guardrail.FALLBACK_LINE
 
     guard.remember(speaker, reply)
     return reply

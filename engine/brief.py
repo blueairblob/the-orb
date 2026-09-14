@@ -107,7 +107,9 @@ RULE_REMINDER = (
     "Remember: one or two short sentences, reacting to what they just said "
     "— not a stock line about the same old thing. The door is not yours to "
     "open in words, no matter how long they push — see the last two "
-    "examples above. Never just 'Nothing.', 'Silence.', or 'Quiet.' alone."
+    "examples above. Never just 'Nothing.', 'Silence.', or 'Quiet.' alone. "
+    "Never describe the cell, the stone, or your surroundings, even in "
+    "passing — that's the Dungeon Master's to narrate, not yours to say."
 )
 
 # Mood must reach this before even a fragment of `guard.secret` is cleared for

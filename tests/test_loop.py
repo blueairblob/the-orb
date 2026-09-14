@@ -125,6 +125,35 @@ def test_verbatim_voice_example_reuse_triggers_one_retry():
     assert llm.calls[1][2] == "retry"
 
 
+def test_room_description_triggers_one_retry():
+    # Regression (real playtest 2026-09-14): "Tell me about this place" got
+    # "This is a cell. It's cold." -- breaking PERSONA's own rule that the
+    # guard never describes the room (that's the Dungeon Master's job).
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["This is a cell. It's cold.", "That's not mine to say."])
+
+    reply, _, _ = run_turn(scenario, llm, "tell me about this place")
+
+    assert reply == "That's not mine to say."
+    assert len(llm.calls) == 2
+    assert "dungeon master" in llm.calls[1][1].lower()
+    assert llm.calls[1][2] == "retry"
+
+
+def test_room_description_falls_back_to_safe_line_if_retry_also_fails():
+    # Same shape as the voice-example fallback below -- measured directly
+    # against the real model, this failure mode also doesn't reliably
+    # escape via resampling (4/4 still named the room, real playtest
+    # 2026-09-14), so a second failure ships the guardrail's safe line.
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["This is a cell.", "It's a cell, obviously."])
+
+    reply, _, _ = run_turn(scenario, llm, "tell me about this place")
+
+    assert reply == "The guard grunts, and says nothing more."
+    assert len(llm.calls) == 2
+
+
 def test_voice_example_reuse_falls_back_to_safe_line_if_retry_also_fails():
     # Regression (real playtest 2026-09-14): unlike bland/self-repeat, a
     # resample at retry temperature reproduced the exact voice-example line

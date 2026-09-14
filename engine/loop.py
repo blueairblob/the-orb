@@ -82,19 +82,50 @@ VOICE_EXAMPLE_NUDGE = (
     "line. Say something different that still sounds like you."
 )
 
+# Same situation as VOICE_EXAMPLE_NUDGE: PERSONA already states this rule,
+# RULE_REMINDER already restates it right before generation, and neither
+# was enough on its own (real playtest 2026-09-14: "Tell me about this
+# place" named the room 4/4 times even with a nudge naming the problem
+# directly, same as the voice-example case) — so this also falls back to
+# guardrail.FALLBACK_LINE on a second failure rather than retrying forever.
+ROOM_DESCRIPTION_NUDGE = (
+    "\n\n# Note\n"
+    "Your instinct just now was to describe the cell or your surroundings "
+    "— resist it, that's the Dungeon Master's to narrate, not yours to say. "
+    "React to what they actually asked without naming or describing where "
+    "you are."
+)
+
 _NUDGES = {
     "bland": BLAND_NUDGE,
     "self_repeat": REPEAT_NUDGE,
     "voice_example": VOICE_EXAMPLE_NUDGE,
+    "room_description": ROOM_DESCRIPTION_NUDGE,
 }
+
+# Failure modes that measurably don't escape via resampling alone (tested
+# directly against the real model — see the nudge comments above) and so
+# fall back to a safe line on a second failure rather than shipping a
+# second bad reply. Bland dismissals and self-repeats aren't in this set —
+# they do reliably improve on retry (test_retry_gives_up_after_one_more_bland_reply
+# keeps that established behavior as-is).
+_FALLS_BACK_ON_RETRY_FAILURE = {"voice_example", "room_description"}
 
 
 def _ask_and_record(
-    llm: LLMClient, guard: Guard, prompt: str, brief: str, speaker: str
+    llm: LLMClient,
+    guard: Guard,
+    prompt: str,
+    brief: str,
+    speaker: str,
+    room_name: str | None = None,
+    room_description: str = "",
 ) -> str:
     own_lines = guard.own_lines(speaker)
-    # Voice examples are only ever shown to the guard (brief.py's few-shot
-    # block), never the DM — checking them for a DM line would be meaningless.
+    # Voice examples and the room-description rule only apply to the guard
+    # (brief.py's few-shot block, PERSONA's own-surroundings ban) — checking
+    # them for a DM line, whose whole job is describing the scene, would be
+    # meaningless. room_name is None for DM calls for the same reason.
     voice_examples = list(VOICE_EXAMPLE_REPLIES) if speaker == "guard" else []
 
     def _failure(reply: str) -> str | None:
@@ -104,6 +135,10 @@ def _ask_and_record(
             return "self_repeat"
         if guardrail.is_repeated_reply(reply, voice_examples):
             return "voice_example"
+        if room_name is not None and guardrail.is_room_description(
+            reply, room_name, room_description
+        ):
+            return "room_description"
         return None
 
     result = llm.ask(prompt, system_message=brief)
@@ -126,16 +161,13 @@ def _ask_and_record(
         retry_failure = _failure(retry_reply)
         if retry_failure is None:
             reply = retry_reply
-        elif failure == "voice_example":
+        elif failure in _FALLS_BACK_ON_RETRY_FAILURE:
             # Unlike bland dismissals and self-repeats (which do reliably
             # escape on retry — see test_retry_gives_up_after_one_more_bland_reply
             # for that established, intentional "keep the first attempt"
-            # behavior), this one measurably doesn't: real playtest
-            # 2026-09-14 found retry-temperature sampling reproduced the
-            # exact voice-example line 4/4 times, even with a nudge naming
-            # the problem directly. Shipping a verbatim copy of prompt
-            # content is worse than the guardrail's own last-resort line —
-            # don't ship it twice just because resampling didn't help.
+            # behavior), these measurably don't (see the nudge comments
+            # above) — shipping the same bad reply twice is worse than the
+            # guardrail's own last-resort line.
             reply = guardrail.FALLBACK_LINE
 
     guard.remember(speaker, reply)
@@ -176,7 +208,15 @@ def run_turn(
         scenario.door.unlock()
 
     brief = build_guard_brief(guard, scenario.door, scenario.room, scenario.premise)
-    reply = _ask_and_record(llm, guard, player_utterance, brief, "guard")
+    reply = _ask_and_record(
+        llm,
+        guard,
+        player_utterance,
+        brief,
+        "guard",
+        room_name=scenario.room.name,
+        room_description=scenario.room.description,
+    )
     return reply, "guard", outcome
 
 

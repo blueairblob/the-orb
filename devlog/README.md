@@ -27,6 +27,7 @@ leave it here if it's closer to "here's what we tried and found."
 
 ## Entries
 
+- [2026-09-14 — Trying to close out the spike with GGUF tuning, hitting a phone-specific CPU anomaly instead](2026-09-14-gguf-tuning-hits-a-phone-cpu-anomaly.md)
 - [2026-09-13 — Swapping the engine's LLM backend onto llama.cpp/GGUF](2026-09-13-engine-onto-llama-cpp.md)
 - [2026-09-10 — LiteRT-LM on real hardware, the aarch64 build problem, and the final call to ship on GGUF instead (ADR 0003)](2026-09-10-litert-lm-on-device-and-the-aarch64-build-problem.md)
 - [2026-09-09 — Running the real engine loop against the phone](2026-09-09-real-loop-against-the-phone.md)

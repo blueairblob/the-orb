@@ -103,13 +103,18 @@ _NUDGES = {
     "room_description": ROOM_DESCRIPTION_NUDGE,
 }
 
-# Failure modes that measurably don't escape via resampling alone (tested
-# directly against the real model — see the nudge comments above) and so
-# fall back to a safe line on a second failure rather than shipping a
-# second bad reply. Bland dismissals and self-repeats aren't in this set —
-# they do reliably improve on retry (test_retry_gives_up_after_one_more_bland_reply
-# keeps that established behavior as-is).
-_FALLS_BACK_ON_RETRY_FAILURE = {"voice_example", "room_description"}
+# Failure modes that measurably don't reliably escape via resampling alone
+# and so fall back to a safe line on a second failure rather than shipping a
+# second bad reply. Bland dismissals aren't in this set — retry does
+# reliably improve on them (test_retry_gives_up_after_one_more_bland_reply
+# keeps that established, still-true behavior as-is). self_repeat *was*
+# exempted on the same assumption, but two real sessions (2026-09-15) each
+# hit a genuine double failure ("Begging doesn't work." / "Hunger is a
+# powerful thing.", both shipped twice verbatim) — tested directly
+# afterward: retry+REPEAT_NUDGE only escapes a self-repeat about half the
+# time, common enough to explain both. A verbatim self-echo reads just as
+# broken to a player as a copied voice-example line; treat it the same way.
+_FALLS_BACK_ON_RETRY_FAILURE = {"voice_example", "room_description", "self_repeat"}
 
 
 def _ask_and_record(
@@ -162,12 +167,12 @@ def _ask_and_record(
         if retry_failure is None:
             reply = retry_reply
         elif failure in _FALLS_BACK_ON_RETRY_FAILURE:
-            # Unlike bland dismissals and self-repeats (which do reliably
-            # escape on retry — see test_retry_gives_up_after_one_more_bland_reply
-            # for that established, intentional "keep the first attempt"
-            # behavior), these measurably don't (see the nudge comments
-            # above) — shipping the same bad reply twice is worse than the
-            # guardrail's own last-resort line.
+            # Unlike bland dismissals (which do reliably escape on retry —
+            # see test_retry_gives_up_after_one_more_bland_reply for that
+            # established, intentional "keep the first attempt" behavior),
+            # these measurably don't (see _FALLS_BACK_ON_RETRY_FAILURE's own
+            # comment above) — shipping the same bad reply twice is worse
+            # than the guardrail's own last-resort line.
             reply = guardrail.FALLBACK_LINE
 
     guard.remember(speaker, reply)

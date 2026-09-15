@@ -169,7 +169,15 @@ def test_voice_example_reuse_falls_back_to_safe_line_if_retry_also_fails():
     assert len(llm.calls) == 2
 
 
-def test_repeat_retry_gives_up_if_still_repeated():
+def test_repeat_retry_falls_back_to_safe_line_if_still_repeated():
+    # Regression (real sessions 2026-09-15): "Begging doesn't work." and
+    # "Hunger is a powerful thing." each shipped twice verbatim in separate
+    # long playtests -- the retry reproduced the exact same line both
+    # times. This test used to assert the opposite ("kept the first
+    # attempt" -- reply == "Move slow."), matching what bland dismissals
+    # still do; corrected once real play showed self-repeats don't reliably
+    # escape retry the way bland dismissals do (measured: ~50% escape rate
+    # against the real model, common enough to explain both failures).
     scenario = build_cell_and_guard()
     scenario.guard.remember("player", "earlier line")
     scenario.guard.remember("guard", "Move slow.")
@@ -177,8 +185,7 @@ def test_repeat_retry_gives_up_if_still_repeated():
 
     reply, _, _ = run_turn(scenario, llm, "come on then")
 
-    assert reply == "Move slow."
-    assert len(llm.calls) == 2
+    assert reply == "The guard grunts, and says nothing more."
     assert len(llm.calls) == 2
 
 

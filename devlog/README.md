@@ -27,6 +27,7 @@ leave it here if it's closer to "here's what we tried and found."
 
 ## Entries
 
+- [2026-09-15 — Closing a real state-machine gap: the secret reveal](2026-09-15-secret-reveal-state-machine.md)
 - [2026-09-14 — First real playtest on the new llama.cpp backend, two bugs found and fixed](2026-09-14-first-playtest-on-llama-cpp-backend.md)
 - [2026-09-14 — Trying to close out the spike with GGUF tuning, hitting a phone-specific CPU anomaly instead](2026-09-14-gguf-tuning-hits-a-phone-cpu-anomaly.md)
 - [2026-09-13 — Swapping the engine's LLM backend onto llama.cpp/GGUF](2026-09-13-engine-onto-llama-cpp.md)

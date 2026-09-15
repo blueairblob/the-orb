@@ -14,9 +14,20 @@ consistent character inside hard, deterministic rules.
 
 - The design is **complete**. Do **not** propose new features or expand scope. If a new problem
   appears, the right instinct is almost always "that's just state again" (PRD §22).
-- **Nothing has been built.** The repo is a scaffold plus the PRD.
-- The single blocking unknown is **the spike** (PRD §0, `spike/README.md`). Until it passes,
-  building the full engine is premature.
+- **Phase 1 is well underway, not un-started.** The cell-and-guard proof of concept (PRD §8) runs
+  end to end on the real shipping backend (`engine/`, `orb-engine`) — object model, guard Character
+  Engine, brief-builder, guardrail, and core loop are all built, extensively playtested, and have
+  reached both terminal states (unlock and lockout are both reachable; see the `devlog/` entries
+  from 2026-09-14/15 for the fullest read). See `README.md`'s Status section for the current
+  picture — keep it, not this bullet list, as the first thing to check for "what's actually built."
+- **The spike (PRD §0) is resolved**, not blocking: ADR 0003 locked llama.cpp/GGUF as the shipping
+  runtime after LiteRT-LM failed the pass mark on both backends. Still open, not a blocker: GGUF's
+  own TTFT (1.33s median) is close to the ~1s bar but not confirmed under it, and everything
+  measured is one physical test device, not a claim about Android phones generally (see
+  `spike/results/` and `docs/decisions/0003-shipping-llm-runtime-gguf.md`).
+- What's still genuinely open: real voice (Phase 2, needs actual audio hardware, not this dev
+  host), and rounding out Phase 1's engine rigor (state machine, object model) *without* adding new
+  scope/rooms — PRD §21 still wants one room proven alive before any second one gets built.
 
 ## Non-negotiable architecture (do not violate these)
 

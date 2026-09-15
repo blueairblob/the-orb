@@ -124,3 +124,25 @@ X" reply that time) — backed by direct reasoning and unit tests, not re-confir
 - [ ] This was one scripted 12-turn session, one read-through. Worth more playtesting across
   different conversation shapes (hostile-only, purely cooperative, long negotiation toward unlock)
   before calling the brief's quality "proven" on this backend the way it was on the old one.
+
+## Update — 2026-09-15: the mood-tone disconnect, and a real rework
+
+Followed the previous "worth more playtesting" thread above directly: ran a genuinely warm,
+deliberate 15-turn session (not edge-case testing, real rapport-building) rather than another
+scripted edge-case pass. Found something bigger than any of the four bugs above — see the
+same-day continuation of this session for the full investigation and fix
+(`engine/brief.py`'s `BAND_VOICE_EXAMPLES` rework, commits same day). Short version: mood tracked
+warmth correctly (40 -> 62 over the session, verified in the save file) but the guard's actual
+tone never softened at all — a real disconnect from PRD §12's "the AI simply voices wherever the
+dial sits". A first fix (one extra example bolted onto the always-shown gruff static set) measurably
+didn't work; even rewriting `PERSONA`'s own framing line didn't help. The real fix split voice
+examples into an unconditional anti-promise pair plus a full per-band set, replacing rather than
+supplementing the static block. Confirmed real (if subtler than hoped) improvement via
+fresh-server isolated testing, ruling out a KV-cache-staleness confound along the way.
+
+**New open thread, not fixed this session**: the mood heuristic's `"threat"` keyword
+false-positived on "I'm **not** a threat to anyone" (no negation awareness) during the 15-turn
+warm session — cost real progress toward the unlock threshold (mood capped at 62 of the needed
+75, partly because of this one false hit). `engine/guard.py`'s `adjust_mood_from_text` has no
+negation handling at all; same class of gap as this file's own `is_bland_dismissal`/
+`is_room_description` word-only checks, not fixed yet.

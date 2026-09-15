@@ -35,6 +35,32 @@ RUDE_DELTA = -4
 THREAT_DELTA = -8
 REPEAT_DELTA = -2
 
+# Real false positive (devlog 2026-09-15): "I'm not a threat to anyone" —
+# reassurance, not menace — docked mood as if it were an actual threat,
+# because THREAT_WORDS matching was pure set membership with no sense of
+# what came before the word. Same fix applies symmetrically to kind/rude
+# words ("I don't appreciate this" isn't gratitude either). A small
+# backward-look window, not real negation-scope parsing — same "keyword
+# heuristic, not real intent parsing" spirit as the rest of this file.
+NEGATION_WORDS = {
+    "not",
+    "no",
+    "never",
+    "don't",
+    "doesn't",
+    "didn't",
+    "isn't",
+    "aren't",
+    "wasn't",
+    "weren't",
+    "won't",
+    "wouldn't",
+    "can't",
+    "couldn't",
+    "ain't",
+}
+NEGATION_WINDOW = 3
+
 # Reverted back down after a real test: widening this to 24 (and the brief's
 # window to 16) was meant to fix the guard forgetting an offer from a dozen
 # turns back, but a live session showed it made verbatim self-repetition
@@ -45,6 +71,17 @@ REPEAT_DELTA = -2
 # slightly above what recent_memory's default shows, not equal to it — see
 # that default below.
 MAX_MEMORY = 12
+
+
+def _has_unnegated_match(tokens: list[str], trigger_words: set[str]) -> bool:
+    """True if any `trigger_words` token appears without a NEGATION_WORDS
+    token in the NEGATION_WINDOW tokens immediately before it."""
+    for i, tok in enumerate(tokens):
+        if tok in trigger_words:
+            window = tokens[max(0, i - NEGATION_WINDOW) : i]
+            if not any(w in NEGATION_WORDS for w in window):
+                return True
+    return False
 
 
 @dataclasses.dataclass
@@ -140,14 +177,18 @@ class Guard(Thing):
         applied, so callers/tests can observe it."""
         was_repeat = self._is_repeat(utterance)
         lowered = utterance.lower()
-        words = set(re.findall(r"[a-z']+", lowered))
+        tokens = re.findall(r"[a-z']+", lowered)
 
         delta = 0
-        if words & KIND_WORDS:
+        if _has_unnegated_match(tokens, KIND_WORDS):
             delta += KIND_DELTA
-        if words & RUDE_WORDS or any(phrase in lowered for phrase in RUDE_PHRASES):
+        if _has_unnegated_match(tokens, RUDE_WORDS) or any(
+            phrase in lowered for phrase in RUDE_PHRASES
+        ):
             delta += RUDE_DELTA
-        if words & THREAT_WORDS or any(phrase in lowered for phrase in THREAT_PHRASES):
+        if _has_unnegated_match(tokens, THREAT_WORDS) or any(
+            phrase in lowered for phrase in THREAT_PHRASES
+        ):
             delta += THREAT_DELTA
         if was_repeat:
             delta += REPEAT_DELTA

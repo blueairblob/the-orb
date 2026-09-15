@@ -42,6 +42,41 @@ def test_threats_lower_mood_more_than_rudeness():
     assert threat_guard.mood.value < rude_guard.mood.value
 
 
+def test_negated_threat_does_not_lower_mood():
+    # Regression (real playtest 2026-09-15): "I'm not a threat to anyone"
+    # docked mood as if it were an actual threat -- pure set-membership
+    # matching had no sense of what came right before the trigger word.
+    guard = make_guard()
+    delta = guard.adjust_mood_from_text("Please, I'm not a threat to anyone.")
+    assert delta > 0  # the "please" still lands -- only the threat penalty is suppressed
+    assert guard.mood.value > 40
+
+
+def test_negated_kind_word_does_not_raise_mood():
+    # Same fix, opposite direction: "I don't appreciate this" is a
+    # complaint, not gratitude.
+    guard = make_guard()
+    delta = guard.adjust_mood_from_text("I don't appreciate this at all.")
+    assert delta == 0
+
+
+def test_negated_rude_word_does_not_lower_mood():
+    guard = make_guard()
+    delta = guard.adjust_mood_from_text("You're not stupid, actually.")
+    assert delta == 0
+
+
+def test_distant_negation_does_not_suppress_the_match():
+    # NEGATION_WINDOW is deliberately small -- a negation several words
+    # earlier in an unrelated clause shouldn't reach across and suppress a
+    # real trigger word later in the sentence.
+    guard = make_guard()
+    delta = guard.adjust_mood_from_text(
+        "No, that's not what I meant — but I still think you're pathetic."
+    )
+    assert delta < 0
+
+
 def test_repeating_the_same_line_is_penalised():
     guard = make_guard()
     guard.remember("player", "open the door")

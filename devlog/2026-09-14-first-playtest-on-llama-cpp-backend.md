@@ -146,3 +146,23 @@ warm session — cost real progress toward the unlock threshold (mood capped at 
 75, partly because of this one false hit). `engine/guard.py`'s `adjust_mood_from_text` has no
 negation handling at all; same class of gap as this file's own `is_bland_dismissal`/
 `is_room_description` word-only checks, not fixed yet.
+
+## Update — 2026-09-15 (later): a real 20-turn rapport arc reaches unlock, self-repeat gap closed
+
+Played a longer, more sustained 20-turn session (avoiding the `"threat"` negation trap above)
+deliberately trying to reach the higher mood bands the previous sessions never touched. **Reached
+`unlock` for the first time in any session this project has run** — the door actually opened. Late
+dialogue (mood in "warming"/toward "ready to help") showed real character depth that never
+appeared before the `BAND_VOICE_EXAMPLES` rework: *"Nothing much. Just the next sunrise."*,
+*"I'll keep the watch. That's all I can offer."* — gruff with something underneath, not a
+personality flip, matching the design intent better than the isolated single-prompt tests
+suggested.
+
+Also reproduced the self-repeat gap flagged as an open thread after the previous long session:
+*"Hunger is a powerful thing."* shipped twice verbatim (turns 10-11). Fixed the same way as
+`voice_example`/`room_description` — added `self_repeat` to `_FALLS_BACK_ON_RETRY_FAILURE`, after
+confirming directly (not assumed) that retry+`REPEAT_NUDGE` only escapes a genuine self-repeat
+about half the time against the real model, common enough to explain the real failure. Caught an
+existing test (`test_repeat_retry_gives_up_if_still_repeated`) asserting the now-superseded
+behavior for this exact scenario before adding a near-duplicate — corrected in place instead.
+Verified against the real backend: the exact reproduction now falls back to the safe line.

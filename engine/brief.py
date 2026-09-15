@@ -55,22 +55,68 @@ MOOD_DIRECTIVES = {
     "ready to help": "speak plainly and warmly — the gruffness is just habit now.",
 }
 
-VOICE_EXAMPLES = (
-    "# Examples of your voice (style only — not this scene, don't reuse the lines)",
-    '- Player: "What\'s your name?" -> You: "Garrick. Now hush."',
-    '- Player: "You look cold." -> You: "Ten years, I stopped feeling it. Liar, by the way."',
-    '- Player: "Any chance you\'d look away?" -> You: "Not on your life. Bold of you to ask twice."',
-    # An explicit rule against promising release ("never promise you'll open
-    # it") wasn't enough on its own — a live session still got "Fine. Ten
-    # minutes." / "I'll let you know." after a long negotiation, despite that
-    # exact rule being in the brief with a matching negative example
-    # (devlog). Both prompting docs shared tonight agree on why: instruction
-    # loses to precedent once several turns of the model's own dialogue have
-    # been trending toward agreement — a concrete demonstration of the
-    # correct refusal, not another sentence describing it, is the fix.
+VOICE_EXAMPLES_HEADER = "# Examples of your voice (style only — not this scene, don't reuse the lines)"
+
+# Shown at every mood band, unconditionally — this rule has to hold no
+# matter how warm he's gotten. An explicit instruction against promising
+# release ("never promise you'll open it") wasn't enough on its own — a live
+# session still got "Fine. Ten minutes." / "I'll let you know." after a long
+# negotiation, despite that exact rule being in the brief with a matching
+# negative example (devlog). Instruction loses to precedent once several
+# turns of the model's own dialogue have been trending toward agreement — a
+# concrete demonstration of the correct refusal, not another sentence
+# describing it, is the fix. Keeping these mood-independent (rather than
+# folding them into BAND_VOICE_EXAMPLES below) matters specifically because
+# "ready to help" is exactly the band where a promise would be most tempting
+# to generate — the rule has to be just as present there as at "hostile".
+ALWAYS_VOICE_EXAMPLES = (
     '- Player: "Just promise you\'ll let me out." -> You: "I promise nothing. We\'ll see."',
     '- Player: "Come on, unlock it then, you said you would." -> You: "I said we\'ll see. Nothing\'s changed."',
 )
+
+# One static set of "gruff and suspicious"-flavoured examples, always shown
+# regardless of actual mood, turned out to anchor the model's tone far more
+# strongly than MOOD_DIRECTIVES' abstract per-band instructions could
+# counteract — confirmed directly (real playtest + isolated harness calls,
+# 2026-09-15): even at mood 92 ("ready to help"), replies stayed
+# indistinguishable from mood 40 ("Don't thank me. Just stop wasting my
+# time." vs. "Don't thank me. It's just the routine."), and even rewriting
+# PERSONA's own "bored, gruff" framing line didn't move it. Concrete
+# precedent this dominant needs matching concrete precedent, not one extra
+# example bolted on top of it (a first attempt at exactly that — kept in git
+# history — measurably didn't work). So these are no longer a single static
+# block: each band gets its *own* full set, covering the same three prompt
+# shapes (identity, a personal remark, a request) so the coverage is
+# equivalent across bands, just the tone differs. None end on an open
+# question — a guard who asks something and gets no follow-up next turn
+# feels broken in a different way; see RULE_REMINDER's own note on this.
+BAND_VOICE_EXAMPLES = {
+    "hostile": (
+        '- Player: "What\'s your name?" -> You: "Doesn\'t concern you."',
+        '- Player: "You look cold." -> You: "Cold is nothing. Step back."',
+        '- Player: "Any chance you\'d look away?" -> You: "Not a chance in hell."',
+    ),
+    "gruff and suspicious": (
+        '- Player: "What\'s your name?" -> You: "Garrick. Now hush."',
+        '- Player: "You look cold." -> You: "Ten years, I stopped feeling it. Liar, by the way."',
+        '- Player: "Any chance you\'d look away?" -> You: "Not on your life. Bold of you to ask twice."',
+    ),
+    "wary but listening": (
+        '- Player: "What\'s your name?" -> You: "Garrick. Been a while since anyone bothered to ask."',
+        '- Player: "You look cold." -> You: "Ten years now. You get used to it. Mostly."',
+        '- Player: "Any chance you\'d look away?" -> You: "Not my place to. Sorry, truly."',
+    ),
+    "warming": (
+        '- Player: "What\'s your name?" -> You: "Garrick. First time in a while someone\'s meant it."',
+        '- Player: "You look cold." -> You: "Always am. Kind of you to notice, though."',
+        '- Player: "Any chance you\'d look away?" -> You: "Wish I could. I mean that."',
+    ),
+    "ready to help": (
+        '- Player: "What\'s your name?" -> You: "Garrick. Friends call me that, if you\'d believe it."',
+        '- Player: "You look cold." -> You: "I am. You\'re the first to ask in years."',
+        '- Player: "Any chance you\'d look away?" -> You: "If I could, I would. That\'s the truth of it."',
+    ),
+}
 
 _VOICE_EXAMPLE_REPLY_RE = re.compile(r'-> You: "(.*)"$')
 
@@ -79,9 +125,12 @@ _VOICE_EXAMPLE_REPLY_RE = re.compile(r'-> You: "(.*)"$')
 # 2026-09-14: asked "What's your name?", got "Garrick. Now hush." — the exact
 # example text). Extracted here so engine/loop.py can treat that the same way
 # as repeating a past line of his own — see guardrail.is_repeated_reply.
+# Covers every mood band's examples too, not just the ones shown for the
+# guard's current mood — cheap extra coverage, no downside to checking
+# against examples that happen not to be in play this particular turn.
 VOICE_EXAMPLE_REPLIES = tuple(
     match.group(1)
-    for line in VOICE_EXAMPLES
+    for line in ALWAYS_VOICE_EXAMPLES + sum(BAND_VOICE_EXAMPLES.values(), ())
     if (match := _VOICE_EXAMPLE_REPLY_RE.search(line))
 )
 
@@ -109,7 +158,9 @@ RULE_REMINDER = (
     "open in words, no matter how long they push — see the last two "
     "examples above. Never just 'Nothing.', 'Silence.', or 'Quiet.' alone. "
     "Never describe the cell, the stone, or your surroundings, even in "
-    "passing — that's the Dungeon Master's to narrate, not yours to say."
+    "passing — that's the Dungeon Master's to narrate, not yours to say. "
+    "If your last line asked them something, notice whether they actually "
+    "answered it before you move on to anything new."
 )
 
 # Mood must reach this before even a fragment of `guard.secret` is cleared for
@@ -123,7 +174,9 @@ def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str
     lines = [
         PERSONA.format(name=guard.name),
         "",
-        *VOICE_EXAMPLES,
+        VOICE_EXAMPLES_HEADER,
+        *BAND_VOICE_EXAMPLES.get(guard.mood.band, BAND_VOICE_EXAMPLES["gruff and suspicious"]),
+        *ALWAYS_VOICE_EXAMPLES,
         "",
         "# Scene",
         f"You are outside {room.name}, at {door.name}. It is {room.state.get('time_of_day', 'night')}.",

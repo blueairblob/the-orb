@@ -44,3 +44,35 @@ def test_secret_available_once_trust_is_earned():
     brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
 
     assert scenario.guard.secret in brief
+
+
+def test_brief_shows_a_mood_appropriate_voice_example():
+    # Regression (real playtest 2026-09-15): mood climbed from 40 to 62 over
+    # a genuinely warm session, but every reply stayed equally cold -- one
+    # extra example bolted onto the always-shown gruff static set (a first
+    # attempt at fixing this, kept in git history) measurably didn't work
+    # either. Each band now gets its own full example set instead.
+    scenario = build_cell_and_guard()
+
+    scenario.guard.mood.value = 92  # "ready to help"
+    warm_brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+    assert "Friends call me that" in warm_brief
+    assert "Now hush" not in warm_brief  # the gruff-band example, not shown here
+
+    scenario.guard.mood.value = 40  # "gruff and suspicious"
+    default_brief = build_guard_brief(
+        scenario.guard, scenario.door, scenario.room, scenario.premise
+    )
+    assert "Now hush" in default_brief
+    assert "Friends call me that" not in default_brief
+
+
+def test_anti_promise_examples_shown_at_every_mood():
+    # The one rule that has to hold at *every* band, including "ready to
+    # help" -- exactly the band where a promise would be most tempting to
+    # generate. Unconditional, unlike the band-specific voice examples above.
+    scenario = build_cell_and_guard()
+    for mood in (5, 40, 62, 92):
+        scenario.guard.mood.value = mood
+        brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+        assert "I promise nothing" in brief

@@ -212,6 +212,11 @@ def run_turn(
     if outcome == "unlock":
         scenario.door.unlock()
 
+    # Brief reflects secret_revealed as it stood *before* this turn, so the
+    # turn eligibility first opens still gets the "may reveal" framing — a
+    # real chance to narrate the moment — rather than skipping straight to
+    # "already revealed" before it's ever actually been said. Flipped for
+    # future turns only after this one's brief and reply are done.
     brief = build_guard_brief(guard, scenario.door, scenario.room, scenario.premise)
     reply = _ask_and_record(
         llm,
@@ -222,6 +227,7 @@ def run_turn(
         room_name=scenario.room.name,
         room_description=scenario.room.description,
     )
+    guard.maybe_reveal_secret()
     return reply, "guard", outcome
 
 

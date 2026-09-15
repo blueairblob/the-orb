@@ -84,6 +84,15 @@ class Guard(Thing):
     memory: list[str] = dataclasses.field(default_factory=list)
     unlock_threshold: int = 75
     lockout_threshold: int = 10
+    secret_reveal_threshold: int = 65
+    # Engine-owned state machine flag (PRD §8 v0.1 must-have: "conversation
+    # flags, what he has let slip"). Before this existed, brief.py re-offered
+    # the *same* "you may reveal this" option to the model every single
+    # turn once eligible, with no memory of whether it had happened — a
+    # direct gap against PRD §22 Gotcha #3 ("the moment the AI invents
+    # something, the engine writes it to state and feeds it back forever").
+    # Set by maybe_reveal_secret() below, never by the model itself.
+    secret_revealed: bool = False
     # PRD §12's own example, verbatim — drives are what make an NPC feel
     # alive underneath the conversation, not just a mood number.
     drives: list[str] = dataclasses.field(
@@ -153,3 +162,16 @@ class Guard(Thing):
         if self.mood.value <= self.lockout_threshold:
             return "lockout"
         return None
+
+    def maybe_reveal_secret(self) -> bool:
+        """Engine-owned state transition, not a same-turn choice the model
+        re-decides from scratch every eligible turn. Once flipped, stays
+        flipped permanently — matches Gotcha #3's "bound thereafter", not
+        reversible if mood later drops back below threshold. Returns True
+        only on the call that actually flips it, so callers (engine/loop.py)
+        can tell "just became eligible" from "already was" and time the
+        brief's framing accordingly (see build_guard_brief)."""
+        if not self.secret_revealed and self.mood.value >= self.secret_reveal_threshold:
+            self.secret_revealed = True
+            return True
+        return False

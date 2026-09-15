@@ -163,12 +163,6 @@ RULE_REMINDER = (
     "answered it before you move on to anything new."
 )
 
-# Mood must reach this before even a fragment of `guard.secret` is cleared for
-# use — matching PRD §12's threshold-gated trust, not something the actor
-# decides on its own.
-SECRET_REVEAL_THRESHOLD = 65
-
-
 def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str:
     """Walks the guard/door/room state into a markdown system message."""
     lines = [
@@ -194,7 +188,22 @@ def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str
         f"- {guard.backstory}",
     ]
 
-    if guard.mood.value >= SECRET_REVEAL_THRESHOLD:
+    # Engine-owned state (guard.secret_revealed, PRD §8 v0.1 must-have:
+    # "conversation flags, what he has let slip") decides which framing to
+    # show, not a fresh mood check re-decided every turn — see
+    # Guard.maybe_reveal_secret. The turn eligibility first opens still gets
+    # the "may reveal" framing (a real chance to narrate the moment,
+    # decided by engine/loop.py's call order); every turn after that, once
+    # the flag has flipped, gets "already revealed" instead.
+    if guard.secret_revealed:
+        lines += [
+            f"- {guard.secret}",
+            (
+                "  You already let this slip to them, once — it's said now. Don't repeat "
+                "it verbatim again; let it quietly colour how you talk to them instead."
+            ),
+        ]
+    elif guard.mood.value >= guard.secret_reveal_threshold:
         lines += [
             f"- {guard.secret}",
             (

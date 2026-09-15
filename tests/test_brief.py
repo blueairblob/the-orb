@@ -44,6 +44,23 @@ def test_secret_available_once_trust_is_earned():
     brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
 
     assert scenario.guard.secret in brief
+    assert "you may let a fragment" in brief  # not-yet-revealed framing -- secret_revealed is False
+
+
+def test_secret_shows_already_revealed_framing_once_flag_is_set():
+    # engine/loop.py's real call order: secret_revealed only flips *after*
+    # a turn's brief is built (see Guard.maybe_reveal_secret) -- this tests
+    # the brief side of that independently of mood, since once revealed it
+    # stays revealed even if mood later drops.
+    scenario = build_cell_and_guard()
+    scenario.guard.mood.value = 20  # would normally withhold the secret entirely
+    scenario.guard.secret_revealed = True
+
+    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+
+    assert scenario.guard.secret in brief
+    assert "already let this slip" in brief
+    assert "you may let a fragment" not in brief  # the one-time offer, not the ongoing fact
 
 
 def test_brief_shows_a_mood_appropriate_voice_example():

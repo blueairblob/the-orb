@@ -83,3 +83,26 @@ def test_thresholds():
 
     guard = make_guard(mood=50)
     assert guard.check_thresholds() is None
+
+
+def test_secret_not_revealed_below_threshold():
+    guard = make_guard(mood=50)
+    assert guard.maybe_reveal_secret() is False
+    assert guard.secret_revealed is False
+
+
+def test_secret_reveals_once_threshold_crossed():
+    guard = make_guard(mood=70)
+    assert guard.maybe_reveal_secret() is True
+    assert guard.secret_revealed is True
+
+
+def test_secret_reveal_is_permanent_once_flipped():
+    # PRD §22 Gotcha #3: "bound thereafter" -- not reversible if mood later
+    # drops back below secret_reveal_threshold.
+    guard = make_guard(mood=70)
+    guard.maybe_reveal_secret()
+    guard.mood.value = 20
+
+    assert guard.secret_revealed is True
+    assert guard.maybe_reveal_secret() is False  # already revealed -- no-op, not a re-reveal

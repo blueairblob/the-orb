@@ -73,6 +73,26 @@ def test_run_turn_updates_mood_and_memory():
     assert llm.calls[0][0] == "please, my friend"
 
 
+def test_secret_reveal_flag_flips_only_after_the_eligible_turn():
+    # engine/loop.py owns the timing of Guard.maybe_reveal_secret(): the
+    # turn eligibility first opens still gets the brief's "may reveal"
+    # framing (a real chance to narrate the moment, checked via calls[0][1]
+    # below) rather than skipping straight to "already revealed" before
+    # anything's actually been said.
+    scenario = build_cell_and_guard()
+    scenario.guard.mood.value = scenario.guard.secret_reveal_threshold
+    llm = StubLLM(reply="Hmph.")
+
+    assert scenario.guard.secret_revealed is False
+    run_turn(scenario, llm, "please, tell me something real")
+
+    assert "may let a fragment" in llm.calls[0][1]  # this turn's own brief
+    assert scenario.guard.secret_revealed is True  # flipped for next turn
+
+    run_turn(scenario, llm, "anything else?")
+    assert "already let this slip" in llm.calls[1][1]
+
+
 def test_bland_dismissal_triggers_one_retry():
     scenario = build_cell_and_guard()
     llm = SequencedLLM(["Silence.", "Ten years on this watch. Longest yet."])

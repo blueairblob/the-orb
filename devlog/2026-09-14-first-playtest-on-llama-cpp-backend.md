@@ -140,12 +140,12 @@ examples into an unconditional anti-promise pair plus a full per-band set, repla
 supplementing the static block. Confirmed real (if subtler than hoped) improvement via
 fresh-server isolated testing, ruling out a KV-cache-staleness confound along the way.
 
-**New open thread, not fixed this session**: the mood heuristic's `"threat"` keyword
-false-positived on "I'm **not** a threat to anyone" (no negation awareness) during the 15-turn
-warm session — cost real progress toward the unlock threshold (mood capped at 62 of the needed
-75, partly because of this one false hit). `engine/guard.py`'s `adjust_mood_from_text` has no
-negation handling at all; same class of gap as this file's own `is_bland_dismissal`/
-`is_room_description` word-only checks, not fixed yet.
+**Open thread from this session, since fixed (2026-09-15)**: the mood heuristic's `"threat"`
+keyword false-positived on "I'm **not** a threat to anyone" (no negation awareness) — cost real
+progress toward the unlock threshold in this session (mood capped at 62 of the needed 75, partly
+because of this one false hit). Fixed with a small backward-look negation window in
+`adjust_mood_from_text` — see `devlog/2026-09-15-secret-reveal-state-machine.md`'s "Update — same
+day: the threat-negation open thread, closed" section for the fix itself.
 
 ## Update — 2026-09-15 (later): a real 20-turn rapport arc reaches unlock, self-repeat gap closed
 

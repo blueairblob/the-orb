@@ -80,3 +80,26 @@ below rather than built prematurely.
   a real, if smaller-than-it-sounds (see PRD §4's own "the brief is rebuilt fresh, not accumulated"
   design, which limits how much this actually bites in practice) gap. Flagged as a real design
   question for a future session, not a quick follow-up.
+
+## Update — same day: the threat-negation open thread, closed
+
+Picked the next item off the resulting list directly (over the other candidate offered — verifying
+the never-yet-tested lockout path): `engine/guard.py`'s `adjust_mood_from_text` had no negation
+awareness at all. "Please, I'm not a threat to anyone" (from the 15-turn playtest two devlog
+entries back) matched `THREAT_WORDS` by pure set membership and docked mood eight points as if it
+were an actual threat, with no sense of what came right before the word.
+
+Fixed with a small backward-look window (`NEGATION_WINDOW = 3` tokens, checked against a
+`NEGATION_WORDS` set of common negation forms/contractions) via a new `_has_unnegated_match()`
+helper, applied uniformly to kind/rude/threat word matching — not real negation-scope parsing,
+same "keyword heuristic, not real intent parsing" spirit this file already claims for itself.
+Applied symmetrically, not just the threat direction: "I don't appreciate this" no longer scores
+as gratitude either.
+
+Pure deterministic logic, no LLM involved this time, so unit tests are the real verification —
+plus a direct sanity check reproducing the exact real utterance from the playtest (delta went from
+the old -5 to the correct +3). 4 new tests, 69 total, all passing.
+
+The lockout-path verification offered as the alternative next step is still untested and open —
+every real session so far has been cooperative/rapport-building; nothing has confirmed the other
+terminal state actually works.

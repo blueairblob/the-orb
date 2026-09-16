@@ -103,3 +103,12 @@ the old -5 to the correct +3). 4 new tests, 69 total, all passing.
 The lockout-path verification offered as the alternative next step is still untested and open —
 every real session so far has been cooperative/rapport-building; nothing has confirmed the other
 terminal state actually works.
+
+## Update — 2026-09-16: lockout confirmed too
+
+Closed the remaining open item directly: a genuinely hostile 10-line script (insults, threats,
+"shut up") ended the session correctly after 6 real turns — mood dropped from 40 to 8 (below the
+lockout_threshold of 10), and the DM's ending narration fired as expected: *"(The guard storms
+off. Your only way out just left.)"* Dialogue stayed in-character through the descent
+(*"Try it."* as a closing defiant beat). Both v0.1 terminal states are now confirmed working
+end-to-end against the real backend — no code changes needed, this was purely a coverage check.

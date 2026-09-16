@@ -1,4 +1,11 @@
-from engine.guardrail import is_bland_dismissal, is_repeated_reply, is_room_description
+from engine.guardrail import (
+    DM_FALLBACK_LINE,
+    GUARD_FALLBACK_LINE,
+    filter_reply,
+    is_bland_dismissal,
+    is_repeated_reply,
+    is_room_description,
+)
 
 
 def test_bare_dismissal_is_flagged():
@@ -84,3 +91,22 @@ def test_room_description_generalises_past_this_one_scenario():
 def test_unrelated_line_is_not_flagged_as_room_description():
     assert not is_room_description("Hmph. Fine.", "the cell")
     assert not is_room_description("We're both prisoners here, in a way.", "the cell")
+
+
+def test_filter_reply_falls_back_to_a_first_person_line_for_the_guard():
+    # Regression (real playtest 2026-09-16): the old single shared
+    # FALLBACK_LINE ("The guard grunts, and says nothing more.") was
+    # third-person narration voiced as the guard's own line -- exactly the
+    # rule PERSONA bans the guard from breaking (only the DM narrates).
+    assert filter_reply("", "guard") == GUARD_FALLBACK_LINE
+    assert filter_reply("As an AI, I cannot do that.", "guard") == GUARD_FALLBACK_LINE
+    assert "grunts" not in GUARD_FALLBACK_LINE.lower()
+
+
+def test_filter_reply_falls_back_to_a_dm_appropriate_line_for_the_dm():
+    assert filter_reply("", "dm") == DM_FALLBACK_LINE
+    assert DM_FALLBACK_LINE != GUARD_FALLBACK_LINE
+
+
+def test_filter_reply_defaults_to_the_guard_fallback():
+    assert filter_reply("") == GUARD_FALLBACK_LINE

@@ -95,7 +95,7 @@ VOICE_EXAMPLE_NUDGE = (
 # was enough on its own (real playtest 2026-09-14: "Tell me about this
 # place" named the room 4/4 times even with a nudge naming the problem
 # directly, same as the voice-example case) — so this also falls back to
-# guardrail.FALLBACK_LINE on a second failure rather than retrying forever.
+# guardrail.fallback_line() on a second failure rather than retrying forever.
 ROOM_DESCRIPTION_NUDGE = (
     "\n\n# Note\n"
     "Your instinct just now was to describe the cell or your surroundings "
@@ -199,7 +199,7 @@ def _ask_and_record(
         return None
 
     result = llm.ask(prompt, system_message=brief)
-    reply = guardrail.filter_reply(result.response)
+    reply = guardrail.filter_reply(result.response, speaker)
 
     # The engine directs: a flat non-answer, a verbatim echo of a past line,
     # or a verbatim copy of a voice-example line gets one retake with a
@@ -214,7 +214,7 @@ def _ask_and_record(
         retry_result = llm.ask(
             prompt, system_message=brief + _NUDGES[failure], sampler_config="retry"
         )
-        retry_reply = guardrail.filter_reply(retry_result.response)
+        retry_reply = guardrail.filter_reply(retry_result.response, speaker)
         retry_failure = _failure(retry_reply)
         if retry_failure is None:
             reply = retry_reply
@@ -225,7 +225,7 @@ def _ask_and_record(
             # these measurably don't (see _FALLS_BACK_ON_RETRY_FAILURE's own
             # comment above) — shipping the same bad reply twice is worse
             # than the guardrail's own last-resort line.
-            reply = guardrail.FALLBACK_LINE
+            reply = guardrail.fallback_line(speaker)
 
     guard.remember(speaker, reply)
     return reply

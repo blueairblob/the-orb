@@ -188,7 +188,7 @@ def test_room_description_falls_back_to_safe_line_if_retry_also_fails():
 
     reply, _, _ = run_turn(scenario, llm, "tell me about this place")
 
-    assert reply == "The guard grunts, and says nothing more."
+    assert reply == "Enough talk."
     assert len(llm.calls) == 3  # narration + retry + fact-extraction
 
 
@@ -203,7 +203,7 @@ def test_voice_example_reuse_falls_back_to_safe_line_if_retry_also_fails():
 
     reply, _, _ = run_turn(scenario, llm, "what's your name?")
 
-    assert reply == "The guard grunts, and says nothing more."
+    assert reply == "Enough talk."
     assert len(llm.calls) == 3  # narration + retry + fact-extraction
 
 
@@ -223,8 +223,24 @@ def test_repeat_retry_falls_back_to_safe_line_if_still_repeated():
 
     reply, _, _ = run_turn(scenario, llm, "come on then")
 
-    assert reply == "The guard grunts, and says nothing more."
+    assert reply == "Enough talk."
     assert len(llm.calls) == 3  # narration + retry + fact-extraction
+
+
+def test_dm_repeat_retry_falls_back_to_a_dm_appropriate_safe_line():
+    # Regression (real playtest 2026-09-16): the guard was heard saying "The
+    # guard grunts, and says nothing more." -- third-person narration voiced
+    # as his own first-person line, breaking PERSONA's own rule. The shared
+    # fallback was also wrong the *other* way: this proves a DM self-repeat
+    # falls back to a DM-appropriate line, not the guard's.
+    scenario = build_cell_and_guard()
+    scenario.guard.remember("dm", "A cold stone cell.")
+    llm = SequencedLLM(["A cold stone cell.", "A cold stone cell."])
+
+    reply, speaker, _ = run_turn(scenario, llm, "describe the room")
+
+    assert speaker == "dm"
+    assert reply == "The moment passes without another word."
 
 
 def test_run_turn_records_a_newly_improvised_fact():

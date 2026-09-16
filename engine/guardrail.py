@@ -20,7 +20,21 @@ FOURTH_WALL_MARKERS = (
 
 MAX_REPLY_CHARS = 240
 
-FALLBACK_LINE = "The guard grunts, and says nothing more."
+# Speaker-specific: PRD §12's DM/guard split means "safe last-resort line"
+# means different things for each. Real playtest catch (2026-09-16): the old
+# single shared FALLBACK_LINE ("The guard grunts, and says nothing more.")
+# was third-person narration voiced *as the guard's own line* — exactly the
+# rule PERSONA itself bans the guard from breaking (only the DM narrates in
+# third person). GUARD_FALLBACK_LINE stays first-person in his own terse
+# voice; DM_FALLBACK_LINE keeps the third-person scene-neutral register the
+# DM actually uses, worded generically so it never misdescribes whatever the
+# DM was actually narrating.
+GUARD_FALLBACK_LINE = "Enough talk."
+DM_FALLBACK_LINE = "The moment passes without another word."
+
+
+def fallback_line(speaker: str) -> str:
+    return GUARD_FALLBACK_LINE if speaker == "guard" else DM_FALLBACK_LINE
 
 # Gemma 4 E2B's single strongest failure mode observed against this brief
 # (see devlog): even with a rich backstory and an explicit ban in the
@@ -112,17 +126,18 @@ def is_room_description(text: str, room_name: str, room_description: str = "") -
     return bool(words & candidates)
 
 
-def filter_reply(text: str) -> str:
-    """Returns `text` unchanged if it passes, else a safe fallback line."""
+def filter_reply(text: str, speaker: str = "guard") -> str:
+    """Returns `text` unchanged if it passes, else a safe fallback line for
+    `speaker` ("guard" or "dm" — see `fallback_line`)."""
     stripped = text.strip()
     if not stripped:
-        return FALLBACK_LINE
+        return fallback_line(speaker)
 
     lowered = stripped.lower()
     if any(marker in lowered for marker in FOURTH_WALL_MARKERS):
-        return FALLBACK_LINE
+        return fallback_line(speaker)
 
     if len(stripped) > MAX_REPLY_CHARS:
-        return FALLBACK_LINE
+        return fallback_line(speaker)
 
     return stripped

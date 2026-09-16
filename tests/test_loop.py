@@ -1,6 +1,6 @@
 import dataclasses
 
-from engine.loop import run_loop, run_turn
+from engine.loop import FACT_EXTRACTION_SAMPLER_KWARGS, run_loop, run_turn
 from engine.scenario import build_cell_and_guard
 
 
@@ -89,8 +89,11 @@ def test_secret_reveal_flag_flips_only_after_the_eligible_turn():
     assert "may let a fragment" in llm.calls[0][1]  # this turn's own brief
     assert scenario.guard.secret_revealed is True  # flipped for next turn
 
+    # calls[1] is this turn's fact-extraction call (system_message=None), not
+    # the next turn's narration brief — that's calls[2], since each guard
+    # turn now makes a narration call followed by an extraction call.
     run_turn(scenario, llm, "anything else?")
-    assert "already let this slip" in llm.calls[1][1]
+    assert "already let this slip" in llm.calls[2][1]
 
 
 def test_bland_dismissal_triggers_one_retry():
@@ -100,7 +103,9 @@ def test_bland_dismissal_triggers_one_retry():
     reply, _, _ = run_turn(scenario, llm, "please, my friend")
 
     assert reply == "Ten years on this watch. Longest yet."
-    assert len(llm.calls) == 2
+    # narration attempt + retry + the fact-extraction call that follows every
+    # successful guard turn (see engine/loop.py's _maybe_record_new_fact).
+    assert len(llm.calls) == 3
     assert "Note" in llm.calls[1][1]  # the retry brief carries the nudge
     assert llm.calls[0][2] == "default"
     assert llm.calls[1][2] == "retry"  # resampled with higher diversity, not a repeat
@@ -124,7 +129,7 @@ def test_verbatim_self_repeat_triggers_one_retry():
     reply, _, _ = run_turn(scenario, llm, "come on then")
 
     assert reply == "Wait by the wall."
-    assert len(llm.calls) == 2
+    assert len(llm.calls) == 3  # narration + retry + fact-extraction
     assert "repeat" in llm.calls[1][1].lower()  # retry brief carries the repeat nudge
     assert llm.calls[1][2] == "retry"
 
@@ -140,7 +145,7 @@ def test_verbatim_voice_example_reuse_triggers_one_retry():
     reply, _, _ = run_turn(scenario, llm, "what's your name?")
 
     assert reply == "Names don't matter in here."
-    assert len(llm.calls) == 2
+    assert len(llm.calls) == 3  # narration + retry + fact-extraction
     assert "examples" in llm.calls[1][1].lower()  # the specific nudge, not the generic repeat one
     assert llm.calls[1][2] == "retry"
 
@@ -155,7 +160,7 @@ def test_room_description_triggers_one_retry():
     reply, _, _ = run_turn(scenario, llm, "tell me about this place")
 
     assert reply == "That's not mine to say."
-    assert len(llm.calls) == 2
+    assert len(llm.calls) == 3  # narration + retry + fact-extraction
     assert "dungeon master" in llm.calls[1][1].lower()
     assert llm.calls[1][2] == "retry"
 
@@ -171,7 +176,7 @@ def test_room_description_falls_back_to_safe_line_if_retry_also_fails():
     reply, _, _ = run_turn(scenario, llm, "tell me about this place")
 
     assert reply == "The guard grunts, and says nothing more."
-    assert len(llm.calls) == 2
+    assert len(llm.calls) == 3  # narration + retry + fact-extraction
 
 
 def test_voice_example_reuse_falls_back_to_safe_line_if_retry_also_fails():
@@ -186,7 +191,7 @@ def test_voice_example_reuse_falls_back_to_safe_line_if_retry_also_fails():
     reply, _, _ = run_turn(scenario, llm, "what's your name?")
 
     assert reply == "The guard grunts, and says nothing more."
-    assert len(llm.calls) == 2
+    assert len(llm.calls) == 3  # narration + retry + fact-extraction
 
 
 def test_repeat_retry_falls_back_to_safe_line_if_still_repeated():
@@ -206,7 +211,40 @@ def test_repeat_retry_falls_back_to_safe_line_if_still_repeated():
     reply, _, _ = run_turn(scenario, llm, "come on then")
 
     assert reply == "The guard grunts, and says nothing more."
-    assert len(llm.calls) == 2
+    assert len(llm.calls) == 3  # narration + retry + fact-extraction
+
+
+def test_run_turn_records_a_newly_improvised_fact():
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["I grew up in Kelsey, by the river.", "He grew up in Kelsey, by the river."])
+
+    run_turn(scenario, llm, "where are you from?")
+
+    assert scenario.guard.established_facts == ["He grew up in Kelsey, by the river."]
+    assert llm.calls[1][1] is None  # extraction call has no brief, unlike narration
+    assert llm.calls[1][2] == FACT_EXTRACTION_SAMPLER_KWARGS
+
+
+def test_run_turn_does_not_record_a_fact_when_extraction_says_none():
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Hmph. Fine.", "NONE"])
+
+    run_turn(scenario, llm, "please, my friend")
+
+    assert scenario.guard.established_facts == []
+
+
+def test_run_turn_does_not_record_a_fact_for_near_miss_negative_answers():
+    # Regression (real backend, 2026-09-16): the extraction prompt asks for
+    # exactly "NONE", but the real model sometimes answers plain "No" --
+    # that used to slip past an exact-match check and get recorded as a
+    # bogus "fact" (see _NO_NEW_FACT_ANSWERS in engine/loop.py).
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Wife and kids. They're not here.", "No"])
+
+    run_turn(scenario, llm, "do you have a family?")
+
+    assert scenario.guard.established_facts == []
 
 
 def test_environment_query_routes_to_dm_without_moving_mood():
@@ -302,4 +340,4 @@ def test_run_loop_quits_on_command(tmp_path):
 
     run_loop(scenario, llm, voice, save_path)
 
-    assert len(llm.calls) == 1
+    assert len(llm.calls) == 2  # narration + fact-extraction, for the one "hello" turn

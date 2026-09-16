@@ -141,3 +141,29 @@ def test_secret_reveal_is_permanent_once_flipped():
 
     assert guard.secret_revealed is True
     assert guard.maybe_reveal_secret() is False  # already revealed -- no-op, not a re-reveal
+
+
+def test_add_established_fact_records_newest_first():
+    guard = make_guard()
+    assert guard.add_established_fact("He grew up in the river town of Kelsey.") is True
+    assert guard.add_established_fact("His brother served in the same watch.") is True
+
+    assert guard.established_facts == [
+        "His brother served in the same watch.",
+        "He grew up in the river town of Kelsey.",
+    ]
+
+
+def test_add_established_fact_dedupes_case_and_whitespace_insensitively():
+    guard = make_guard()
+    guard.add_established_fact("He grew up in the river town of Kelsey.")
+
+    assert guard.add_established_fact("  HE GREW UP IN THE RIVER TOWN OF KELSEY.  ") is False
+    assert guard.established_facts == ["He grew up in the river town of Kelsey."]
+
+
+def test_add_established_fact_rejects_empty_or_blank():
+    guard = make_guard()
+    assert guard.add_established_fact("") is False
+    assert guard.add_established_fact("   ") is False
+    assert guard.established_facts == []

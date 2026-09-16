@@ -1,4 +1,4 @@
-from engine.brief import build_guard_brief
+from engine.brief import build_fact_extraction_prompt, build_guard_brief
 from engine.scenario import build_cell_and_guard
 
 
@@ -61,6 +61,50 @@ def test_secret_shows_already_revealed_framing_once_flag_is_set():
     assert scenario.guard.secret in brief
     assert "already let this slip" in brief
     assert "you may let a fragment" not in brief  # the one-time offer, not the ongoing fact
+
+
+def test_brief_omits_established_facts_section_when_none_recorded():
+    scenario = build_cell_and_guard()
+
+    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+
+    assert "already told them" not in brief
+
+
+def test_brief_feeds_back_established_facts_newest_first():
+    scenario = build_cell_and_guard()
+    scenario.guard.add_established_fact("He grew up in the river town of Kelsey.")
+    scenario.guard.add_established_fact("His brother served in the same watch.")
+
+    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+
+    assert "already told them" in brief
+    assert "He grew up in the river town of Kelsey." in brief
+    assert "His brother served in the same watch." in brief
+    assert brief.index("His brother served in the same watch.") < brief.index(
+        "He grew up in the river town of Kelsey."
+    )
+
+
+def test_fact_extraction_prompt_lists_no_facts_yet():
+    scenario = build_cell_and_guard()
+
+    prompt = build_fact_extraction_prompt(scenario.guard, "what's your name?", "Garrick. Hush.")
+
+    assert "(nothing yet)" in prompt
+    assert "what's your name?" in prompt
+    assert "Garrick. Hush." in prompt
+    assert "NONE" in prompt
+
+
+def test_fact_extraction_prompt_lists_existing_facts():
+    scenario = build_cell_and_guard()
+    scenario.guard.add_established_fact("He grew up in the river town of Kelsey.")
+
+    prompt = build_fact_extraction_prompt(scenario.guard, "where are you from?", "Kelsey.")
+
+    assert "He grew up in the river town of Kelsey." in prompt
+    assert "(nothing yet)" not in prompt
 
 
 def test_brief_shows_a_mood_appropriate_voice_example():

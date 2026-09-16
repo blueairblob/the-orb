@@ -68,7 +68,7 @@ def test_empty_and_malformed_messages_are_ignored(tmp_path):
         reply = ws.receive_json()
         assert reply["type"] == "reply"
 
-    assert len(llm.calls) == 1
+    assert len(llm.calls) == 2  # narration + fact-extraction, for the one "hello" turn
 
 
 def test_static_index_is_served(tmp_path):

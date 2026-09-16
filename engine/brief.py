@@ -212,6 +212,13 @@ def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str
             ),
         ]
 
+    # Anything the actor has already improvised gets fed back as fact, not
+    # re-decided each turn from a forgetful chat log (PRD §22 Gotcha #3) —
+    # see Guard.add_established_fact and engine/loop.py's extraction call.
+    if guard.established_facts:
+        lines += ["", "# Things you've already told them — stay consistent with these"]
+        lines += [f"- {fact}" for fact in guard.established_facts]
+
     # Short verbatim history only — see this file's docstring. Forgetting an
     # exchange from a dozen turns back is in character for this NPC, not a
     # bug to fix with a wider window.
@@ -227,3 +234,32 @@ def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str
     ]
 
     return "\n".join(lines)
+
+
+def build_fact_extraction_prompt(guard: Guard, player_utterance: str, guard_reply: str) -> str:
+    """A small, separate prompt — not the free-form narration call — asking
+    whether this turn established a new durable fact about the guard.
+    Modelled on the "Oracle" fact-ledger pattern (an existing open-source
+    LLM-GM engine with the same server-owns-truth philosophy): a focused
+    extraction call is far more reliable than parsing meaning out of open
+    prose with a keyword heuristic, the same trap already hit twice this
+    session (guardrail.is_bland_dismissal, is_room_description). Runs
+    *after* the narration reply is already finalized — unlike Oracle's
+    mechanical dice/HP deltas, a personality detail the guard chooses to
+    reveal doesn't have a clean "decide it before narrating" answer; the
+    actor only decides what to invent as it performs the line."""
+    existing = (
+        "\n".join(f"- {fact}" for fact in guard.established_facts) or "(nothing yet)"
+    )
+    return (
+        f"# Already established about {guard.name}\n{existing}\n\n"
+        "# What was just said\n"
+        f"Player: {player_utterance}\n"
+        f"{guard.name}: {guard_reply}\n\n"
+        "# Task\n"
+        f"Did {guard.name}'s reply state a NEW, specific, reusable fact about himself "
+        "that isn't already listed above — a name, a person, a place, an event from his "
+        "past? Mood, feelings, or vague colour do not count, only a concrete fact someone "
+        "could refer back to later. If yes, write it as one short third-person sentence. "
+        "If no, reply with exactly: NONE"
+    )

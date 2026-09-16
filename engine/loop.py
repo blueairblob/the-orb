@@ -14,7 +14,11 @@ from pathlib import Path
 from typing import Protocol
 
 from engine import dm, guardrail
-from engine.brief import VOICE_EXAMPLE_REPLIES, build_guard_brief
+from engine.brief import (
+    VOICE_EXAMPLE_REPLIES,
+    build_fact_extraction_prompt,
+    build_guard_brief,
+)
 from engine.guard import Guard
 from engine.llm import GemmaHarness, is_model_ready
 from engine.save import load_state, save_state
@@ -115,6 +119,38 @@ _NUDGES = {
 # time, common enough to explain both. A verbatim self-echo reads just as
 # broken to a player as a copied voice-example line; treat it the same way.
 _FALLS_BACK_ON_RETRY_FAILURE = {"voice_example", "room_description", "self_repeat"}
+
+# Low temperature deliberately, unlike DEFAULT_SAMPLER_CONFIG_KWARGS in
+# engine/llm.py — this call is extraction, not in-character performance, and
+# wants the same fact judged the same way turn to turn, not creative variety.
+FACT_EXTRACTION_SAMPLER_KWARGS = {"temperature": 0.2, "top_k": 20, "top_p": 0.9}
+
+
+# The prompt asks for exactly "NONE" on a no-fact turn, but real backend
+# testing (2026-09-16) caught the model answering plain "No" instead — an
+# exact-match check let that get recorded as if it were a fact, corrupting
+# the ledger with garbage ("- No" shown back to the model as established
+# canon). Small tolerance set, not real intent parsing, same spirit as the
+# rest of this file's keyword heuristics.
+_NO_NEW_FACT_ANSWERS = {"NONE", "NO", "N/A", "NOTHING", "NOTHING NEW", "NO NEW FACT"}
+
+
+def _maybe_record_new_fact(llm: LLMClient, guard: Guard, player_utterance: str, reply: str) -> None:
+    """Oracle-pattern fact-ledger extraction (see build_fact_extraction_prompt
+    for the full rationale) — a small, separate call, not a keyword scan
+    over the reply, deciding whether this turn established a new durable
+    fact about the guard. Best-effort: if the model doesn't cleanly say
+    NONE, guard.add_established_fact still dedupes, so a slightly-off
+    answer degrades gracefully rather than corrupting the ledger."""
+    extraction_prompt = build_fact_extraction_prompt(guard, player_utterance, reply)
+    result = llm.ask(
+        extraction_prompt, system_message=None, sampler_config=FACT_EXTRACTION_SAMPLER_KWARGS
+    )
+    answer = guardrail.filter_reply(result.response)
+    normalized = answer.strip().rstrip(".").upper()
+    if not normalized or normalized in _NO_NEW_FACT_ANSWERS:
+        return
+    guard.add_established_fact(answer)
 
 
 def _ask_and_record(
@@ -228,6 +264,7 @@ def run_turn(
         room_description=scenario.room.description,
     )
     guard.maybe_reveal_secret()
+    _maybe_record_new_fact(llm, guard, player_utterance, reply)
     return reply, "guard", outcome
 
 

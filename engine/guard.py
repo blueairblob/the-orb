@@ -130,6 +130,19 @@ class Guard(Thing):
     # something, the engine writes it to state and feeds it back forever").
     # Set by maybe_reveal_secret() below, never by the model itself.
     secret_revealed: bool = False
+    # PRD §22 Gotcha #3's general case, beyond the one pre-scripted
+    # `secret` above: durable facts the actor spontaneously *invents*
+    # during narration (a name, a person, a place, an event from his
+    # past) — nothing the engine knew about in advance. Recorded via
+    # add_established_fact(), fed back into every future brief so the
+    # actor is bound by its own earlier word rather than free to
+    # reinvent it (PRD's own example: "rolling green hills" then "a dark
+    # forest" — contradiction, illusion dead). Newest-first, matching the
+    # "Oracle" fact-ledger pattern this was modelled on (see devlog).
+    # No cap — v0.1 sessions are short (10-30 turns to unlock/lockout),
+    # so the bloat problem PRD §22 Gotcha #6 flags as "unsolved" doesn't
+    # bite at this scale; revisit if that ever changes.
+    established_facts: list[str] = dataclasses.field(default_factory=list)
     # PRD §12's own example, verbatim — drives are what make an NPC feel
     # alive underneath the conversation, not just a mood number.
     drives: list[str] = dataclasses.field(
@@ -216,3 +229,16 @@ class Guard(Thing):
             self.secret_revealed = True
             return True
         return False
+
+    def add_established_fact(self, fact: str) -> bool:
+        """Records a new durable fact the actor just improvised (PRD §22
+        Gotcha #3). Deduped case/whitespace-insensitively — returns False
+        without re-adding if this fact (or near enough) is already
+        recorded. Newest-first, matching build_guard_brief's ordering."""
+        normalized = fact.strip()
+        if not normalized:
+            return False
+        if any(normalized.lower() == existing.lower() for existing in self.established_facts):
+            return False
+        self.established_facts.insert(0, normalized)
+        return True

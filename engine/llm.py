@@ -158,12 +158,21 @@ class GemmaHarness:
     Manages its own `llama-server` subprocess (started on construction,
     stopped on `close()`) rather than expecting one to already be running —
     same self-contained "just works" contract the old litert-lm version had.
-    All calls from one instance share a single fixed `id_slot`, matching
-    this engine's current one-guard-per-process scope: with
-    `cache_prompt=True`, llama.cpp's automatic longest-common-prefix
-    matching reuses the static top of each freshly-rebuilt brief
-    (`engine/brief.py` — persona/voice-examples/scene/backstory) turn to
-    turn, without needing to accumulate raw conversation history.
+
+    Calls default to a fixed `id_slot` (0), matching this engine's current
+    one-guard-per-process scope: with `cache_prompt=True`, llama.cpp's
+    automatic longest-common-prefix matching reuses the static top of each
+    freshly-rebuilt brief (`engine/brief.py` — persona/voice-examples/scene/
+    backstory) turn to turn, without needing to accumulate raw conversation
+    history. Real testing (2026-09-16, devlog) found this reuse silently
+    breaks the moment a *differently-shaped* prompt shares the same slot —
+    llama.cpp's cache is per-slot, one active KV sequence at a time, so
+    engine/loop.py's fact-extraction call (a short, unrelated prompt run
+    right after each narration reply) was evicting the narration brief's
+    cached prefix every single turn, forcing a full ~13s re-prefill on
+    *every* guard turn rather than just the first. Fixed by giving that
+    call its own `id_slot` (see `ask()`'s `id_slot` param) — hence
+    `--parallel 2` below, one slot per concurrently-live prompt shape.
     """
 
     def __init__(
@@ -216,6 +225,13 @@ class GemmaHarness:
             "--n-gpu-layers", "0",
             "--cache-type-k", "q4_0",
             "--cache-type-v", "q4_0",
+            # Two slots: id_slot 0 for narration/retry, id_slot 1 for the
+            # separate fact-extraction call (see the class docstring) — each
+            # keeps its own KV cache so one doesn't evict the other's
+            # reusable prefix. ctx_size is split across slots by llama.cpp,
+            # so each still gets ctx_size/2 -- comfortably above a brief's
+            # actual size (~560 tokens) at the current DEFAULT_CTX_SIZE.
+            "--parallel", "2",
             "--slots",
         ]
         log_path = orb_models_base_dir() / "logs" / "llama-server.log"
@@ -272,11 +288,19 @@ class GemmaHarness:
         prompt: str,
         system_message: str | None = None,
         sampler_config: dict[str, Any] | str | None = "default",
+        id_slot: int | None = None,
     ) -> PromptResult:
         """`sampler_config`: "default" (this instance's usual sampling, see
         DEFAULT_SAMPLER_CONFIG_KWARGS) or "retry" (RETRY_SAMPLER_CONFIG_KWARGS
         — higher diversity, for engine/loop.py's bland-dismissal resample) —
-        or pass a dict of raw llama.cpp request fields to override outright."""
+        or pass a dict of raw llama.cpp request fields to override outright.
+
+        `id_slot`: which llama.cpp KV-cache slot to use, defaulting to this
+        instance's usual one (0). Pass a different slot for a prompt with a
+        different shape/prefix than the usual brief (e.g. loop.py's fact-
+        extraction call) — sharing a slot between two unrelated prompts
+        means whichever ran second evicts the first's cached prefix, so
+        *neither* ever gets to reuse it turn to turn (devlog 2026-09-16)."""
         if sampler_config == "default":
             resolved_sampler_config = self._sampler_config
         elif sampler_config == "retry":
@@ -294,7 +318,7 @@ class GemmaHarness:
 
         payload = {
             "messages": messages,
-            "id_slot": self._id_slot,
+            "id_slot": self._id_slot if id_slot is None else id_slot,
             "cache_prompt": True,
             "max_tokens": DEFAULT_MAX_TOKENS,
             "stream": True,

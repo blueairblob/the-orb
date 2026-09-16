@@ -51,7 +51,11 @@ class LLMResult(Protocol):
 
 class LLMClient(Protocol):
     def ask(
-        self, prompt: str, system_message: str | None = None, sampler_config: str = "default"
+        self,
+        prompt: str,
+        system_message: str | None = None,
+        sampler_config: str = "default",
+        id_slot: int | None = None,
     ) -> LLMResult: ...
 
 
@@ -125,6 +129,15 @@ _FALLS_BACK_ON_RETRY_FAILURE = {"voice_example", "room_description", "self_repea
 # wants the same fact judged the same way turn to turn, not creative variety.
 FACT_EXTRACTION_SAMPLER_KWARGS = {"temperature": 0.2, "top_k": 20, "top_p": 0.9}
 
+# A distinct llama.cpp KV-cache slot from the narration/retry calls' default
+# (0) — real backend testing (2026-09-16, devlog) found that sharing one
+# slot between this short, differently-shaped prompt and the guard's much
+# larger brief meant *each* call evicted the other's cached prefix, so
+# narration never got to reuse its static top turn to turn and every single
+# guard turn paid a full ~13s re-prefill instead of just the first.
+# GemmaHarness reserves a second slot (--parallel 2) specifically for this.
+FACT_EXTRACTION_ID_SLOT = 1
+
 
 # The prompt asks for exactly "NONE" on a no-fact turn, but real backend
 # testing (2026-09-16) caught the model answering plain "No" instead — an
@@ -144,7 +157,10 @@ def _maybe_record_new_fact(llm: LLMClient, guard: Guard, player_utterance: str, 
     answer degrades gracefully rather than corrupting the ledger."""
     extraction_prompt = build_fact_extraction_prompt(guard, player_utterance, reply)
     result = llm.ask(
-        extraction_prompt, system_message=None, sampler_config=FACT_EXTRACTION_SAMPLER_KWARGS
+        extraction_prompt,
+        system_message=None,
+        sampler_config=FACT_EXTRACTION_SAMPLER_KWARGS,
+        id_slot=FACT_EXTRACTION_ID_SLOT,
     )
     answer = guardrail.filter_reply(result.response)
     normalized = answer.strip().rstrip(".").upper()

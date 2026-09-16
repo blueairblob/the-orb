@@ -1,6 +1,11 @@
 import dataclasses
 
-from engine.loop import FACT_EXTRACTION_SAMPLER_KWARGS, run_loop, run_turn
+from engine.loop import (
+    FACT_EXTRACTION_ID_SLOT,
+    FACT_EXTRACTION_SAMPLER_KWARGS,
+    run_loop,
+    run_turn,
+)
 from engine.scenario import build_cell_and_guard
 
 
@@ -18,7 +23,11 @@ class StubLLM:
         self.calls: list[tuple[str, str | None]] = []
 
     def ask(
-        self, prompt: str, system_message: str | None = None, sampler_config: str = "default"
+        self,
+        prompt: str,
+        system_message: str | None = None,
+        sampler_config: str = "default",
+        id_slot: int | None = None,
     ) -> StubResult:
         self.calls.append((prompt, system_message))
         return StubResult(response=self.reply)
@@ -33,9 +42,13 @@ class SequencedLLM:
         self.calls: list[tuple[str, str | None, str]] = []
 
     def ask(
-        self, prompt: str, system_message: str | None = None, sampler_config: str = "default"
+        self,
+        prompt: str,
+        system_message: str | None = None,
+        sampler_config: str = "default",
+        id_slot: int | None = None,
     ) -> StubResult:
-        self.calls.append((prompt, system_message, sampler_config))
+        self.calls.append((prompt, system_message, sampler_config, id_slot))
         index = min(len(self.calls) - 1, len(self.replies) - 1)
         return StubResult(response=self.replies[index])
 
@@ -223,6 +236,12 @@ def test_run_turn_records_a_newly_improvised_fact():
     assert scenario.guard.established_facts == ["He grew up in Kelsey, by the river."]
     assert llm.calls[1][1] is None  # extraction call has no brief, unlike narration
     assert llm.calls[1][2] == FACT_EXTRACTION_SAMPLER_KWARGS
+    # Regression (2026-09-16, real backend): sharing the narration calls'
+    # default id_slot meant this call evicted the brief's cached prefix
+    # every turn, forcing a full re-prefill on every single guard turn
+    # instead of just the first. Must land on its own slot.
+    assert llm.calls[1][3] == FACT_EXTRACTION_ID_SLOT
+    assert llm.calls[0][3] != FACT_EXTRACTION_ID_SLOT  # narration keeps the default slot
 
 
 def test_run_turn_does_not_record_a_fact_when_extraction_says_none():

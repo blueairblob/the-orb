@@ -27,6 +27,7 @@ leave it here if it's closer to "here's what we tried and found."
 
 ## Entries
 
+- [2026-09-16 — Generalizing the mood dial into a reusable Character Engine primitive](2026-09-16-character-engine-stat-primitive.md)
 - [2026-09-16 — Closing the last state-machine gap: improvised detail becomes canon](2026-09-16-improvised-detail-canonization.md)
 - [2026-09-15 — Closing a real state-machine gap: the secret reveal](2026-09-15-secret-reveal-state-machine.md)
 - [2026-09-14 — First real playtest on the new llama.cpp backend, two bugs found and fixed](2026-09-14-first-playtest-on-llama-cpp-backend.md)

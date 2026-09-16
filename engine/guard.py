@@ -1,11 +1,11 @@
 """The guard — the Character Engine's first NPC (PRD §12, the "Tamagotchi model").
 
 PRD §12 explicitly leaves "what actually moves the dial?" as an open,
-unsketched question. `adjust_mood_from_text` below is a first sketch, not a
-final answer: a small, transparent keyword heuristic. The natural upgrade —
-have the LLM *propose* a mood delta via structured output and let the engine
-clamp/apply it (Gotcha #31: "agents propose, engine disposes") — is flagged
-in the devlog as the v0.2 direction, not built here.
+unsketched question. `adjust_affiliation_from_text` below is a first sketch,
+not a final answer: a small, transparent keyword heuristic. The natural
+upgrade — have the LLM *propose* a delta via structured output and let the
+engine clamp/apply it (Gotcha #31: "agents propose, engine disposes") — is
+flagged in the devlog as the v0.2 direction, not built here.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
+from engine.character import Stat, has_unnegated_match
 from engine.world import Thing
 
 KIND_WORDS = {
@@ -35,31 +36,18 @@ RUDE_DELTA = -4
 THREAT_DELTA = -8
 REPEAT_DELTA = -2
 
-# Real false positive (devlog 2026-09-15): "I'm not a threat to anyone" —
-# reassurance, not menace — docked mood as if it were an actual threat,
-# because THREAT_WORDS matching was pure set membership with no sense of
-# what came before the word. Same fix applies symmetrically to kind/rude
-# words ("I don't appreciate this" isn't gratitude either). A small
-# backward-look window, not real negation-scope parsing — same "keyword
-# heuristic, not real intent parsing" spirit as the rest of this file.
-NEGATION_WORDS = {
-    "not",
-    "no",
-    "never",
-    "don't",
-    "doesn't",
-    "didn't",
-    "isn't",
-    "aren't",
-    "wasn't",
-    "weren't",
-    "won't",
-    "wouldn't",
-    "can't",
-    "couldn't",
-    "ain't",
-}
-NEGATION_WINDOW = 3
+# Narrative register ladder for the guard's Affiliation stat (see
+# engine/character.py's Stat.bands) — unchanged values from the old
+# MoodDial.band, just relocated: Stat itself carries no opinion on what
+# these labels mean, only this NPC does. Ascending (threshold, label); the
+# last entry's threshold must cover up to the stat's ceiling.
+AFFILIATION_BANDS: tuple[tuple[int, str], ...] = (
+    (15, "hostile"),
+    (40, "gruff and suspicious"),
+    (65, "wary but listening"),
+    (85, "warming"),
+    (100, "ready to help"),
+)
 
 # Reverted back down after a real test: widening this to 24 (and the brief's
 # window to 16) was meant to fix the guard forgetting an offer from a dozen
@@ -73,51 +61,24 @@ NEGATION_WINDOW = 3
 MAX_MEMORY = 12
 
 
-def _has_unnegated_match(tokens: list[str], trigger_words: set[str]) -> bool:
-    """True if any `trigger_words` token appears without a NEGATION_WORDS
-    token in the NEGATION_WINDOW tokens immediately before it."""
-    for i, tok in enumerate(tokens):
-        if tok in trigger_words:
-            window = tokens[max(0, i - NEGATION_WINDOW) : i]
-            if not any(w in NEGATION_WORDS for w in window):
-                return True
-    return False
-
-
-@dataclasses.dataclass
-class MoodDial:
-    """A single trust/suspicion dial, 0-100 (PRD §12 lists two — suspicion,
-    warmth — but with the driving mechanism unsketched, v0.1 keeps one and
-    documents the simplification rather than guessing at a second)."""
-
-    value: int = 40
-    minimum: int = 0
-    maximum: int = 100
-
-    def adjust(self, delta: int) -> None:
-        self.value = max(self.minimum, min(self.maximum, self.value + delta))
-
-    @property
-    def band(self) -> str:
-        """Narrative register, never the raw number (PRD §12: "the AI simply
-        voices wherever the dial currently sits")."""
-        if self.value <= 15:
-            return "hostile"
-        if self.value <= 40:
-            return "gruff and suspicious"
-        if self.value <= 65:
-            return "wary but listening"
-        if self.value <= 85:
-            return "warming"
-        return "ready to help"
-
-
 @dataclasses.dataclass
 class Guard(Thing):
     """An NPC running the Character Engine (PRD §12), pointed at a single
     person rather than the whole scene."""
 
-    mood: MoodDial = dataclasses.field(default_factory=MoodDial)
+    # PRD §12 lists two dials (suspicion, warmth) but leaves the driving
+    # mechanism unsketched; research into psychology/game-AI models of NPC
+    # disposition (devlog 2026-09-16) mapped "warmth <-> hostility" onto the
+    # interpersonal circumplex's Affiliation axis — this *is* trust, not a
+    # separate number from it (see engine/character.py's Stat for the
+    # generic primitive this is built on, shared by every future NPC). A
+    # second axis, Control (dominance <-> submission), is deliberately not
+    # built yet — no scene currently needs it to gate or flavor anything,
+    # same "defer until there's a concrete signal" call already made for
+    # Thing.capabilities.
+    affiliation: Stat = dataclasses.field(
+        default_factory=lambda: Stat(value=40, floor=0, ceiling=100, bands=AFFILIATION_BANDS)
+    )
     memory: list[str] = dataclasses.field(default_factory=list)
     unlock_threshold: int = 75
     lockout_threshold: int = 10
@@ -185,7 +146,7 @@ class Guard(Thing):
         ]
         return utterance.strip().lower() in {line.strip().lower() for line in recent_player_lines}
 
-    def adjust_mood_from_text(self, utterance: str) -> int:
+    def adjust_affiliation_from_text(self, utterance: str) -> int:
         """Sketch heuristic for PRD §12's open question. Returns the delta
         applied, so callers/tests can observe it."""
         was_repeat = self._is_repeat(utterance)
@@ -193,27 +154,27 @@ class Guard(Thing):
         tokens = re.findall(r"[a-z']+", lowered)
 
         delta = 0
-        if _has_unnegated_match(tokens, KIND_WORDS):
+        if has_unnegated_match(tokens, KIND_WORDS):
             delta += KIND_DELTA
-        if _has_unnegated_match(tokens, RUDE_WORDS) or any(
+        if has_unnegated_match(tokens, RUDE_WORDS) or any(
             phrase in lowered for phrase in RUDE_PHRASES
         ):
             delta += RUDE_DELTA
-        if _has_unnegated_match(tokens, THREAT_WORDS) or any(
+        if has_unnegated_match(tokens, THREAT_WORDS) or any(
             phrase in lowered for phrase in THREAT_PHRASES
         ):
             delta += THREAT_DELTA
         if was_repeat:
             delta += REPEAT_DELTA
 
-        self.mood.adjust(delta)
+        self.affiliation.adjust(delta)
         return delta
 
     def check_thresholds(self) -> str | None:
         """Returns 'unlock', 'lockout', or None."""
-        if self.mood.value >= self.unlock_threshold:
+        if self.affiliation.value >= self.unlock_threshold:
             return "unlock"
-        if self.mood.value <= self.lockout_threshold:
+        if self.affiliation.value <= self.lockout_threshold:
             return "lockout"
         return None
 
@@ -221,11 +182,11 @@ class Guard(Thing):
         """Engine-owned state transition, not a same-turn choice the model
         re-decides from scratch every eligible turn. Once flipped, stays
         flipped permanently — matches Gotcha #3's "bound thereafter", not
-        reversible if mood later drops back below threshold. Returns True
-        only on the call that actually flips it, so callers (engine/loop.py)
-        can tell "just became eligible" from "already was" and time the
-        brief's framing accordingly (see build_guard_brief)."""
-        if not self.secret_revealed and self.mood.value >= self.secret_reveal_threshold:
+        reversible if affiliation later drops back below threshold. Returns
+        True only on the call that actually flips it, so callers
+        (engine/loop.py) can tell "just became eligible" from "already was"
+        and time the brief's framing accordingly (see build_guard_brief)."""
+        if not self.secret_revealed and self.affiliation.value >= self.secret_reveal_threshold:
             self.secret_revealed = True
             return True
         return False

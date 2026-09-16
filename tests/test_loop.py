@@ -67,7 +67,7 @@ def test_run_turn_updates_mood_and_memory():
     assert reply == "Hmph. Fine."
     assert speaker == "guard"
     assert outcome is None
-    assert scenario.guard.mood.value > 40
+    assert scenario.guard.affiliation.value > 40
     assert "player: please, my friend" in scenario.guard.memory
     assert "guard: Hmph. Fine." in scenario.guard.memory
     assert llm.calls[0][0] == "please, my friend"
@@ -80,7 +80,7 @@ def test_secret_reveal_flag_flips_only_after_the_eligible_turn():
     # below) rather than skipping straight to "already revealed" before
     # anything's actually been said.
     scenario = build_cell_and_guard()
-    scenario.guard.mood.value = scenario.guard.secret_reveal_threshold
+    scenario.guard.affiliation.value = scenario.guard.secret_reveal_threshold
     llm = StubLLM(reply="Hmph.")
 
     assert scenario.guard.secret_revealed is False
@@ -250,14 +250,14 @@ def test_run_turn_does_not_record_a_fact_for_near_miss_negative_answers():
 def test_environment_query_routes_to_dm_without_moving_mood():
     scenario = build_cell_and_guard()
     llm = StubLLM(reply="A cold stone cell, a locked door.")
-    starting_mood = scenario.guard.mood.value
+    starting_mood = scenario.guard.affiliation.value
 
     reply, speaker, outcome = run_turn(scenario, llm, "what does this place look like?")
 
     assert speaker == "dm"
     assert outcome is None
     assert reply == "A cold stone cell, a locked door."
-    assert scenario.guard.mood.value == starting_mood
+    assert scenario.guard.affiliation.value == starting_mood
     assert "dm: A cold stone cell, a locked door." in scenario.guard.memory
     # The DM's brief, not the guard's — should describe the scene, not voice the guard.
     assert "Dungeon Master" in llm.calls[0][1]
@@ -266,13 +266,13 @@ def test_environment_query_routes_to_dm_without_moving_mood():
 def test_ungrounded_action_is_refused_by_the_dm():
     scenario = build_cell_and_guard()
     llm = StubLLM(reply="There is no such thing here.")
-    starting_mood = scenario.guard.mood.value
+    starting_mood = scenario.guard.affiliation.value
 
     _reply, speaker, outcome = run_turn(scenario, llm, "I cast a fireball at the guard")
 
     assert speaker == "dm"
     assert outcome is None
-    assert scenario.guard.mood.value == starting_mood
+    assert scenario.guard.affiliation.value == starting_mood
     assert "no place here" in llm.calls[0][1] or "no such thing" in llm.calls[0][1].lower()
 
 

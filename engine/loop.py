@@ -241,7 +241,7 @@ def run_turn(
 
     # Default: dialogue directed at the guard.
     # Check for a repeat against prior turns before this one joins memory.
-    guard.adjust_mood_from_text(player_utterance)
+    guard.adjust_affiliation_from_text(player_utterance)
     guard.remember("player", player_utterance)
 
     outcome = guard.check_thresholds()

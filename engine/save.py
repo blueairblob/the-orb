@@ -19,7 +19,7 @@ def save_state(path: Path, scenario: CellAndGuard) -> None:
     data = {
         "clock_minutes": scenario.world.clock.minutes,
         "door_locked": scenario.door.locked,
-        "guard_mood": scenario.guard.mood.value,
+        "guard_affiliation": scenario.guard.affiliation.value,
         "guard_memory": scenario.guard.memory,
     }
     path.write_text(json.dumps(data, indent=2))
@@ -35,6 +35,8 @@ def load_state(path: Path) -> CellAndGuard:
     scenario.world.clock.minutes = data.get("clock_minutes", 0)
     if not data.get("door_locked", True):
         scenario.door.unlock()
-    scenario.guard.mood.value = data.get("guard_mood", scenario.guard.mood.value)
+    scenario.guard.affiliation.value = data.get(
+        "guard_affiliation", scenario.guard.affiliation.value
+    )
     scenario.guard.memory = data.get("guard_memory", [])
     return scenario

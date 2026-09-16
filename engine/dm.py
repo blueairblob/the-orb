@@ -12,7 +12,7 @@ has no place in this scene, in character, rather than letting the guard's
 persona absorb it. Full rules adjudication is v0.2+ engine work.
 
 `classify_utterance` is a keyword heuristic, same honest sketch as
-`engine/guard.py`'s mood heuristic — not real intent parsing (Gotchas
+`engine/guard.py`'s affiliation heuristic — not real intent parsing (Gotchas
 #1/#2's proper resolution is bigger than this pass).
 """
 
@@ -34,8 +34,8 @@ DM_PERSONA = (
 
 # Things with no place in the cell-and-guard scene (PRD §8: no items, no
 # spells, no dice, no combat yet). Deliberately narrow — generic combat/
-# threat words like "attack" or "fight" are left to the guard's own mood
-# heuristic as aggressive dialogue, not routed here.
+# threat words like "attack" or "fight" are left to the guard's own
+# affiliation heuristic as aggressive dialogue, not routed here.
 UNGROUNDED_WORDS = {"cast", "spell", "wand", "potion", "scroll", "sword"}
 
 # Single words, matched as whole words (like UNGROUNDED_WORDS above) — a bare
@@ -119,7 +119,7 @@ def build_narration_brief(room: Room, door: Door, guard: Guard, premise: str) ->
                 f"{'locked' if door.locked else 'unlocked'}. It is "
                 f"{room.state.get('time_of_day', 'night')}."
             ),
-            f"The guard beyond the door seems {guard.mood.band}.",
+            f"The guard beyond the door seems {guard.affiliation.band}.",
             (
                 f"The player is here for {premise} — mention this only if directly "
                 "relevant to what's being asked, not as a reflex."

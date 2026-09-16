@@ -4,7 +4,7 @@ from engine.scenario import build_cell_and_guard
 
 def test_brief_reflects_current_state():
     scenario = build_cell_and_guard()
-    scenario.guard.mood.value = 90
+    scenario.guard.affiliation.value = 90
     scenario.guard.remember("player", "please let me out")
     scenario.guard.remember("guard", "No.")
 
@@ -30,7 +30,7 @@ def test_brief_reflects_unlocked_door():
 
 def test_secret_withheld_below_trust_threshold():
     scenario = build_cell_and_guard()
-    scenario.guard.mood.value = 40
+    scenario.guard.affiliation.value = 40
 
     brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
 
@@ -39,7 +39,7 @@ def test_secret_withheld_below_trust_threshold():
 
 def test_secret_available_once_trust_is_earned():
     scenario = build_cell_and_guard()
-    scenario.guard.mood.value = 90
+    scenario.guard.affiliation.value = 90
 
     brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
 
@@ -53,7 +53,7 @@ def test_secret_shows_already_revealed_framing_once_flag_is_set():
     # the brief side of that independently of mood, since once revealed it
     # stays revealed even if mood later drops.
     scenario = build_cell_and_guard()
-    scenario.guard.mood.value = 20  # would normally withhold the secret entirely
+    scenario.guard.affiliation.value = 20  # would normally withhold the secret entirely
     scenario.guard.secret_revealed = True
 
     brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
@@ -115,12 +115,12 @@ def test_brief_shows_a_mood_appropriate_voice_example():
     # either. Each band now gets its own full example set instead.
     scenario = build_cell_and_guard()
 
-    scenario.guard.mood.value = 92  # "ready to help"
+    scenario.guard.affiliation.value = 92  # "ready to help"
     warm_brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
     assert "Friends call me that" in warm_brief
     assert "Now hush" not in warm_brief  # the gruff-band example, not shown here
 
-    scenario.guard.mood.value = 40  # "gruff and suspicious"
+    scenario.guard.affiliation.value = 40  # "gruff and suspicious"
     default_brief = build_guard_brief(
         scenario.guard, scenario.door, scenario.room, scenario.premise
     )
@@ -134,6 +134,6 @@ def test_anti_promise_examples_shown_at_every_mood():
     # generate. Unconditional, unlike the band-specific voice examples above.
     scenario = build_cell_and_guard()
     for mood in (5, 40, 62, 92):
-        scenario.guard.mood.value = mood
+        scenario.guard.affiliation.value = mood
         brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
         assert "I promise nothing" in brief

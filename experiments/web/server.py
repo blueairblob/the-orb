@@ -61,8 +61,13 @@ def create_app(
             # Raw value + band both sent: PRD §12's "never a raw number"
             # rule is about the LLM's brief, not this nonverbal visual
             # channel — continuous input makes for smoother orb animation.
-            "mood": scenario.guard.mood.value,
-            "band": scenario.guard.mood.band,
+            # Wire key stays "mood" even though the engine field is now
+            # `guard.affiliation` (devlog 2026-09-16) — this is disposable
+            # shell/dev-tooling (CLAUDE.md), and orb.js's whole visual
+            # language (colour, restlessness) is already built around that
+            # name; renaming it buys nothing for engine rigor.
+            "mood": scenario.guard.affiliation.value,
+            "band": scenario.guard.affiliation.band,
             "door_locked": scenario.door.locked,
         }
 
@@ -77,7 +82,7 @@ def create_app(
         await websocket.accept()
         intro = build_intro(scenario.premise)
         await websocket.send_json({**_state_message(), "intro": intro, "speaker": "dm"})
-        _log_transcript({"speaker": "dm", "text": intro, "mood": scenario.guard.mood.value})
+        _log_transcript({"speaker": "dm", "text": intro, "mood": scenario.guard.affiliation.value})
 
         try:
             while True:
@@ -102,8 +107,8 @@ def create_app(
                         "player": utterance,
                         "speaker": speaker,
                         "reply": reply,
-                        "mood": scenario.guard.mood.value,
-                        "band": scenario.guard.mood.band,
+                        "mood": scenario.guard.affiliation.value,
+                        "band": scenario.guard.affiliation.band,
                         "outcome": outcome,
                     }
                 )

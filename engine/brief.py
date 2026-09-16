@@ -47,7 +47,7 @@ PERSONA = (
 # PERSONA above. Restated with the mood band itself in build_guard_brief,
 # right next to RULE_REMINDER at the end of the brief (highest-attention
 # position, closest to where generation actually starts).
-MOOD_DIRECTIVES = {
+AFFILIATION_DIRECTIVES = {
     "hostile": "sharp, no patience.",
     "gruff and suspicious": "clipped, give them nothing extra.",
     "wary but listening": "let one word land softer than the rest.",
@@ -169,7 +169,7 @@ def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str
         PERSONA.format(name=guard.name),
         "",
         VOICE_EXAMPLES_HEADER,
-        *BAND_VOICE_EXAMPLES.get(guard.mood.band, BAND_VOICE_EXAMPLES["gruff and suspicious"]),
+        *BAND_VOICE_EXAMPLES.get(guard.affiliation.band, BAND_VOICE_EXAMPLES["gruff and suspicious"]),
         *ALWAYS_VOICE_EXAMPLES,
         "",
         "# Scene",
@@ -203,7 +203,7 @@ def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str
                 "it verbatim again; let it quietly colour how you talk to them instead."
             ),
         ]
-    elif guard.mood.value >= guard.secret_reveal_threshold:
+    elif guard.affiliation.value >= guard.secret_reveal_threshold:
         lines += [
             f"- {guard.secret}",
             (
@@ -229,7 +229,10 @@ def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str
 
     lines += [
         "",
-        f"# Right now you feel {guard.mood.band} toward the prisoner — {MOOD_DIRECTIVES[guard.mood.band]}",
+        (
+            f"# Right now you feel {guard.affiliation.band} toward the prisoner — "
+            f"{AFFILIATION_DIRECTIVES[guard.affiliation.band]}"
+        ),
         RULE_REMINDER,
     ]
 

@@ -27,6 +27,7 @@ leave it here if it's closer to "here's what we tried and found."
 
 ## Entries
 
+- [2026-09-17 — Two small, already-flagged gaps closed (save persistence, "Try again." guardrail)](2026-09-17-two-quick-fixes-from-real-play.md)
 - [2026-09-16 — The safety net itself broke the DM/guard voice split (fallback line fix)](2026-09-16-guard-fallback-line-broke-voice-split.md)
 - [2026-09-16 — Real playtest catches a self-inflicted latency regression (fact-extraction cache eviction)](2026-09-16-fact-extraction-cache-eviction-bug.md)
 - [2026-09-16 — Generalizing the mood dial into a reusable Character Engine primitive](2026-09-16-character-engine-stat-primitive.md)

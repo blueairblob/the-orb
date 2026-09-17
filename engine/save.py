@@ -21,6 +21,14 @@ def save_state(path: Path, scenario: CellAndGuard) -> None:
         "door_locked": scenario.door.locked,
         "guard_affiliation": scenario.guard.affiliation.value,
         "guard_memory": scenario.guard.memory,
+        # Noticed missing during the 2026-09-16 fact-canonization/Stat work
+        # (devlog) but out of scope for that fix — both are engine-owned,
+        # PRD §22 Gotcha #3 "bound thereafter" state, same as the fields
+        # above; leaving them out meant a resumed session could silently
+        # re-litigate an already-revealed secret or forget an established
+        # fact the guard is supposed to stay bound to.
+        "guard_secret_revealed": scenario.guard.secret_revealed,
+        "guard_established_facts": scenario.guard.established_facts,
     }
     path.write_text(json.dumps(data, indent=2))
 
@@ -39,4 +47,10 @@ def load_state(path: Path) -> CellAndGuard:
         "guard_affiliation", scenario.guard.affiliation.value
     )
     scenario.guard.memory = data.get("guard_memory", [])
+    scenario.guard.secret_revealed = data.get(
+        "guard_secret_revealed", scenario.guard.secret_revealed
+    )
+    scenario.guard.established_facts = data.get(
+        "guard_established_facts", scenario.guard.established_facts
+    )
     return scenario

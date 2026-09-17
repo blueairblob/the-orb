@@ -49,6 +49,21 @@ def test_fuller_line_is_not_flagged():
     assert not is_bland_dismissal("Fine.")
 
 
+def test_bare_try_again_is_flagged():
+    # Regression (real playtest 2026-09-16): "Try again." shipped as the
+    # whole reply to "I want out" -- a content-free deflection back at the
+    # player, same failure shape as "Nothing.", just a phrase instead of a
+    # single word.
+    assert is_bland_dismissal("Try again.")
+    assert is_bland_dismissal('"Try again."')  # quote-wrapped, same as other checks
+
+
+def test_try_again_tacked_onto_a_real_answer_is_not_flagged():
+    # A real answer that merely *ends* with the phrase has to stay
+    # unflagged, same principle as test_fuller_line_is_not_flagged above.
+    assert not is_bland_dismissal("I don't care about your treasure. Try again.")
+
+
 def test_verbatim_echo_of_own_past_line_is_flagged():
     # devlog: widening the guard's memory window (so he'd stop forgetting a
     # dozen-turn-old offer) had the side effect of making him more likely to

@@ -48,6 +48,16 @@ def fallback_line(speaker: str) -> str:
 # for another take (PRD §1: the engine directs).
 BLAND_DISMISSALS = {"nothing", "silence", "quiet"}
 
+# Same content-free "deflects instead of answering" shape as BLAND_DISMISSALS
+# above, but the dismissal is a phrase rather than a single word, so it needs
+# its own exact-match check rather than the first-word/padding logic below —
+# a real answer that merely *ends* with one of these ("I don't care about
+# your treasure. Try again.") has to stay unflagged, same as a longer reply
+# containing "nothing" partway through. Real playtest catch (2026-09-16):
+# "Try again." shipped bare as the whole reply to "I want out" -- deflects
+# the question back at the player without answering it.
+BLAND_DISMISSAL_PHRASES = {"try again"}
+
 # How many words a reply can have and still count as a padded version of a
 # bare BLAND_DISMISSALS word ("Nothing worth mentioning.", "Nothing matters
 # now.") rather than a real, if terse, answer — both real failures were 3
@@ -78,7 +88,7 @@ def is_bland_dismissal(text: str) -> bool:
     §3's Yoda principle wants and must not flag ("No.", "Fine.", "Stop.",
     or a longer reply that just happens to contain one of these words)."""
     normalized = _normalize(text)
-    if normalized in BLAND_DISMISSALS:
+    if normalized in BLAND_DISMISSALS or normalized in BLAND_DISMISSAL_PHRASES:
         return True
     words = normalized.split()
     return bool(words) and words[0] in BLAND_DISMISSALS and len(words) <= BLAND_DISMISSAL_MAX_WORDS

@@ -15,18 +15,24 @@ the LLM owns only its *mouth* (the words). That split is the whole idea.
 ## Status
 
 **The cell-and-guard proof of concept (PRD §8) runs end to end, in text mode, on the desktop, on
-the engine's real shipping runtime.** Object model, guard Character Engine, brief-builder,
-guardrail, and core loop are all built (`engine/`) and run against the real Gemma 4 E2B model via
-`orb-engine` and `llama.cpp`/GGUF ([ADR 0003](docs/decisions/0003-shipping-llm-runtime-gguf.md)).
-Both terminal states — talk your way to an unlock, or push the guard to a lockout — are reachable.
-**Not yet re-validated against this backend: the guard's actual conversational quality** — the
-prompt tuning in `engine/brief.py` was proven out against the old backend; a real playtest on the
-new one is the next task.
+the engine's real shipping runtime, and has been through several real (not synthetic) playtest
+sessions against it.** Object model, guard Character Engine, brief-builder, guardrail, and core
+loop are all built (`engine/`) and run against the real Gemma 4 E2B model via `orb-engine` and
+`llama.cpp`/GGUF ([ADR 0003](docs/decisions/0003-shipping-llm-runtime-gguf.md)). Both terminal
+states — talk your way to an unlock, or push the guard to a lockout — are confirmed reachable in
+real play, not just unit tests. State-machine rigor (PRD §22 Gotcha #3, "improvised detail becomes
+canon") is built: the guard's secret-reveal and any fact he spontaneously invents both become
+real, engine-owned state, persisted across saves, fed back into every future brief so he stays
+consistent with his own earlier word. See `devlog/` (2026-09-14 through 2026-09-17) for the full
+trail of real playtest findings and fixes.
 
-What's still **not** built is real voice. This desktop dev host has no audio hardware at all, so
-`engine/voice.py` defines a swappable protocol and only a text-mode backend exists so far — the
-real Android on-device STT/TTS backend is Phase 2, on a device that actually has a microphone
-and a speaker.
+**Not yet done, and the actual next milestone**: everything above has been proven on this desktop
+host, in text mode — PRD §24's roadmap step 5, "port to a real mid-range phone, feel the true
+latency in the real loop," hasn't happened. The hardware spike (§0, below) benchmarked the raw
+model in isolation on-device; the actual engine+loop has never run there. Real voice (Google
+STT/TTS) is unbuilt for the same reason — this host has no audio hardware, so `engine/voice.py` is
+a swappable protocol with only a text-mode backend so far. Both are explicitly Phase 2
+(`CLAUDE.md`), not a Phase 1 gap.
 
 **The hardware spike (§0)** — does a small model run acceptably on a warm mid-range Android phone?
 — is a **qualified pass-leaning result, on one physical test device** (`poco-m4-pro`, MediaTek

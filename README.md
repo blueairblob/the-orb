@@ -80,6 +80,7 @@ Current decisions locked:
 | `experiments/` | Model / prompt / brief experiments run on the dev host. One dated folder per experiment. |
 | `demos/` | Recorded runs worth keeping — transcripts, audio, notes. |
 | `devlog/` | Living journal of development sessions — decisions, commands, outcomes, open threads, dated. |
+| `REVIEW.md` | Formal project review log — dated, reviewer-attributed step-backs listing gaps against the PRD and missed opportunities, with per-finding status. |
 | `tests/` | Engine-logic tests, run against a stub LLM — no model download needed. |
 
 ## Where to start

@@ -493,3 +493,38 @@ def test_run_loop_quits_on_command(tmp_path):
     run_loop(scenario, llm, voice, save_path)
 
     assert len(llm.calls) == 2  # narration + fact-extraction, for the one "hello" turn
+
+
+def test_restating_canon_beats_the_self_repeat_fallback():
+    # Regression (real backend, 2026-09-18): asked "Remind me, where did you
+    # grow up?", the guard's consistent answer was his earlier line word for
+    # word -- flagged as a self-repeat, retried, repeated again, and replaced
+    # by "Enough talk.", dodging a fact he'd already given. Gotcha #15 (don't
+    # echo) must yield to Gotcha #3 (stay bound to your word).
+    scenario = build_cell_and_guard()
+    guard = scenario.guard
+    guard.remember("player", "What town did you grow up in?")
+    guard.remember("guard", "Blackwood. A quiet place.")
+    guard.add_established_fact(
+        'Asked "What town did you grow up in?", you said: "Blackwood. A quiet place."'
+    )
+    llm = SequencedLLM(["Blackwood. A quiet place.", "Blackwood. A quiet place.", "NONE"])
+
+    reply, _, _ = run_turn(scenario, llm, "Remind me, where did you grow up?")
+
+    assert reply == "Blackwood. A quiet place."
+    assert llm.calls[1][2] == "retry"  # fresh wording was still tried first
+
+
+def test_unrelated_self_repeat_still_falls_back():
+    # The exemption is only for restating canon -- an idle echo of a line
+    # that isn't a recorded fact still gets the fallback, as before.
+    scenario = build_cell_and_guard()
+    guard = scenario.guard
+    guard.remember("guard", "Move slow.")
+    guard.add_established_fact('Asked "Where from?", you said: "Blackwood."')
+    llm = SequencedLLM(["Move slow.", "Move slow."])
+
+    reply, _, _ = run_turn(scenario, llm, "come on then")
+
+    assert reply == "Enough talk."

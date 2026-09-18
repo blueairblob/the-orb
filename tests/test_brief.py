@@ -2,6 +2,7 @@ from engine.brief import (
     build_fact_extraction_prompt,
     build_guard_brief,
     format_guard_fact,
+    guard_fact_quote,
 )
 from engine.scenario import build_cell_and_guard
 
@@ -175,3 +176,10 @@ def test_brief_reads_the_live_clock_not_a_frozen_copy():
     scenario.world.clock.minutes = 6 * 60  # 6am
     assert "It is dawn." in brief_for(scenario)
     assert "time_of_day" not in scenario.room.state  # no duplicate to go stale
+
+
+def test_guard_fact_quote_inverts_format_guard_fact():
+    fact = format_guard_fact("Where from?", "Blackwood. A quiet place.")
+
+    assert guard_fact_quote(fact) == "Blackwood. A quiet place."
+    assert guard_fact_quote("He grew up in Kelsey.") is None  # older, free-form fact

@@ -19,6 +19,7 @@ from engine.brief import (
     build_fact_extraction_prompt,
     build_guard_brief,
     format_guard_fact,
+    guard_fact_quote,
 )
 from engine.guard import Guard
 from engine.llm import GemmaHarness, is_model_ready
@@ -186,6 +187,15 @@ def _is_quoted_from(fact: str, source: str) -> bool:
     return bool(quoted) and quoted in _normalize_for_quote(source)
 
 
+def _restates_canon(guard: Guard, speaker: str, reply: str) -> bool:
+    """True if a guard reply contains his own verbatim words from a recorded
+    fact — i.e. repeating it is him staying consistent, not echoing."""
+    if speaker != "guard":
+        return False
+    quotes = (guard_fact_quote(fact) for fact in guard.established_facts)
+    return any(quote and _is_quoted_from(quote, reply) for quote in quotes)
+
+
 def _ask_and_record(
     llm: LLMClient,
     guard: Guard,
@@ -235,6 +245,15 @@ def _ask_and_record(
         retry_failure = _failure(retry_reply)
         if retry_failure is None:
             reply = retry_reply
+        elif failure == "self_repeat" and _restates_canon(guard, speaker, reply):
+            # Gotcha #15 (don't echo yourself) yields to Gotcha #3 (stay bound
+            # to your word). Asked "Remind me, where did you grow up?", the
+            # consistent answer *is* the one he gave before — real backend
+            # testing (2026-09-18) caught the fallback below dodging that
+            # exact question with "Enough talk.", refusing to repeat his own
+            # canon. The retry still runs first (fresh wording is preferred);
+            # this only replaces the fallback when both attempts repeat.
+            pass
         elif failure in _FALLS_BACK_ON_RETRY_FAILURE:
             # Unlike bland dismissals (which do reliably escape on retry —
             # see test_retry_gives_up_after_one_more_bland_reply for that

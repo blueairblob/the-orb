@@ -287,3 +287,15 @@ def format_guard_fact(player_utterance: str, quote: str) -> str:
     town did you grow up in?". Second person, to read naturally under the
     guard brief's "Things you've already told them" heading."""
     return f'Asked "{player_utterance.strip()}", you said: "{quote.strip()}"'
+
+
+_GUARD_FACT_QUOTE = re.compile(r'you said: "(.*)"$')
+
+
+def guard_fact_quote(fact: str) -> str | None:
+    """The inverse of format_guard_fact: the guard's own verbatim words out
+    of a recorded fact, or None for a fact not in that form (e.g. one from an
+    older save). Kept beside format_guard_fact so the format and its parser
+    can't drift apart."""
+    match = _GUARD_FACT_QUOTE.search(fact)
+    return match.group(1) if match else None

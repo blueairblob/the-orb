@@ -32,7 +32,7 @@ from engine.brief import (
 from engine.guard import Guard
 from engine.llm import GemmaHarness, is_model_ready
 from engine.save import load_state, save_state
-from engine.scenario import CellAndGuard
+from engine.scenario import CellAndGuard, build_cell_and_guard
 from engine.tactics import DIFFICULTIES, classify_tactic, difficulty_from_setting
 from engine.voice import Voice
 from engine.voice_text import TextVoice
@@ -477,6 +477,13 @@ def main() -> None:
         help="easy: the classifier can only credit you; hard (default): it can "
         "also count against you. Also settable via ORB_DIFFICULTY.",
     )
+    parser.add_argument(
+        "--new",
+        action="store_true",
+        help="Start a fresh game instead of resuming the saved one (the save "
+        "is overwritten on the first turn). Use it to compare difficulties "
+        "from the same starting point.",
+    )
     args = parser.parse_args()
     try:
         difficulty = difficulty_from_setting(args.difficulty)
@@ -491,7 +498,7 @@ def main() -> None:
 
     save_path = DEFAULT_SAVE_PATH
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    scenario = load_state(save_path)
+    scenario = build_cell_and_guard() if args.new else load_state(save_path)
     scenario.difficulty = difficulty
 
     transcript_dir = save_path.parent / "transcripts"

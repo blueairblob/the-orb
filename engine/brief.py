@@ -250,7 +250,15 @@ def build_fact_extraction_prompt(guard: Guard, player_utterance: str, guard_repl
     *after* the narration reply is already finalized — unlike Oracle's
     mechanical dice/HP deltas, a personality detail the guard chooses to
     reveal doesn't have a clean "decide it before narrating" answer; the
-    actor only decides what to invent as it performs the line."""
+    actor only decides what to invent as it performs the line.
+
+    Extractive, like the DM's (dm.build_scene_fact_extraction_prompt): the
+    model only *points at* the words — copies them verbatim — and
+    engine/loop.py verifies the quote is really in the reply before
+    format_guard_fact builds the recorded fact from verbatim parts alone.
+    The original version asked for a third-person paraphrase ("Garrick grew
+    up in Oakhaven"), which nothing could check; the same extraction model
+    was caught inventing a DM detail outright (REVIEW.md R10)."""
     existing = (
         "\n".join(f"- {fact}" for fact in guard.established_facts) or "(nothing yet)"
     )
@@ -263,6 +271,17 @@ def build_fact_extraction_prompt(guard: Guard, player_utterance: str, guard_repl
         f"Did {guard.name}'s reply state a NEW, specific, reusable fact about himself "
         "that isn't already listed above — a name, a person, a place, an event from his "
         "past? Mood, feelings, or vague colour do not count, only a concrete fact someone "
-        "could refer back to later. If yes, write it as one short third-person sentence. "
-        "If no, reply with exactly: NONE"
+        f"could refer back to later. If yes, copy the words from {guard.name}'s reply that "
+        "state it exactly, word for word — change nothing. If no, reply with exactly: NONE"
     )
+
+
+def format_guard_fact(player_utterance: str, quote: str) -> str:
+    """The recorded form of a guard fact, composed by the engine from two
+    verbatim pieces — what the player asked, and the guard's own verified
+    words — so nothing the extraction model paraphrased ever enters canon.
+    The question is kept because the guard's answers are terse and lean on
+    it: "Oakhaven. A quiet place." only means "my hometown" next to "What
+    town did you grow up in?". Second person, to read naturally under the
+    guard brief's "Things you've already told them" heading."""
+    return f'Asked "{player_utterance.strip()}", you said: "{quote.strip()}"'

@@ -18,6 +18,7 @@ from engine.brief import (
     VOICE_EXAMPLE_REPLIES,
     build_fact_extraction_prompt,
     build_guard_brief,
+    format_guard_fact,
 )
 from engine.guard import Guard
 from engine.llm import GemmaHarness, is_model_ready
@@ -314,11 +315,11 @@ def run_turn(
     # A fallback line is the engine's own words, not an improvisation —
     # there's nothing in it to canonize, so skip the extraction call.
     if reply != guardrail.fallback_line("guard"):
-        fact = _extract_new_fact(
+        quote = _extract_new_fact(
             llm, build_fact_extraction_prompt(guard, player_utterance, reply)
         )
-        if fact:
-            guard.add_established_fact(fact)
+        if quote and _is_quoted_from(quote, reply):
+            guard.add_established_fact(format_guard_fact(player_utterance, quote))
     return reply, "guard", outcome
 
 

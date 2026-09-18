@@ -344,13 +344,29 @@ def test_empty_extraction_answer_is_not_recorded_as_a_fallback_line():
     assert scenario.guard.established_facts == []
 
 
-def test_run_turn_records_a_newly_improvised_fact():
+def test_guard_fact_the_reply_never_said_is_rejected():
+    # REVIEW.md R10: the extraction model was caught inventing canon on the
+    # DM side; the guard's used to be a free paraphrase nothing could check.
+    # A "fact" not quoted from his actual reply never enters the ledger.
     scenario = build_cell_and_guard()
-    llm = SequencedLLM(["I grew up in Kelsey, by the river.", "He grew up in Kelsey, by the river."])
+    llm = SequencedLLM(["Kelsey. By the river.", "He has a wife and two daughters in Kelsey."])
 
     run_turn(scenario, llm, "where are you from?")
 
-    assert scenario.guard.established_facts == ["He grew up in Kelsey, by the river."]
+    assert scenario.guard.established_facts == []
+
+
+def test_run_turn_records_a_newly_improvised_fact():
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Kelsey. By the river. Now hush.", "Kelsey. By the river."])
+
+    run_turn(scenario, llm, "where are you from?")
+
+    # Built by the engine from verbatim parts -- the player's question plus
+    # the guard's own verified words -- never the extraction model's phrasing.
+    assert scenario.guard.established_facts == [
+        'Asked "where are you from?", you said: "Kelsey. By the river."'
+    ]
     assert llm.calls[1][1] is None  # extraction call has no brief, unlike narration
     assert llm.calls[1][2] == FACT_EXTRACTION_SAMPLER_KWARGS
     # Regression (2026-09-16, real backend): sharing the narration calls'

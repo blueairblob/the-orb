@@ -1,4 +1,8 @@
-from engine.brief import build_fact_extraction_prompt, build_guard_brief
+from engine.brief import (
+    build_fact_extraction_prompt,
+    build_guard_brief,
+    format_guard_fact,
+)
 from engine.scenario import build_cell_and_guard
 
 
@@ -137,3 +141,20 @@ def test_anti_promise_examples_shown_at_every_mood():
         scenario.guard.affiliation.value = mood
         brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
         assert "I promise nothing" in brief
+
+
+def test_guard_fact_is_composed_from_the_question_and_his_own_words():
+    # The guard's answers are terse and lean on the question -- "Oakhaven. A
+    # quiet place." only means "my hometown" next to what was asked.
+    fact = format_guard_fact(" What town did you grow up in? ", " Oakhaven. A quiet place. ")
+
+    assert fact == 'Asked "What town did you grow up in?", you said: "Oakhaven. A quiet place."'
+
+
+def test_guard_fact_extraction_prompt_asks_for_a_verbatim_copy():
+    scenario = build_cell_and_guard()
+
+    prompt = build_fact_extraction_prompt(scenario.guard, "where are you from?", "Kelsey.")
+
+    assert "word for word" in prompt
+    assert "third-person" not in prompt

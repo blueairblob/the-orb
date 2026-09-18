@@ -1,4 +1,9 @@
-from engine.dm import build_narration_brief, build_refusal_brief, classify_utterance
+from engine.dm import (
+    build_narration_brief,
+    build_refusal_brief,
+    build_scene_fact_extraction_prompt,
+    classify_utterance,
+)
 from engine.scenario import build_cell_and_guard
 
 
@@ -62,3 +67,59 @@ def test_narration_brief_describes_scene_not_guard_dialogue():
     assert "locked" in brief
     assert "Do not speak as the guard" in brief
     assert scenario.premise in brief
+
+
+def test_narration_brief_feeds_back_scene_facts():
+    # PRD §22 Gotcha #3's own flagship example is a DM detail -- whatever the
+    # DM already improvised about the place has to come back as fact.
+    scenario = build_cell_and_guard()
+    facts = ["A single iron grate covers the door."]
+
+    brief = build_narration_brief(
+        scenario.room, scenario.door, scenario.guard, scenario.premise, facts
+    )
+
+    assert "already described" in brief
+    assert "A single iron grate covers the door." in brief
+
+
+def test_refusal_brief_feeds_back_scene_facts():
+    scenario = build_cell_and_guard()
+
+    brief = build_refusal_brief(
+        scenario.room, "I cast a spell", ["Water drips somewhere in the corner."]
+    )
+
+    assert "Water drips somewhere in the corner." in brief
+
+
+def test_dm_briefs_omit_the_facts_section_when_there_are_none():
+    scenario = build_cell_and_guard()
+
+    narration = build_narration_brief(
+        scenario.room, scenario.door, scenario.guard, scenario.premise
+    )
+    refusal = build_refusal_brief(scenario.room, "I cast a spell")
+
+    assert "already described" not in narration
+    assert "already described" not in refusal
+
+
+def test_scene_fact_extraction_prompt_treats_the_authored_room_as_known():
+    # The room's own description counts as already established, so the base
+    # scene isn't re-recorded in new words every turn; the engine-owned
+    # door lock and guard mood are explicitly excluded (PRD §3).
+    scenario = build_cell_and_guard()
+
+    prompt = build_scene_fact_extraction_prompt(
+        scenario.room,
+        ["A single iron grate covers the door."],
+        "describe the room",
+        "Stone walls, a drip in the corner.",
+    )
+
+    assert scenario.room.description in prompt
+    assert "A single iron grate covers the door." in prompt
+    assert "Stone walls, a drip in the corner." in prompt
+    assert "door is locked" in prompt
+    assert "NONE" in prompt

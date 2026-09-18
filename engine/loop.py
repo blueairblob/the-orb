@@ -148,25 +148,41 @@ FACT_EXTRACTION_ID_SLOT = 1
 _NO_NEW_FACT_ANSWERS = {"NONE", "NO", "N/A", "NOTHING", "NOTHING NEW", "NO NEW FACT"}
 
 
-def _maybe_record_new_fact(llm: LLMClient, guard: Guard, player_utterance: str, reply: str) -> None:
+def _extract_new_fact(llm: LLMClient, extraction_prompt: str) -> str | None:
     """Oracle-pattern fact-ledger extraction (see build_fact_extraction_prompt
     for the full rationale) — a small, separate call, not a keyword scan
-    over the reply, deciding whether this turn established a new durable
-    fact about the guard. Best-effort: if the model doesn't cleanly say
-    NONE, guard.add_established_fact still dedupes, so a slightly-off
-    answer degrades gracefully rather than corrupting the ledger."""
-    extraction_prompt = build_fact_extraction_prompt(guard, player_utterance, reply)
+    over the reply, deciding whether a turn established a new durable fact.
+    Returns the fact, or None. The guardrail is used as a *predicate* here,
+    not a filter: this text is never spoken, so substituting a fallback line
+    would be wrong — an empty or broken answer used to become "Enough talk."
+    and get recorded as canon. Anything the guardrail would have replaced is
+    simply rejected instead."""
     result = llm.ask(
         extraction_prompt,
         system_message=None,
         sampler_config=FACT_EXTRACTION_SAMPLER_KWARGS,
         id_slot=FACT_EXTRACTION_ID_SLOT,
     )
-    answer = guardrail.filter_reply(result.response)
-    normalized = answer.strip().rstrip(".").upper()
-    if not normalized or normalized in _NO_NEW_FACT_ANSWERS:
-        return
-    guard.add_established_fact(answer)
+    answer = result.response.strip().strip("\"'“”‘’").strip()
+    if not answer or guardrail.filter_reply(answer) != answer:
+        return None
+    if answer.rstrip(".").upper() in _NO_NEW_FACT_ANSWERS:
+        return None
+    return answer
+
+
+def _normalize_for_quote(text: str) -> str:
+    return " ".join(text.lower().strip(" \"'“”‘’").rstrip(".!…").split())
+
+
+def _is_quoted_from(fact: str, source: str) -> bool:
+    """Engine-side grounding check for extractive fact extraction ("agents
+    propose, engine disposes"): the proposed fact must appear verbatim —
+    modulo case, whitespace, wrapping quotes and trailing punctuation — in
+    what was actually said. Rejects a hallucinated detail outright rather
+    than trusting the extraction model's word."""
+    quoted = _normalize_for_quote(fact)
+    return bool(quoted) and quoted in _normalize_for_quote(source)
 
 
 def _ask_and_record(
@@ -243,16 +259,31 @@ def run_turn(
     scenario.world.clock.advance(TURN_MINUTES)
     route = dm.classify_utterance(player_utterance)
 
-    if route == "refusal":
-        guard.remember("player", player_utterance)
-        brief = dm.build_refusal_brief(scenario.room, player_utterance)
-        reply = _ask_and_record(llm, guard, player_utterance, brief, "dm")
-        return reply, "dm", None
+    world = scenario.world
 
-    if route == "narration":
+    if route in ("refusal", "narration"):
         guard.remember("player", player_utterance)
-        brief = dm.build_narration_brief(scenario.room, scenario.door, guard, scenario.premise)
+        if route == "refusal":
+            brief = dm.build_refusal_brief(
+                scenario.room, player_utterance, world.established_facts
+            )
+        else:
+            brief = dm.build_narration_brief(
+                scenario.room, scenario.door, guard, scenario.premise, world.established_facts
+            )
         reply = _ask_and_record(llm, guard, player_utterance, brief, "dm")
+        # The DM improvises scene detail every time it narrates or redirects —
+        # the PRD's own flagship Gotcha #3 example is a DM detail ("what's
+        # over the wall?"), so this is the same canonization the guard gets.
+        if reply != guardrail.fallback_line("dm"):
+            fact = _extract_new_fact(
+                llm,
+                dm.build_scene_fact_extraction_prompt(
+                    scenario.room, world.established_facts, player_utterance, reply
+                ),
+            )
+            if fact and _is_quoted_from(fact, reply):
+                world.add_established_fact(fact)
         return reply, "dm", None
 
     # Default: dialogue directed at the guard.
@@ -280,7 +311,14 @@ def run_turn(
         room_description=scenario.room.description,
     )
     guard.maybe_reveal_secret()
-    _maybe_record_new_fact(llm, guard, player_utterance, reply)
+    # A fallback line is the engine's own words, not an improvisation —
+    # there's nothing in it to canonize, so skip the extraction call.
+    if reply != guardrail.fallback_line("guard"):
+        fact = _extract_new_fact(
+            llm, build_fact_extraction_prompt(guard, player_utterance, reply)
+        )
+        if fact:
+            guard.add_established_fact(fact)
     return reply, "guard", outcome
 
 

@@ -29,6 +29,7 @@ def save_state(path: Path, scenario: CellAndGuard) -> None:
         # fact the guard is supposed to stay bound to.
         "guard_secret_revealed": scenario.guard.secret_revealed,
         "guard_established_facts": scenario.guard.established_facts,
+        "world_established_facts": scenario.world.established_facts,
     }
     path.write_text(json.dumps(data, indent=2))
 
@@ -52,5 +53,8 @@ def load_state(path: Path) -> CellAndGuard:
     )
     scenario.guard.established_facts = data.get(
         "guard_established_facts", scenario.guard.established_facts
+    )
+    scenario.world.established_facts = data.get(
+        "world_established_facts", scenario.world.established_facts
     )
     return scenario

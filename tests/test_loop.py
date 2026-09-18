@@ -117,7 +117,7 @@ def test_bland_dismissal_triggers_one_retry():
 
     assert reply == "Ten years on this watch. Longest yet."
     # narration attempt + retry + the fact-extraction call that follows every
-    # successful guard turn (see engine/loop.py's _maybe_record_new_fact).
+    # successful guard turn (see engine/loop.py's _extract_new_fact).
     assert len(llm.calls) == 3
     assert "Note" in llm.calls[1][1]  # the retry brief carries the nudge
     assert llm.calls[0][2] == "default"
@@ -189,7 +189,9 @@ def test_room_description_falls_back_to_safe_line_if_retry_also_fails():
     reply, _, _ = run_turn(scenario, llm, "tell me about this place")
 
     assert reply == "Enough talk."
-    assert len(llm.calls) == 3  # narration + retry + fact-extraction
+    # narration + retry only -- a fallback line is the engine's own words,
+    # nothing improvised to canonize, so no fact-extraction call follows.
+    assert len(llm.calls) == 2
 
 
 def test_voice_example_reuse_falls_back_to_safe_line_if_retry_also_fails():
@@ -204,7 +206,9 @@ def test_voice_example_reuse_falls_back_to_safe_line_if_retry_also_fails():
     reply, _, _ = run_turn(scenario, llm, "what's your name?")
 
     assert reply == "Enough talk."
-    assert len(llm.calls) == 3  # narration + retry + fact-extraction
+    # narration + retry only -- a fallback line is the engine's own words,
+    # nothing improvised to canonize, so no fact-extraction call follows.
+    assert len(llm.calls) == 2
 
 
 def test_repeat_retry_falls_back_to_safe_line_if_still_repeated():
@@ -224,7 +228,9 @@ def test_repeat_retry_falls_back_to_safe_line_if_still_repeated():
     reply, _, _ = run_turn(scenario, llm, "come on then")
 
     assert reply == "Enough talk."
-    assert len(llm.calls) == 3  # narration + retry + fact-extraction
+    # narration + retry only -- a fallback line is the engine's own words,
+    # nothing improvised to canonize, so no fact-extraction call follows.
+    assert len(llm.calls) == 2
 
 
 def test_dm_repeat_retry_falls_back_to_a_dm_appropriate_safe_line():
@@ -241,6 +247,101 @@ def test_dm_repeat_retry_falls_back_to_a_dm_appropriate_safe_line():
 
     assert speaker == "dm"
     assert reply == "The moment passes without another word."
+    assert len(llm.calls) == 2  # no extraction call for a fallback line
+    assert scenario.world.established_facts == []
+
+
+def test_dm_narration_records_an_improvised_scene_fact():
+    # R1 (REVIEW.md 2026-09-18): the PRD's own flagship Gotcha #3 example
+    # is a DM detail, but only the guard's improvisations were canonized.
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(
+        [
+            "Stone walls. A single iron grate covers the door.",
+            "A single iron grate covers the door.",
+        ]
+    )
+
+    _, speaker, _ = run_turn(scenario, llm, "describe the room")
+
+    assert speaker == "dm"
+    assert scenario.world.established_facts == ["A single iron grate covers the door."]
+    assert llm.calls[1][1] is None  # the extraction call, not a brief
+    assert llm.calls[1][3] == FACT_EXTRACTION_ID_SLOT
+    assert scenario.guard.established_facts == []  # scene canon, not the guard's
+
+
+def test_recorded_scene_fact_is_fed_back_into_the_next_dm_brief():
+    scenario = build_cell_and_guard()
+    scenario.world.add_established_fact("A single iron grate covers the door.")
+    llm = StubLLM(reply="Damp stone.")
+
+    run_turn(scenario, llm, "describe the room")
+
+    assert "A single iron grate covers the door." in llm.calls[0][1]
+
+
+def test_dm_refusal_also_gets_scene_facts_canonized():
+    # Refusals improvise too ("only damp stone and a rusted bucket") -- same
+    # canonization as narration, fed back into later refusal briefs.
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(
+        ["No magic here. A rusted bucket sits in the corner.", "A rusted bucket sits in the corner."]
+    )
+
+    run_turn(scenario, llm, "I cast a fireball")
+
+    assert scenario.world.established_facts == ["A rusted bucket sits in the corner."]
+
+
+def test_dm_fact_the_narration_never_said_is_rejected():
+    # Regression (real backend, 2026-09-18): the extraction model recorded
+    # "The iron door is etched with faint, swirling patterns." when the DM
+    # had only said "A heavy iron door bars your exit." -- invented canon.
+    # The engine now requires the fact to be quoted verbatim from the reply.
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(
+        [
+            "A heavy iron door bars your exit.",
+            "The iron door is etched with faint, swirling patterns.",
+        ]
+    )
+
+    run_turn(scenario, llm, "describe my surroundings")
+
+    assert scenario.world.established_facts == []
+
+
+def test_dm_fact_quote_tolerates_case_quotes_and_trailing_punctuation():
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(
+        ["Faint carvings cover the rough surface!", '"faint carvings cover the rough surface."']
+    )
+
+    run_turn(scenario, llm, "describe the walls")
+
+    assert scenario.world.established_facts == ["faint carvings cover the rough surface."]
+
+
+def test_dm_turn_records_nothing_when_extraction_says_none():
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Cold stone.", "NONE"])
+
+    run_turn(scenario, llm, "describe the room")
+
+    assert scenario.world.established_facts == []
+
+
+def test_empty_extraction_answer_is_not_recorded_as_a_fallback_line():
+    # Latent bug found while fixing R1: extraction ran its answer through
+    # guardrail.filter_reply, which swaps an empty reply for the speaker's
+    # fallback line -- so "" became "Enough talk." and got recorded as canon.
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Hmph. Fine.", ""])
+
+    run_turn(scenario, llm, "please, my friend")
+
+    assert scenario.guard.established_facts == []
 
 
 def test_run_turn_records_a_newly_improvised_fact():

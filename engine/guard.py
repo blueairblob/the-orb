@@ -14,7 +14,7 @@ import dataclasses
 import re
 
 from engine.character import Stat, has_unnegated_match
-from engine.world import Thing
+from engine.world import Thing, add_fact
 
 KIND_WORDS = {
     "please",
@@ -196,10 +196,4 @@ class Guard(Thing):
         Gotcha #3). Deduped case/whitespace-insensitively — returns False
         without re-adding if this fact (or near enough) is already
         recorded. Newest-first, matching build_guard_brief's ordering."""
-        normalized = fact.strip()
-        if not normalized:
-            return False
-        if any(normalized.lower() == existing.lower() for existing in self.established_facts):
-            return False
-        self.established_facts.insert(0, normalized)
-        return True
+        return add_fact(self.established_facts, fact)

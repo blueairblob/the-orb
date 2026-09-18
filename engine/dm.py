@@ -19,6 +19,7 @@ persona absorb it. Full rules adjudication is v0.2+ engine work.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
@@ -85,7 +86,27 @@ def classify_utterance(text: str) -> Route:
     return "dialogue"
 
 
-def build_refusal_brief(room: Room, attempted_action: str) -> str:
+# "Don't repeat unprompted" matters as much as "stay consistent": real
+# testing (2026-09-18) showed a recorded detail fed back as a bare fact got
+# re-narrated on every following turn, turning one line of colour into a tic.
+SCENE_FACTS_HEADER = (
+    "# Details you've already described — never contradict these, but don't repeat them "
+    "unless they're relevant to what's being asked"
+)
+
+
+def _scene_fact_lines(scene_facts: Sequence[str]) -> list[str]:
+    """PRD §22 Gotcha #3: whatever the DM has already improvised about the
+    place is fed back as fact, so it can't describe "a single iron grate"
+    one turn and "a heavy oak door" the next."""
+    if not scene_facts:
+        return []
+    return ["", SCENE_FACTS_HEADER, *[f"- {fact}" for fact in scene_facts]]
+
+
+def build_refusal_brief(
+    room: Room, attempted_action: str, scene_facts: Sequence[str] = ()
+) -> str:
     """Gotcha #2's own resolution: redirect in character, make the
     constraint flavour, never explain rules explicitly."""
     return "\n".join(
@@ -97,6 +118,7 @@ def build_refusal_brief(room: Room, attempted_action: str) -> str:
                 f"Only {room.name}, its locked door, and the guard beyond it. Nothing else — "
                 "no weapons, no magic, no items of any kind."
             ),
+            *_scene_fact_lines(scene_facts),
             "",
             "# What just happened",
             (
@@ -108,7 +130,9 @@ def build_refusal_brief(room: Room, attempted_action: str) -> str:
     )
 
 
-def build_narration_brief(room: Room, door: Door, guard: Guard, premise: str) -> str:
+def build_narration_brief(
+    room: Room, door: Door, guard: Guard, premise: str, scene_facts: Sequence[str] = ()
+) -> str:
     return "\n".join(
         [
             DM_PERSONA,
@@ -124,6 +148,7 @@ def build_narration_brief(room: Room, door: Door, guard: Guard, premise: str) ->
                 f"The player is here for {premise} — mention this only if directly "
                 "relevant to what's being asked, not as a reflex."
             ),
+            *_scene_fact_lines(scene_facts),
             "",
             "# Your task",
             (
@@ -131,4 +156,41 @@ def build_narration_brief(room: Room, door: Door, guard: Guard, premise: str) ->
                 "the guard — you are narrating, not conversing."
             ),
         ]
+    )
+
+
+def build_scene_fact_extraction_prompt(
+    room: Room, scene_facts: Sequence[str], player_utterance: str, dm_reply: str
+) -> str:
+    """The DM-side twin of brief.build_fact_extraction_prompt (the Oracle
+    fact-ledger pattern): a small, separate judgment call deciding whether
+    this narration invented a lasting detail about the place. The room's own
+    authored description counts as already established, so the base scene
+    isn't re-recorded in different words every turn. The door's lock and
+    the guard's mood are explicitly excluded — the engine owns those (PRD
+    §3), and recording the model's version of them would let prose compete
+    with state.
+
+    Extractive, not abstractive: the model must *copy* the sentence, and
+    engine/loop.py rejects anything that isn't verbatim in the narration.
+    Real backend testing (2026-09-18) caught a paraphrasing version of this
+    prompt inventing a detail the DM never said ("The iron door is etched
+    with faint, swirling patterns") and recording it as canon — a missed
+    fact is recoverable, a hallucinated one corrupts the ledger for good."""
+    known = [room.description or room.name, *scene_facts]
+    existing = "\n".join(f"- {fact}" for fact in known)
+    return (
+        f"# Already established about {room.name}\n{existing}\n\n"
+        "# What was just said\n"
+        f"Player: {player_utterance}\n"
+        f"Dungeon Master: {dm_reply}\n\n"
+        "# Task\n"
+        "Did the Dungeon Master's narration describe a NEW, specific, lasting physical detail "
+        "of this place that isn't already listed above — an object, a marking or feature of "
+        "the walls or floor, the source of a sound, what lies beyond? Only things that will "
+        "still be there next time: anything moving or happening right now (a shadow shifting, "
+        "a sound passing) does not count. Light, air, smells and mood do not count, and "
+        "neither does whether the door is locked or how the guard seems. If yes, copy that "
+        "sentence from the Dungeon Master's words "
+        "exactly, word for word — change nothing. If no, reply with exactly: NONE"
     )

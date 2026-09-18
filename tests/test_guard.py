@@ -1,5 +1,13 @@
 from engine.character import Stat
-from engine.guard import AFFILIATION_BANDS, Guard
+from engine.guard import (
+    AFFILIATION_BANDS,
+    GARRICK_SUSCEPTIBILITY,
+    KIND_DELTA,
+    REPEAT_DELTA,
+    RUDE_DELTA,
+    THREAT_DELTA,
+    Guard,
+)
 
 
 def make_guard(affiliation: int = 40) -> Guard:
@@ -165,3 +173,86 @@ def test_add_established_fact_rejects_empty_or_blank():
     assert guard.add_established_fact("") is False
     assert guard.add_established_fact("   ") is False
     assert guard.established_facts == []
+
+
+# --- R5: the classifier labels the tactic, Garrick's table sets the number ---
+
+
+def test_garrick_is_softest_on_empathy_and_offended_by_bribes():
+    guard = make_guard()
+    assert guard.susceptibility["empathy"] > guard.susceptibility["argument"] > 0
+    assert guard.susceptibility["bribe"] < 0
+    assert guard.susceptibility["threat"] < guard.susceptibility["insult"] < 0
+
+
+def test_confident_label_moves_the_dial_by_the_table():
+    guard = make_guard()
+
+    tactic, delta = guard.react_to("I'm sorry about your brother.", ("empathy", 0.9))
+
+    assert tactic == "empathy"
+    assert delta == GARRICK_SUSCEPTIBILITY["empathy"]
+    assert guard.affiliation.value == 40 + delta
+
+
+def test_low_confidence_label_counts_as_neutral():
+    # In the spike, every dangerous error (a kind line read as hostile) had
+    # confidence 0.15-0.35 -- below the floor it must not move the dial.
+    guard = make_guard()
+
+    tactic, delta = guard.react_to("To avenge your brother's death?", ("threat", 0.15))
+
+    assert tactic == "other"
+    assert delta == 0
+
+
+def test_keyword_hostility_overrides_the_classifier():
+    # The spike's one confident error: "Open it or else." read as a request.
+    guard = make_guard()
+
+    tactic, delta = guard.react_to("Open it or else.", ("request", 0.61))
+
+    assert tactic == "threat"
+    assert delta == THREAT_DELTA
+
+
+def test_repeating_a_winning_tactic_lands_for_less_each_time():
+    # PRD Gotcha #15, "the world wears down": variety, not spamming "please".
+    guard = make_guard()
+    deltas = [guard.react_to(f"sympathy line {i}", ("empathy", 0.9))[1] for i in range(4)]
+
+    assert deltas == [6, 3, 2, 1]
+
+
+def test_hostility_does_not_wear_down():
+    guard = make_guard(affiliation=90)
+    deltas = [guard.react_to(f"You're useless, take {i}.", ("insult", 0.9))[1] for i in range(3)]
+
+    assert deltas == [RUDE_DELTA] * 3
+
+
+def test_repeating_the_same_line_still_costs_extra():
+    guard = make_guard()
+    guard.remember("player", "please help me")
+
+    _, delta = guard.react_to("please help me", ("plea", 0.9))
+
+    assert delta == GARRICK_SUSCEPTIBILITY["plea"] + REPEAT_DELTA
+
+
+def test_no_classification_falls_back_to_the_keyword_heuristic():
+    guard = make_guard()
+
+    tactic, delta = guard.react_to("Please, my friend.", None)
+
+    assert tactic is None
+    assert delta == KIND_DELTA
+
+
+def test_an_off_table_label_falls_back_too():
+    guard = make_guard()
+
+    tactic, delta = guard.react_to("Please, my friend.", ("seduction", 0.99))
+
+    assert tactic is None
+    assert delta == KIND_DELTA

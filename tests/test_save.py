@@ -21,6 +21,7 @@ def test_save_and_load_round_trips_every_persisted_field(tmp_path):
     scenario.guard.secret_revealed = True
     scenario.guard.add_established_fact("He grew up in Oakhaven.")
     scenario.world.add_established_fact("A single iron grate covers the door.")
+    scenario.guard.tactic_counts = {"empathy": 2, "bribe": 1}
 
     save_state(save_path, scenario)
     loaded = load_state(save_path)
@@ -32,6 +33,7 @@ def test_save_and_load_round_trips_every_persisted_field(tmp_path):
     assert loaded.guard.secret_revealed is True
     assert loaded.guard.established_facts == ["He grew up in Oakhaven."]
     assert loaded.world.established_facts == ["A single iron grate covers the door."]
+    assert loaded.guard.tactic_counts == {"empathy": 2, "bribe": 1}
 
 
 def test_load_state_defaults_missing_fields_from_an_older_save_format(tmp_path):

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -31,7 +32,9 @@ DEFAULT_HF_FILE = "gemma-4-E2B_q4_0-it.gguf"
 
 DEFAULT_SERVER_HOST = "127.0.0.1"
 DEFAULT_SERVER_PORT = 8091
-DEFAULT_CTX_SIZE = 4096
+# Split evenly across the --parallel slots below (~2048 each): a guard brief
+# is ~600 tokens and grows with its fact ledger, so this keeps headroom.
+DEFAULT_CTX_SIZE = 6144
 DEFAULT_THREADS = 4
 DEFAULT_MAX_TOKENS = 96
 SERVER_STARTUP_TIMEOUT_S = 60.0
@@ -172,7 +175,7 @@ class GemmaHarness:
     cached prefix every single turn, forcing a full ~13s re-prefill on
     *every* guard turn rather than just the first. Fixed by giving that
     call its own `id_slot` (see `ask()`'s `id_slot` param) — hence
-    `--parallel 2` below, one slot per concurrently-live prompt shape.
+    `--parallel` below, one slot per concurrently-live prompt shape.
     """
 
     def __init__(
@@ -225,13 +228,12 @@ class GemmaHarness:
             "--n-gpu-layers", "0",
             "--cache-type-k", "q4_0",
             "--cache-type-v", "q4_0",
-            # Two slots: id_slot 0 for narration/retry, id_slot 1 for the
-            # separate fact-extraction call (see the class docstring) — each
-            # keeps its own KV cache so one doesn't evict the other's
-            # reusable prefix. ctx_size is split across slots by llama.cpp,
-            # so each still gets ctx_size/2 -- comfortably above a brief's
-            # actual size (~560 tokens) at the current DEFAULT_CTX_SIZE.
-            "--parallel", "2",
+            # One slot per concurrently-live prompt shape (see the class
+            # docstring): 0 narration/retry, 1 fact extraction, 2 the tactic
+            # classifier (engine/tactics.py). Each keeps its own KV cache so
+            # none evicts another's reusable prefix. llama.cpp splits
+            # ctx_size across slots — see DEFAULT_CTX_SIZE.
+            "--parallel", "3",
             "--slots",
         ]
         log_path = orb_models_base_dir() / "logs" / "llama-server.log"
@@ -361,3 +363,45 @@ class GemmaHarness:
             total_time_s=total_time_s,
             raw_response=final_chunk,
         )
+
+    def choose(
+        self,
+        prompt: str,
+        system_message: str,
+        options: list[str],
+        id_slot: int | None = None,
+    ) -> tuple[str, float | None] | None:
+        """Asks the model to pick exactly one of `options`, returning the pick
+        and its probability — or None if the call fails or returns something
+        off-list, so callers can fall back rather than crash. A GBNF grammar
+        makes any other answer impossible, and logprobs give the confidence
+        from the same call (validated in experiments/2026-09-18-tactic-
+        classifier/). Non-streaming: the answer is a single short label."""
+        payload = {
+            "messages": [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt},
+            ],
+            "grammar": "root ::= " + " | ".join(json.dumps(option) for option in options),
+            "temperature": 0,
+            "max_tokens": 8,
+            "logprobs": True,
+            "top_logprobs": 1,
+            "id_slot": self._id_slot if id_slot is None else id_slot,
+            "cache_prompt": True,
+            "stream": False,
+        }
+        try:
+            response = self._client.post("/v1/chat/completions", json=payload)
+            response.raise_for_status()
+            choice = response.json()["choices"][0]
+        except (httpx.HTTPError, KeyError, IndexError, ValueError):
+            return None
+        answer = (choice.get("message") or {}).get("content", "").strip()
+        if answer not in options:
+            return None
+        token_logprobs = [
+            token["logprob"] for token in ((choice.get("logprobs") or {}).get("content") or [])
+        ]
+        confidence = math.exp(sum(token_logprobs)) if token_logprobs else None
+        return answer, confidence

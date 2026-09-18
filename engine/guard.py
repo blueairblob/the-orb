@@ -1,11 +1,13 @@
 """The guard — the Character Engine's first NPC (PRD §12, the "Tamagotchi model").
 
-PRD §12 explicitly leaves "what actually moves the dial?" as an open,
-unsketched question. `adjust_affiliation_from_text` below is a first sketch,
-not a final answer: a small, transparent keyword heuristic. The natural
-upgrade — have the LLM *propose* a delta via structured output and let the
-engine clamp/apply it (Gotcha #31: "agents propose, engine disposes") — is
-flagged in the devlog as the v0.2 direction, not built here.
+PRD §12 leaves "what actually moves the dial?" as an open question. The
+answer built here (REVIEW.md R5, Façade's pattern): a classifier labels the
+*kind* of move the player made (engine/tactics.py), and the guard's own
+authored `susceptibility` table sets what it does to him — `react_to`. The
+model never supplies the number ("agents propose, engine disposes"). The
+original keyword heuristic, `adjust_affiliation_from_text`, remains as the
+fallback when no classification is available, and its hostility lists
+override the classifier (they were precise in the spike; it wasn't always).
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ import dataclasses
 import re
 
 from engine.character import Stat, has_unnegated_match
+from engine.tactics import CONFIDENCE_FLOOR
 from engine.world import Thing, add_fact
 
 KIND_WORDS = {
@@ -35,6 +38,33 @@ KIND_DELTA = 3
 RUDE_DELTA = -4
 THREAT_DELTA = -8
 REPEAT_DELTA = -2
+
+# What each kind of move does to *this* character (REVIEW.md R5): the
+# classifier (engine/tactics.py) only names the act, this table sets the
+# number. Drafted from Garrick's backstory and approved by the user
+# (2026-09-18): his brother died in a cell "for the same kind of petty theft",
+# so sympathy lands hardest; "secretly soft on prisoners", so innocence and
+# pleading move him; twenty unnoticed years make flattery pleasant but cheap;
+# an honest watchman finds a bribe faintly insulting. Hostility keeps the
+# existing keyword deltas. Another NPC gets a different table, not new code.
+GARRICK_SUSCEPTIBILITY: dict[str, int] = {
+    "empathy": 6,
+    "argument": 4,
+    "plea": 3,
+    "flattery": 2,
+    "bribe": -1,
+    "request": 0,
+    "question": 0,
+    "other": 0,
+    "insult": RUDE_DELTA,
+    "threat": THREAT_DELTA,
+}
+
+# Each repeat of the same *winning* tactic lands at half the last (PRD §22
+# Gotcha #15, "the world wears down") — so tending the mood takes variety,
+# not spamming "please". Hostile tactics don't wear down: a repeated threat
+# is no less a threat.
+TACTIC_REPEAT_DECAY = 0.5
 
 # Narrative register ladder for the guard's Affiliation stat (see
 # engine/character.py's Stat.bands) — unchanged values from the old
@@ -80,6 +110,12 @@ class Guard(Thing):
         default_factory=lambda: Stat(value=40, floor=0, ceiling=100, bands=AFFILIATION_BANDS)
     )
     memory: list[str] = dataclasses.field(default_factory=list)
+    susceptibility: dict[str, int] = dataclasses.field(
+        default_factory=lambda: dict(GARRICK_SUSCEPTIBILITY)
+    )
+    # How often each tactic has already been tried this session — drives
+    # TACTIC_REPEAT_DECAY. Persisted, so a resumed session doesn't reset it.
+    tactic_counts: dict[str, int] = dataclasses.field(default_factory=dict)
     unlock_threshold: int = 75
     lockout_threshold: int = 10
     secret_reveal_threshold: int = 65
@@ -169,6 +205,59 @@ class Guard(Thing):
 
         self.affiliation.adjust(delta)
         return delta
+
+    def keyword_hostility(self, utterance: str) -> str | None:
+        """'threat', 'insult' or None, from the keyword lists alone. In the
+        R5 spike these never pushed the mood the wrong way on any line —
+        precise but missing most lines — and they caught the classifier's
+        one confident error ("Open it or else." read as a request), so they
+        override its label for hostility."""
+        lowered = utterance.lower()
+        tokens = re.findall(r"[a-z']+", lowered)
+        if has_unnegated_match(tokens, THREAT_WORDS) or any(p in lowered for p in THREAT_PHRASES):
+            return "threat"
+        if has_unnegated_match(tokens, RUDE_WORDS) or any(p in lowered for p in RUDE_PHRASES):
+            return "insult"
+        return None
+
+    def resolve_tactic(
+        self, utterance: str, classified: tuple[str, float | None] | None
+    ) -> str | None:
+        """The engine's final call on what this line is — the classifier
+        proposes, this disposes. None means no usable classification at all
+        (the caller falls back to adjust_affiliation_from_text)."""
+        hostile = self.keyword_hostility(utterance)
+        if hostile:
+            return hostile
+        if classified is None:
+            return None
+        label, confidence = classified
+        if label not in self.susceptibility:
+            return None
+        if confidence is not None and confidence < CONFIDENCE_FLOOR:
+            return "other"
+        return label
+
+    def react_to(
+        self, utterance: str, classified: tuple[str, float | None] | None
+    ) -> tuple[str | None, int]:
+        """Moves the affiliation dial for one player line; returns (tactic,
+        delta) so callers/tests can see what happened. Call before the line
+        joins memory, same as adjust_affiliation_from_text (the repeat check
+        compares against earlier turns only)."""
+        tactic = self.resolve_tactic(utterance, classified)
+        if tactic is None:
+            return None, self.adjust_affiliation_from_text(utterance)
+
+        was_repeat = self._is_repeat(utterance)
+        base = self.susceptibility[tactic]
+        times_tried = self.tactic_counts.get(tactic, 0)
+        delta = round(base * TACTIC_REPEAT_DECAY**times_tried) if base > 0 else base
+        if was_repeat:
+            delta += REPEAT_DELTA
+        self.tactic_counts[tactic] = times_tried + 1
+        self.affiliation.adjust(delta)
+        return tactic, delta
 
     def check_thresholds(self) -> str | None:
         """Returns 'unlock', 'lockout', or None."""

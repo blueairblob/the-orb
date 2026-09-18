@@ -20,7 +20,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 
 from engine.llm import GemmaHarness, is_model_ready
-from engine.loop import LLMClient, build_intro, run_turn
+from engine.loop import LLMClient, build_intro, play_turn
 from engine.save import save_state
 from engine.scenario import CellAndGuard
 
@@ -98,27 +98,30 @@ def create_app(
                     continue
 
                 await websocket.send_json({"type": "thinking"})
-                reply, speaker, outcome = await asyncio.to_thread(
-                    run_turn, scenario, llm, utterance
-                )
-                save_state(save_path, scenario)
-                _log_transcript(
-                    {
-                        "player": utterance,
-                        "speaker": speaker,
-                        "reply": reply,
-                        "mood": scenario.guard.affiliation.value,
-                        "band": scenario.guard.affiliation.band,
-                        "outcome": outcome,
-                    }
-                )
+                turn = await asyncio.to_thread(play_turn, scenario, llm, utterance)
+                # R4: the reply goes out first; fact recording (turn.finish)
+                # runs after, while the browser speaks it. This loop awaits it
+                # before reading the next utterance, so turns never overlap.
                 await websocket.send_json(
                     {
                         **_state_message(),
                         "type": "reply",
-                        "text": reply,
-                        "speaker": speaker,
-                        "outcome": outcome,
+                        "text": turn.reply,
+                        "speaker": turn.speaker,
+                        "outcome": turn.outcome,
+                    }
+                )
+                await asyncio.to_thread(turn.finish)
+                save_state(save_path, scenario)
+                _log_transcript(
+                    {
+                        "player": utterance,
+                        "speaker": turn.speaker,
+                        "reply": turn.reply,
+                        "tactic": turn.tactic,
+                        "mood": scenario.guard.affiliation.value,
+                        "band": scenario.guard.affiliation.band,
+                        "outcome": turn.outcome,
                     }
                 )
         except WebSocketDisconnect:

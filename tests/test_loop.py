@@ -1,8 +1,11 @@
 import dataclasses
+import json
 
+from engine.guard import GARRICK_SUSCEPTIBILITY
 from engine.loop import (
     FACT_EXTRACTION_ID_SLOT,
     FACT_EXTRACTION_SAMPLER_KWARGS,
+    play_turn,
     run_loop,
     run_turn,
 )
@@ -18,9 +21,15 @@ class StubLLM:
     """A fake LLM client: echoes a fixed in-character line, so engine-logic
     tests never need the real model."""
 
-    def __init__(self, reply: str = "Stay put."):
+    def __init__(self, reply: str = "Stay put.", tactic: tuple[str, float | None] | None = None):
         self.reply = reply
+        self.tactic = tactic
         self.calls: list[tuple[str, str | None]] = []
+        self.choices: list[tuple[str, str, list[str], int | None]] = []
+
+    def choose(self, prompt, system_message, options, id_slot=None):
+        self.choices.append((prompt, system_message, options, id_slot))
+        return self.tactic
 
     def ask(
         self,
@@ -37,9 +46,13 @@ class SequencedLLM:
     """Returns each reply in `replies` in order, then repeats the last —
     for exercising the bland-dismissal retry in `engine.loop._ask_and_record`."""
 
-    def __init__(self, replies: list[str]):
+    def __init__(self, replies: list[str], tactic: tuple[str, float | None] | None = None):
         self.replies = replies
+        self.tactic = tactic
         self.calls: list[tuple[str, str | None, str]] = []
+
+    def choose(self, prompt, system_message, options, id_slot=None):
+        return self.tactic
 
     def ask(
         self,
@@ -528,3 +541,97 @@ def test_unrelated_self_repeat_still_falls_back():
     reply, _, _ = run_turn(scenario, llm, "come on then")
 
     assert reply == "Enough talk."
+
+
+# --- R5: a classified tactic drives the mood, before the reply ---
+
+
+def test_guard_turn_is_scored_by_the_classified_tactic():
+    scenario = build_cell_and_guard()
+    llm = StubLLM(reply="Hmph.", tactic=("empathy", 0.9))
+
+    run_turn(scenario, llm, "I'm sorry about your brother.")
+
+    assert scenario.guard.affiliation.value == 40 + GARRICK_SUSCEPTIBILITY["empathy"]
+    assert scenario.guard.tactic_counts == {"empathy": 1}
+
+
+def test_classifier_sees_the_guards_previous_line_for_context():
+    scenario = build_cell_and_guard()
+    scenario.guard.remember("guard", "Dig.")
+    llm = StubLLM(reply="Hmph.", tactic=("other", 0.9))
+
+    run_turn(scenario, llm, "yes Dig")
+
+    prompt = llm.choices[0][0]
+    assert 'Guard: "Dig."' in prompt and '"yes Dig"' in prompt
+
+
+def test_a_winning_line_can_unlock_on_the_turn_it_lands():
+    # The mood is decided before the reply, so crossing the threshold opens
+    # the door on this turn, not the next.
+    scenario = build_cell_and_guard()
+    scenario.guard.affiliation.value = 72
+    llm = StubLLM(reply="Go. Before I think better of it.", tactic=("empathy", 0.9))
+
+    _, _, outcome = run_turn(scenario, llm, "Your brother would have wanted mercy.")
+
+    assert outcome == "unlock"
+    assert scenario.door.locked is False
+
+
+def test_dm_turns_are_not_classified():
+    scenario = build_cell_and_guard()
+    llm = StubLLM(reply="Cold stone.", tactic=("empathy", 0.9))
+
+    run_turn(scenario, llm, "describe the room")
+
+    assert llm.choices == []
+    assert scenario.guard.affiliation.value == 40
+
+
+# --- R4: the reply comes back before fact recording runs ---
+
+
+def test_play_turn_returns_the_reply_before_fact_extraction():
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Kelsey. By the river.", "Kelsey. By the river."])
+
+    turn = play_turn(scenario, llm, "where are you from?")
+
+    assert turn.reply == "Kelsey. By the river."
+    assert len(llm.calls) == 1  # only the reply so far -- extraction is deferred
+    assert scenario.guard.established_facts == []
+
+    turn.finish()
+
+    assert len(llm.calls) == 2
+    assert scenario.guard.established_facts == [
+        'Asked "where are you from?", you said: "Kelsey. By the river."'
+    ]
+
+
+def test_finish_runs_the_deferred_work_only_once():
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Kelsey.", "NONE"])
+    turn = play_turn(scenario, llm, "where are you from?")
+
+    turn.finish()
+    turn.finish()
+
+    assert len(llm.calls) == 2
+
+
+def test_run_loop_still_records_facts_before_saving(tmp_path):
+    # run_loop overlaps fact recording with delivering the reply, but must
+    # join it before saving -- a save must never miss a turn's canon.
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["Kelsey. By the river.", "Kelsey. By the river."])
+    save_path = tmp_path / "save.json"
+
+    run_loop(scenario, llm, ScriptedVoice(["where are you from?"]), save_path)
+
+    saved = json.loads(save_path.read_text())
+    assert saved["guard_established_facts"] == [
+        'Asked "where are you from?", you said: "Kelsey. By the river."'
+    ]

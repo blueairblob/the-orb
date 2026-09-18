@@ -9,7 +9,10 @@ else here is exactly what ships. `llm` is typed against a small protocol so
 
 from __future__ import annotations
 
+import dataclasses
 import sys
+import threading
+from collections.abc import Callable
 from pathlib import Path
 from typing import Protocol
 
@@ -25,6 +28,7 @@ from engine.guard import Guard
 from engine.llm import GemmaHarness, is_model_ready
 from engine.save import load_state, save_state
 from engine.scenario import CellAndGuard
+from engine.tactics import classify_tactic
 from engine.voice import Voice
 from engine.voice_text import TextVoice
 
@@ -59,6 +63,10 @@ class LLMClient(Protocol):
         sampler_config: str = "default",
         id_slot: int | None = None,
     ) -> LLMResult: ...
+
+    def choose(
+        self, prompt: str, system_message: str, options: list[str], id_slot: int | None = None
+    ) -> tuple[str, float | None] | None: ...
 
 
 BLAND_NUDGE = (
@@ -267,19 +275,37 @@ def _ask_and_record(
     return reply
 
 
-def run_turn(
-    scenario: CellAndGuard, llm: LLMClient, player_utterance: str
-) -> tuple[str, str, str | None]:
-    """Runs one turn end to end. Returns (spoken_reply, speaker, outcome),
-    where speaker is 'dm' or 'guard' and outcome is 'unlock', 'lockout', or
-    None. Routes to the DM (PRD §12: "the DM wearing a different hat") for
-    scene narration and grounding refusals; the guard only ever speaks his
-    own dialogue — see `engine/dm.py`."""
-    guard: Guard = scenario.guard
-    scenario.world.clock.advance(TURN_MINUTES)
-    route = dm.classify_utterance(player_utterance)
+@dataclasses.dataclass
+class Turn:
+    """One turn, split at the moment the player hears the reply (REVIEW.md
+    R4). Everything the reply depends on — routing, the mood dial, the
+    thresholds, the reply itself — happens in play_turn, before this exists.
+    Recording what the reply established (fact extraction) happens in
+    finish(), *after* the reply is on its way: real testing measured that
+    call at ~2.5-3.5s, spent entirely on something the player never sees.
+    Call finish() before the next turn and before saving, so both see
+    complete state."""
 
+    reply: str
+    speaker: str
+    outcome: str | None
+    tactic: str | None = None
+    _pending: Callable[[], None] | None = None
+
+    def finish(self) -> None:
+        if self._pending is not None:
+            pending, self._pending = self._pending, None
+            pending()
+
+
+def play_turn(scenario: CellAndGuard, llm: LLMClient, player_utterance: str) -> Turn:
+    """Runs a turn up to the reply. Routes to the DM (PRD §12: "the DM
+    wearing a different hat") for scene narration and grounding refusals;
+    the guard only ever speaks his own dialogue — see `engine/dm.py`."""
+    guard: Guard = scenario.guard
     world = scenario.world
+    world.clock.advance(TURN_MINUTES)
+    route = dm.classify_utterance(player_utterance)
 
     if route in ("refusal", "narration"):
         guard.remember("player", player_utterance)
@@ -297,10 +323,13 @@ def run_turn(
                 clock=world.clock,
             )
         reply = _ask_and_record(llm, guard, player_utterance, brief, "dm")
+
         # The DM improvises scene detail every time it narrates or redirects —
         # the PRD's own flagship Gotcha #3 example is a DM detail ("what's
         # over the wall?"), so this is the same canonization the guard gets.
-        if reply != guardrail.fallback_line("dm"):
+        def record_scene_fact() -> None:
+            if reply == guardrail.fallback_line("dm"):
+                return
             fact = _extract_new_fact(
                 llm,
                 dm.build_scene_fact_extraction_prompt(
@@ -309,11 +338,16 @@ def run_turn(
             )
             if fact and _is_quoted_from(fact, reply):
                 world.add_established_fact(fact)
-        return reply, "dm", None
 
-    # Default: dialogue directed at the guard.
-    # Check for a repeat against prior turns before this one joins memory.
-    guard.adjust_affiliation_from_text(player_utterance)
+        return Turn(reply, "dm", None, _pending=record_scene_fact)
+
+    # Default: dialogue directed at the guard. Classified and scored before
+    # this line joins memory (the repeat check compares earlier turns only),
+    # and before the reply — his mood decides how he answers, and whether
+    # the door opens this turn.
+    previous_reply = (guard.own_lines("guard") or ["(the scene opens)"])[-1]
+    classified = classify_tactic(llm, player_utterance, previous_reply)
+    tactic, _ = guard.react_to(player_utterance, classified)
     guard.remember("player", player_utterance)
 
     outcome = guard.check_thresholds()
@@ -326,7 +360,7 @@ def run_turn(
     # "already revealed" before it's ever actually been said. Flipped for
     # future turns only after this one's brief and reply are done.
     brief = build_guard_brief(
-        guard, scenario.door, scenario.room, scenario.premise, clock=scenario.world.clock
+        guard, scenario.door, scenario.room, scenario.premise, clock=world.clock
     )
     reply = _ask_and_record(
         llm,
@@ -338,15 +372,31 @@ def run_turn(
         room_description=scenario.room.description,
     )
     guard.maybe_reveal_secret()
-    # A fallback line is the engine's own words, not an improvisation —
-    # there's nothing in it to canonize, so skip the extraction call.
-    if reply != guardrail.fallback_line("guard"):
+
+    def record_guard_fact() -> None:
+        # A fallback line is the engine's own words, not an improvisation —
+        # nothing in it to canonize, so skip the extraction call.
+        if reply == guardrail.fallback_line("guard"):
+            return
         quote = _extract_new_fact(
             llm, build_fact_extraction_prompt(guard, player_utterance, reply)
         )
         if quote and _is_quoted_from(quote, reply):
             guard.add_established_fact(format_guard_fact(player_utterance, quote))
-    return reply, "guard", outcome
+
+    return Turn(reply, "guard", outcome, tactic=tactic, _pending=record_guard_fact)
+
+
+def run_turn(
+    scenario: CellAndGuard, llm: LLMClient, player_utterance: str
+) -> tuple[str, str, str | None]:
+    """A whole turn, synchronously: play_turn then finish. Returns
+    (spoken_reply, speaker, outcome), where speaker is 'dm' or 'guard' and
+    outcome is 'unlock', 'lockout', or None. The interactive loops use
+    play_turn directly so the player isn't kept waiting for finish()."""
+    turn = play_turn(scenario, llm, player_utterance)
+    turn.finish()
+    return turn.reply, turn.speaker, turn.outcome
 
 
 def run_loop(
@@ -363,14 +413,21 @@ def run_loop(
         if not utterance.strip():
             continue
 
-        reply, speaker, outcome = run_turn(scenario, llm, utterance)
-        voice.speak(reply, speaker=speaker)
+        turn = play_turn(scenario, llm, utterance)
+        # R4: fact recording runs while the reply is being delivered (a real
+        # voice backend blocks on TTS here), not before it. llama.cpp serves
+        # the two concurrently on separate slots. Joined before saving and
+        # before the next turn, so neither ever sees half-recorded state.
+        recorder = threading.Thread(target=turn.finish)
+        recorder.start()
+        voice.speak(turn.reply, speaker=turn.speaker)
+        recorder.join()
         save_state(save_path, scenario)
 
-        if outcome == "unlock":
+        if turn.outcome == "unlock":
             voice.speak("(The door creaks open. You're free.)", speaker="dm")
             break
-        if outcome == "lockout":
+        if turn.outcome == "lockout":
             voice.speak("(The guard storms off. Your only way out just left.)", speaker="dm")
             break
 

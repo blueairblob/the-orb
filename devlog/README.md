@@ -27,6 +27,7 @@ leave it here if it's closer to "here's what we tried and found."
 
 ## Entries
 
+- [2026-09-18 — Hardening the state machine: R10, R2 and a canon-vs-anti-echo conflict (R12)](2026-09-18-state-machine-hardening.md)
 - [2026-09-18 — The DM's improvisations become canon too (REVIEW R1)](2026-09-18-dm-scene-canon.md)
 - [2026-09-17 — Two small, already-flagged gaps closed (save persistence, "Try again." guardrail)](2026-09-17-two-quick-fixes-from-real-play.md)
 - [2026-09-16 — The safety net itself broke the DM/guard voice split (fallback line fix)](2026-09-16-guard-fallback-line-broke-voice-split.md)

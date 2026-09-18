@@ -116,6 +116,10 @@ class Guard(Thing):
     # How often each tactic has already been tried this session — drives
     # TACTIC_REPEAT_DECAY. Persisted, so a resumed session doesn't reset it.
     tactic_counts: dict[str, int] = dataclasses.field(default_factory=dict)
+    # This turn's resolved move and what it did to him, set by react_to so
+    # the brief can tell the actor how he took it (REVIEW.md R13). Transient:
+    # overwritten every guard turn before his brief is built, never saved.
+    last_move: tuple[str | None, int] | None = None
     unlock_threshold: int = 75
     lockout_threshold: int = 10
     secret_reveal_threshold: int = 65
@@ -247,7 +251,9 @@ class Guard(Thing):
         compares against earlier turns only)."""
         tactic = self.resolve_tactic(utterance, classified)
         if tactic is None:
-            return None, self.adjust_affiliation_from_text(utterance)
+            delta = self.adjust_affiliation_from_text(utterance)
+            self.last_move = (None, delta)
+            return None, delta
 
         was_repeat = self._is_repeat(utterance)
         base = self.susceptibility[tactic]
@@ -257,6 +263,7 @@ class Guard(Thing):
             delta += REPEAT_DELTA
         self.tactic_counts[tactic] = times_tried + 1
         self.affiliation.adjust(delta)
+        self.last_move = (tactic, delta)
         return tactic, delta
 
     def check_thresholds(self) -> str | None:

@@ -163,6 +163,52 @@ RULE_REMINDER = (
     "answered it before you move on to anything new."
 )
 
+# What the player just did, in the guard's terms (REVIEW.md R13). Tactics
+# that aren't a persuasion move at all (a question, small talk) get no line.
+MOVE_DESCRIPTIONS = {
+    "empathy": "showed real sympathy for you and your life",
+    "flattery": "flattered you",
+    "bribe": "offered you a bribe",
+    "plea": "pleaded with you",
+    "argument": "argued their case to you",
+    "request": "asked you to do something for them",
+    "threat": "threatened you",
+    "insult": "insulted you",
+}
+
+
+def describe_reaction(guard: Guard) -> str | None:
+    """One line telling the actor what the player just did and how *he took
+    it* — decided by the engine from the delta the move actually earned
+    (Guard.react_to), so his words can't contradict his mood. Found in the R5
+    live replay: every bribe scored -1 (Garrick's table: bribes offend him)
+    while he answered "Show it to me.", because the brief never said how he
+    took it — the actor contradicted the director, and a player could never
+    learn that bribes don't work on him (REVIEW.md R13)."""
+    if guard.last_move is None:
+        return None
+    tactic, delta = guard.last_move
+    if tactic not in MOVE_DESCRIPTIONS:
+        return None
+    if guard.susceptibility.get(tactic, 0) > 0 and delta <= 0:
+        feeling = "You've heard that from them before; it doesn't move you any more."
+    elif delta >= 5:
+        feeling = "It truly reaches you — let that show, even gruffly."
+    elif delta >= 3:
+        feeling = "It gets through to you a little."
+    elif delta >= 1:
+        feeling = "It pleases you, though it costs them nothing."
+    elif delta == 0:
+        feeling = "It doesn't move you either way."
+    elif delta >= -2:
+        feeling = "It sits badly with you — you won't give them what they want for it."
+    elif delta >= -5:
+        feeling = "It stings; you're less inclined to help them."
+    else:
+        feeling = "It makes you angry."
+    return f"# Just now they {MOVE_DESCRIPTIONS[tactic]}. {feeling}"
+
+
 def build_guard_brief(
     guard: Guard, door: Door, room: Room, premise: str, *, clock: WorldClock
 ) -> str:
@@ -229,8 +275,10 @@ def build_guard_brief(
         lines += ["", "# What's been said so far"]
         lines += [f"- {line}" for line in recent]
 
+    reaction = describe_reaction(guard)
     lines += [
         "",
+        *([reaction] if reaction else []),
         (
             f"# Right now you feel {guard.affiliation.band} toward the prisoner — "
             f"{AFFILIATION_DIRECTIVES[guard.affiliation.band]}"

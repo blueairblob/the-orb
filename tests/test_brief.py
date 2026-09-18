@@ -205,3 +205,58 @@ def test_guard_fact_prompt_rules_out_non_facts():
 
     for excluded in ("refusals", "the door, the lock", "promises", "reactions to the prisoner"):
         assert excluded in prompt
+
+
+# --- R13: the brief tells him how he took the player's move ---
+
+
+def test_brief_voices_his_reaction_to_a_bribe():
+    # REVIEW.md R13: each bribe scored -1 while he answered "Show it to me.",
+    # because nothing told him he'd taken it badly.
+    scenario = build_cell_and_guard()
+    scenario.guard.react_to("Look I have gold", ("bribe", 0.9))
+
+    brief = brief_for(scenario)
+
+    assert "Just now they offered you a bribe." in brief
+    assert "you won't give them what they want for it" in brief
+
+
+def test_reaction_scales_with_what_the_move_actually_earned():
+    scenario = build_cell_and_guard()
+    scenario.guard.react_to("I'm sorry about your brother.", ("empathy", 0.9))
+    assert "It truly reaches you" in brief_for(scenario)
+
+    scenario.guard.react_to("You're pathetic.", ("insult", 0.9))
+    assert "It stings" in brief_for(scenario)
+
+    scenario.guard.react_to("I will hurt you.", ("threat", 0.9))
+    assert "It makes you angry." in brief_for(scenario)
+
+
+def test_worn_out_tactic_is_voiced_as_worn_out():
+    # Gotcha #15 made visible: the third time the same flattery lands at 0.
+    scenario = build_cell_and_guard()
+    for i in range(3):
+        scenario.guard.react_to(f"You're a fine guard ({i}).", ("flattery", 0.9))
+
+    assert "doesn't move you any more" in brief_for(scenario)
+
+
+def test_no_reaction_line_for_questions_or_before_any_move():
+    scenario = build_cell_and_guard()
+    assert "Just now they" not in brief_for(scenario)
+
+    scenario.guard.react_to("Do you have family?", ("question", 0.9))
+    assert "Just now they" not in brief_for(scenario)
+
+
+def test_reaction_line_sits_just_before_his_current_mood():
+    # Near the end of the brief: the highest-attention position, closest to
+    # where generation starts (same reasoning as RULE_REMINDER).
+    scenario = build_cell_and_guard()
+    scenario.guard.react_to("Look I have gold", ("bribe", 0.9))
+    brief = brief_for(scenario)
+
+    assert brief.index("Just now they") < brief.index("# Right now you feel")
+    assert brief.index("Just now they") > brief.index("# Your private history")

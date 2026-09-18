@@ -183,3 +183,25 @@ def test_guard_fact_quote_inverts_format_guard_fact():
 
     assert guard_fact_quote(fact) == "Blackwood. A quiet place."
     assert guard_fact_quote("He grew up in Kelsey.") is None  # older, free-form fact
+
+
+def test_guard_fact_prompt_treats_his_name_as_already_known():
+    # R14: the untightened prompt recorded "Garrick." -- his own name -- as a
+    # new fact about himself.
+    scenario = build_cell_and_guard()
+
+    prompt = build_fact_extraction_prompt(scenario.guard, "what's your name?", "Garrick.")
+
+    assert f"His name is {scenario.guard.name}." in prompt
+
+
+def test_guard_fact_prompt_rules_out_non_facts():
+    # R14: 8 of 27 non-fact turns got recorded ("Still locked.", "Show it to
+    # me.", the promise "Ten minutes. Fine."), and fed back as canon they drove
+    # repetition loops. The categories that caused it are named as excluded.
+    scenario = build_cell_and_guard()
+
+    prompt = build_fact_extraction_prompt(scenario.guard, "q", "r")
+
+    for excluded in ("refusals", "the door, the lock", "promises", "reactions to the prisoner"):
+        assert excluded in prompt

@@ -1,0 +1,17 @@
+{
+  "current": {
+    "real_facts_recorded": "5/5",
+    "real_facts_missed": 0,
+    "junk_recorded": "8/27"
+  },
+  "candidate": {
+    "real_facts_recorded": "3/5",
+    "real_facts_missed": 2,
+    "junk_recorded": "0/27"
+  },
+  "candidate2": {
+    "real_facts_recorded": "3/5",
+    "real_facts_missed": 2,
+    "junk_recorded": "0/27"
+  }
+}

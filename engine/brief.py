@@ -264,17 +264,28 @@ def build_fact_extraction_prompt(guard: Guard, player_utterance: str, guard_repl
     existing = (
         "\n".join(f"- {fact}" for fact in guard.established_facts) or "(nothing yet)"
     )
+    # Tightened after R14 (experiments/2026-09-18-guard-fact-precision/):
+    # the plain "copy the words that state a fact" version recorded junk on
+    # 8 of 27 non-fact turns ("Still locked.", "Show it to me.", his own name,
+    # even the promise "Ten minutes. Fine."), and that junk, fed back as
+    # canon, drove repetition loops. This version: 0 of 27 junk, at the cost
+    # of 2 of 5 real facts missed on first telling — a missed fact is
+    # recoverable (a later retelling gets recorded), junk canon isn't.
     return (
-        f"# Already established about {guard.name}\n{existing}\n\n"
+        f"# Already established about {guard.name}\n"
+        f"- His name is {guard.name}.\n{existing}\n\n"
         "# What was just said\n"
         f"Player: {player_utterance}\n"
         f"{guard.name}: {guard_reply}\n\n"
         "# Task\n"
-        f"Did {guard.name}'s reply state a NEW, specific, reusable fact about himself "
-        "that isn't already listed above — a name, a person, a place, an event from his "
-        "past? Mood, feelings, or vague colour do not count, only a concrete fact someone "
-        f"could refer back to later. If yes, copy the words from {guard.name}'s reply that "
-        "state it exactly, word for word — change nothing. If no, reply with exactly: NONE"
+        f"Did {guard.name} just reveal a NEW, lasting fact about his own life that isn't "
+        "already listed above — where he comes from or grew up, his past, his family, people "
+        "he knows, places he's been, something that happened to him? It still counts if he "
+        "adds a remark with it. These do NOT count: refusals, orders or threats; reactions to "
+        "the prisoner or to what they said; anything about the door, the lock, the cell or "
+        "what happens next; promises, deals or offers; moods and opinions of the moment. If "
+        "he revealed such a fact, copy the words from his reply that state it exactly, word "
+        "for word — change nothing. If not, reply with exactly: NONE"
     )
 
 

@@ -66,6 +66,27 @@ GARRICK_SUSCEPTIBILITY: dict[str, int] = {
 # is no less a threat.
 TACTIC_REPEAT_DECAY = 0.5
 
+# What Garrick *does* with each kind of move — the engine's directing of his
+# reply (REVIEW.md R18). The classifier says what the player did; his mood
+# table says how it lands; this says what act his reply should perform, so a
+# 2B model phrases a decided act instead of improvising a gruff-sounding
+# non-sequitur ("I need to get out" -> "Try harder."). Phrased positively and
+# concretely: telling this model what *not* to say primes it to say it.
+GARRICK_REPLY_INTENTS: dict[str, str] = {
+    "question": "Answer what they asked, plainly and in your own voice. If you won't answer, "
+    "say so and why.",
+    "request": "Say plainly that the door stays locked and why — you're on watch, it's your duty.",
+    "empathy": "Let it reach you a little: admit one small true thing about how it was, "
+    "without going soft.",
+    "argument": "Weigh what they said aloud: doubt it or half-grant it, in your own words.",
+    "plea": "Show you heard the plea: you feel for them, but it isn't yours to grant. Say so.",
+    "flattery": "Be gruff about the praise; it doesn't win you over.",
+    "bribe": "Turn the offer down and say why: you're a watchman, not for sale.",
+    "threat": "Warn them off sharply; you've heard worse.",
+    "insult": "Shut them down coldly; don't be baited.",
+    "other": "React to what they said, naturally, in a few words.",
+}
+
 # Narrative register ladder for the guard's Affiliation stat (see
 # engine/character.py's Stat.bands) — unchanged values from the old
 # MoodDial.band, just relocated: Stat itself carries no opinion on what
@@ -113,6 +134,15 @@ class Guard(Thing):
     susceptibility: dict[str, int] = dataclasses.field(
         default_factory=lambda: dict(GARRICK_SUSCEPTIBILITY)
     )
+    # What he does with each kind of move (GARRICK_REPLY_INTENTS), and the
+    # standing goal his lines should follow from (`stance`, authored with the
+    # character in engine/scenario.py). Both empty = an undirected actor
+    # that only knows how to *sound* — the pre-R18 behaviour, kept reachable
+    # so the two can be compared.
+    reply_intents: dict[str, str] = dataclasses.field(
+        default_factory=lambda: dict(GARRICK_REPLY_INTENTS)
+    )
+    stance: str = ""
     # How often each tactic has already been tried this session — drives
     # TACTIC_REPEAT_DECAY. Persisted, so a resumed session doesn't reset it.
     tactic_counts: dict[str, int] = dataclasses.field(default_factory=dict)

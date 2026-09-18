@@ -281,3 +281,92 @@ def test_several_moves_are_joined_naturally():
     scenario.guard.react_to("You're good at your job, and I'm innocent.", {"flattery": 0.5, "argument": 0.45})
 
     assert "Just now they flattered you and argued their case to you." in brief_for(scenario)
+
+
+# --- R18: the engine directs what his reply does ---
+
+
+def test_brief_states_what_he_is_doing_in_the_conversation():
+    # R18: a real Easy playtest had "I need to get out" -> "Try harder." -- the
+    # brief said how to sound but never what he was trying to achieve.
+    scenario = build_cell_and_guard()
+
+    brief = brief_for(scenario)
+
+    assert "# What you're doing here" in brief
+    assert scenario.guard.stance in brief
+    assert brief.index("# What you're doing here") < brief.index("# Your private history")
+
+
+def test_an_undirected_guard_gets_no_stance_and_no_intent():
+    # Empty stance + empty intents is the pre-R18 actor, kept reachable so
+    # directed vs undirected can be compared (experiments/2026-09-18-guard-coherence/).
+    scenario = build_cell_and_guard()
+    scenario.guard.stance = ""
+    scenario.guard.reply_intents = {}
+    scenario.guard.react_to("I need to get out", {"request": 0.9})
+
+    brief = brief_for(scenario)
+
+    assert "What you're doing here" not in brief
+    assert "What you do now" not in brief
+
+
+def test_a_request_is_met_with_a_plain_refusal_directive():
+    scenario = build_cell_and_guard()
+    scenario.guard.react_to("I need to get out", {"request": 0.9})
+
+    assert "# What you do now: Say plainly that the door stays locked and why" in brief_for(
+        scenario
+    )
+
+
+def test_a_pure_question_gets_an_answer_directive_though_no_reaction_line():
+    # "what do you mean 'try harder'?" -- he doubled down instead of answering.
+    scenario = build_cell_and_guard()
+    scenario.guard.react_to("what do you mean try harder?", {"question": 0.9})
+    brief = brief_for(scenario)
+
+    assert "Just now they" not in brief
+    assert "# What you do now: Answer what they asked, plainly" in brief
+
+
+def test_a_question_is_dealt_with_before_the_other_move():
+    # The user: "would act on the question first if asked".
+    scenario = build_cell_and_guard()
+    scenario.guard.react_to("I'm sorry. How did it happen?", {"empathy": 0.5, "question": 0.4})
+
+    line = next(ln for ln in brief_for(scenario).splitlines() if ln.startswith("# What you do now"))
+
+    assert line.index("Answer what they asked") < line.index("Let it reach you a little")
+
+
+def test_no_more_than_two_directives():
+    scenario = build_cell_and_guard()
+    scenario.guard.react_to(
+        "sorry, how? I have gold and I'm innocent",
+        {"empathy": 0.3, "question": 0.3, "bribe": 0.2, "argument": 0.2},
+    )
+
+    line = next(ln for ln in brief_for(scenario).splitlines() if ln.startswith("# What you do now"))
+
+    assert line.count(" Then: ") == 1
+
+
+def test_other_is_only_a_directive_when_nothing_else_was_said():
+    scenario = build_cell_and_guard()
+    scenario.guard.react_to("Funny. Do you get many prisoners?", {"other": 0.5, "question": 0.4})
+    line = next(ln for ln in brief_for(scenario).splitlines() if ln.startswith("# What you do now"))
+    assert "React to what they said" not in line
+
+    scenario.guard.react_to("hmm", {"other": 0.9})
+    line = next(ln for ln in brief_for(scenario).splitlines() if ln.startswith("# What you do now"))
+    assert "React to what they said" in line
+
+
+def test_no_intent_before_any_move_and_none_when_classification_failed():
+    scenario = build_cell_and_guard()
+    assert "What you do now" not in brief_for(scenario)
+
+    scenario.guard.react_to("Please, my friend.", None)  # keyword fallback: no tactics
+    assert "What you do now" not in brief_for(scenario)

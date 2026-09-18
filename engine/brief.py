@@ -177,6 +177,32 @@ MOVE_DESCRIPTIONS = {
 }
 
 
+MAX_INTENT_DIRECTIVES = 2
+
+
+def describe_intent(guard: Guard) -> str | None:
+    """What his reply should *do*, decided by the engine from the player's
+    move (REVIEW.md R18). Found in a real Easy playtest: "I need to get out"
+    got "Try harder." and, asked what he meant, he doubled down — the brief
+    said how to sound but never what he was trying to achieve, so a 2B model
+    strung gruff phrases together with nothing behind them. A question is
+    always dealt with first (the user: "act on the question first if asked");
+    then the strongest other move. At most two directives — a small model
+    follows one or two, not five."""
+    if not guard.reply_intents or guard.last_move is None:
+        return None
+    tactics, _ = guard.last_move
+    if not tactics:
+        return None
+    ordered = sorted(tactics, key=lambda t: t != "question")
+    others = [t for t in ordered if t != "other"]
+    chosen = (others or ordered)[:MAX_INTENT_DIRECTIVES]
+    directives = [guard.reply_intents[t] for t in chosen if t in guard.reply_intents]
+    if not directives:
+        return None
+    return "# What you do now: " + " Then: ".join(directives)
+
+
 def _join(parts: list[str]) -> str:
     return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
 
@@ -244,6 +270,7 @@ def build_guard_brief(
         "",
         "# What's on your mind",
         *[f"- You are {drive}." for drive in guard.drives],
+        *(["", "# What you're doing here", guard.stance] if guard.stance else []),
         "",
         "# Your private history",
         (
@@ -293,9 +320,11 @@ def build_guard_brief(
         lines += [f"- {line}" for line in recent]
 
     reaction = describe_reaction(guard)
+    intent = describe_intent(guard)
     lines += [
         "",
         *([reaction] if reaction else []),
+        *([intent] if intent else []),
         (
             f"# Right now you feel {guard.affiliation.band} toward the prisoner — "
             f"{AFFILIATION_DIRECTIVES[guard.affiliation.band]}"

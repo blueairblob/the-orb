@@ -44,6 +44,13 @@ def build_cell_and_guard() -> CellAndGuard:
             name="Garrick",
             description="A bored, gruff dungeon guard, twenty years in the King's Watch.",
             location=room,
+            stance=(
+                "You are keeping this prisoner locked in until your watch ends. You won't "
+                "open the door, help them escape, or be bought — but you're not cruel, and "
+                "someone who truly earns your trust might get a little from you. What you "
+                "say always follows from that: you answer what they ask, you give a reason "
+                "when you refuse."
+            ),
             backstory=(
                 "Twenty years in the King's Watch, most of it spent freezing outside "
                 "cells exactly like this one. His younger brother went into one during "

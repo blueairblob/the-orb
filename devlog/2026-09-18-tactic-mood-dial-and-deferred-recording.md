@@ -115,3 +115,29 @@ One limitation surfaced: each line gets one label, so a line that does two thing
 "Wow, look I am really sorry. How did it happen?" was labelled *question*, and the apology earned
 nothing on either difficulty. A candidate for later: multi-label, or ranking empathy above
 question.
+
+## Update — multi-label readings; a skewed confidence score found and fixed
+
+The user wanted multi-label: "even a dim human would take more than one meaning, though would act
+on the question first if asked."
+
+The same single classifier call already carries the model's whole distribution over readings (the
+first token's top_logprobs, mapped to labels by prefix), so this cost no extra latency.
+
+Looking at those logprobs revealed a mistake of mine in the R5 spike and build, logged as **R17**
+and fixed. Confidence had been the product of every generated token's probability, including an
+end-of-answer token near 0.65, so certain labels scored ~0.62. Every floor was stricter than
+written. The first-token probability is now the measure.
+
+**The rules:**
+- Every reading above the credit floor adds its value.
+- A model reading may penalise only when it's dominant; the spike's harmful misreads were all
+  diffuse.
+- Keyword hostility always counts.
+- The reaction line names every move, and tells him to answer a question first.
+- Hard: credit from 0.25, penalise from 0.5. Easy: credit from 0.1, never penalise.
+
+**Same replay:** hard 40 → 45, easy 40 → 64. Easy is now winnable-looking. Hard's extra harshness
+is partly misreadings: "yes Dig" and "help for 10 minutes" were read as bribes, and "your brother
+was a good man" as an insult, all at ≥ 0.5. A stricter hard penalty floor is noted under R15 for
+after the user's own playtests.

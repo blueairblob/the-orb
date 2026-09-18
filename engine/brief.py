@@ -177,20 +177,34 @@ MOVE_DESCRIPTIONS = {
 }
 
 
+def _join(parts: list[str]) -> str:
+    return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+
+
 def describe_reaction(guard: Guard) -> str | None:
     """One line telling the actor what the player just did and how *he took
-    it* — decided by the engine from the delta the move actually earned
+    it* — decided by the engine from the delta the line actually earned
     (Guard.react_to), so his words can't contradict his mood. Found in the R5
     live replay: every bribe scored -1 (Garrick's table: bribes offend him)
     while he answered "Show it to me.", because the brief never said how he
-    took it — the actor contradicted the director, and a player could never
-    learn that bribes don't work on him (REVIEW.md R13)."""
+    took it (REVIEW.md R13).
+
+    A line can make several moves at once; all are named. If one of them was
+    a question, he's told to answer it first — the user's framing: a person
+    "would take more than one meaning, though would act on the question
+    first if asked". A pure question gets no line; he answers it anyway."""
     if guard.last_move is None:
         return None
-    tactic, delta = guard.last_move
-    if tactic not in MOVE_DESCRIPTIONS:
+    tactics, delta = guard.last_move
+    if not tactics:
         return None
-    if guard.susceptibility.get(tactic, 0) > 0 and delta <= 0:
+    moves = [MOVE_DESCRIPTIONS[t] for t in tactics if t in MOVE_DESCRIPTIONS]
+    if not moves:
+        return None
+    worn_out = delta <= 0 and all(guard.susceptibility.get(t, 0) >= 0 for t in tactics) and any(
+        guard.susceptibility.get(t, 0) > 0 for t in tactics
+    )
+    if worn_out:
         feeling = "You've heard that from them before; it doesn't move you any more."
     elif delta >= 5:
         feeling = "It truly reaches you — let that show, even gruffly."
@@ -206,7 +220,10 @@ def describe_reaction(guard: Guard) -> str | None:
         feeling = "It stings; you're less inclined to help them."
     else:
         feeling = "It makes you angry."
-    return f"# Just now they {MOVE_DESCRIPTIONS[tactic]}. {feeling}"
+    line = f"# Just now they {_join(moves)}. {feeling}"
+    if "question" in tactics:
+        line += " They asked you something too — answer that first."
+    return line
 
 
 def build_guard_brief(

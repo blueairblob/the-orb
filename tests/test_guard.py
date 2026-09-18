@@ -186,48 +186,86 @@ def test_garrick_is_softest_on_empathy_and_offended_by_bribes():
     assert guard.susceptibility["threat"] < guard.susceptibility["insult"] < 0
 
 
-def test_confident_label_moves_the_dial_by_the_table():
+def test_confident_reading_moves_the_dial_by_the_table():
     guard = make_guard()
 
-    tactic, delta = guard.react_to("I'm sorry about your brother.", ("empathy", 0.9))
+    tactics, delta = guard.react_to("I'm sorry about your brother.", {"empathy": 0.9})
 
-    assert tactic == "empathy"
+    assert tactics == ("empathy",)
     assert delta == GARRICK_SUSCEPTIBILITY["empathy"]
     assert guard.affiliation.value == 40 + delta
 
 
-def test_low_confidence_label_counts_as_neutral():
-    # In the spike, every dangerous error (a kind line read as hostile) had
-    # confidence 0.15-0.35 -- below the floor it must not move the dial.
+def test_diffuse_hostile_reading_of_a_kind_line_does_not_penalise():
+    # The spike's harmful errors were kind lines read as hostile, and the
+    # readings were diffuse, never dominant -- this one verbatim from the
+    # trace. Hard lets the model penalise only from 0.5.
+    guard = make_guard()
+    readings = {"threat": 0.28, "request": 0.27, "argument": 0.17, "plea": 0.16, "question": 0.12}
+
+    tactics, delta = guard.react_to("To avenge your brother's death?", readings, HARD)
+
+    assert "threat" not in tactics
+    assert delta == 0  # request is worth 0 to him
+
+
+def test_a_kind_line_keeps_its_kindness_when_misread_as_hostile():
+    # Trace: "I'm sure your brother was a good man" -> insult 0.36, empathy
+    # 0.32. Hard blocks the diffuse insult and still credits the sympathy.
+    guard = make_guard()
+    readings = {"insult": 0.36, "empathy": 0.32, "other": 0.17, "flattery": 0.12}
+
+    tactics, delta = guard.react_to("I'm sure your brother was a good man.", readings, HARD)
+
+    assert tactics == ("empathy",)
+    assert delta == GARRICK_SUSCEPTIBILITY["empathy"]
+
+
+def test_a_line_can_carry_sympathy_and_a_question_at_once():
+    # The user's framing: a person takes more than one meaning. The question
+    # is kept (it's worth 0 to the dial) so his brief can put it first.
     guard = make_guard()
 
-    tactic, delta = guard.react_to("To avenge your brother's death?", ("threat", 0.15))
+    tactics, delta = guard.react_to(
+        "Wow, look I am really sorry. How did it happen?", {"empathy": 0.55, "question": 0.4}
+    )
 
-    assert tactic == "other"
-    assert delta == 0
+    assert tactics == ("empathy", "question")
+    assert delta == GARRICK_SUSCEPTIBILITY["empathy"]
 
 
-def test_keyword_hostility_overrides_the_classifier():
+def test_each_meaning_adds_its_own_value():
+    guard = make_guard()
+
+    tactics, delta = guard.react_to(
+        "You're good at your job, and I'm innocent.", {"flattery": 0.5, "argument": 0.45}
+    )
+
+    assert set(tactics) == {"flattery", "argument"}
+    assert delta == GARRICK_SUSCEPTIBILITY["flattery"] + GARRICK_SUSCEPTIBILITY["argument"]
+
+
+def test_keyword_hostility_is_always_one_of_the_meanings():
     # The spike's one confident error: "Open it or else." read as a request.
     guard = make_guard()
 
-    tactic, delta = guard.react_to("Open it or else.", ("request", 0.61))
+    tactics, delta = guard.react_to("Open it or else.", {"request": 0.61})
 
-    assert tactic == "threat"
+    assert tactics == ("threat", "request")
     assert delta == THREAT_DELTA
 
 
 def test_repeating_a_winning_tactic_lands_for_less_each_time():
     # PRD Gotcha #15, "the world wears down": variety, not spamming "please".
     guard = make_guard()
-    deltas = [guard.react_to(f"sympathy line {i}", ("empathy", 0.9))[1] for i in range(4)]
+    deltas = [guard.react_to(f"sympathy line {i}", {"empathy": 0.9})[1] for i in range(4)]
 
     assert deltas == [6, 3, 2, 1]
 
 
 def test_hostility_does_not_wear_down():
     guard = make_guard(affiliation=90)
-    deltas = [guard.react_to(f"You're useless, take {i}.", ("insult", 0.9))[1] for i in range(3)]
+    deltas = [guard.react_to(f"You're useless, take {i}.", {"insult": 0.9})[1] for i in range(3)]
 
     assert deltas == [RUDE_DELTA] * 3
 
@@ -236,7 +274,7 @@ def test_repeating_the_same_line_still_costs_extra():
     guard = make_guard()
     guard.remember("player", "please help me")
 
-    _, delta = guard.react_to("please help me", ("plea", 0.9))
+    _, delta = guard.react_to("please help me", {"plea": 0.9})
 
     assert delta == GARRICK_SUSCEPTIBILITY["plea"] + REPEAT_DELTA
 
@@ -244,61 +282,64 @@ def test_repeating_the_same_line_still_costs_extra():
 def test_no_classification_falls_back_to_the_keyword_heuristic():
     guard = make_guard()
 
-    tactic, delta = guard.react_to("Please, my friend.", None)
+    tactics, delta = guard.react_to("Please, my friend.", None)
 
-    assert tactic is None
+    assert tactics is None
     assert delta == KIND_DELTA
 
 
-def test_an_off_table_label_falls_back_too():
+def test_readings_with_no_known_tactic_fall_back_too():
     guard = make_guard()
 
-    tactic, delta = guard.react_to("Please, my friend.", ("seduction", 0.99))
+    tactics, delta = guard.react_to("Please, my friend.", {"seduction": 0.99})
 
-    assert tactic is None
+    assert tactics is None
     assert delta == KIND_DELTA
+
+
+def test_nothing_above_the_floor_reads_as_other():
+    guard = make_guard()
+
+    assert guard.react_to("hmm", {"empathy": 0.2, "plea": 0.2}, HARD) == (("other",), 0)
 
 
 # --- R15: difficulty decides how far the classifier is trusted ---
 
 
-def test_easy_credits_sympathy_the_classifier_was_unsure_of():
-    # Live replay: "Wow, look I am really sorry" -> empathy at 0.28, which
-    # hard's 0.4 floor turns neutral. Easy's floor is lower.
+def test_easy_credits_readings_hard_finds_too_unsure():
     hard_guard, easy_guard = make_guard(), make_guard()
 
-    assert hard_guard.react_to("Wow, I'm really sorry.", ("empathy", 0.28), HARD) == ("other", 0)
-    assert easy_guard.react_to("Wow, I'm really sorry.", ("empathy", 0.28), EASY) == (
-        "empathy",
+    assert hard_guard.react_to("Wow, I'm really sorry.", {"empathy": 0.2}, HARD) == (("other",), 0)
+    assert easy_guard.react_to("Wow, I'm really sorry.", {"empathy": 0.2}, EASY) == (
+        ("empathy",),
         GARRICK_SUSCEPTIBILITY["empathy"],
     )
 
 
 def test_easy_never_lets_the_classifier_penalise():
-    # Every harmful spike error was a model label penalising a kind line
-    # ("I'm sure your brother was a good man" -> insult 0.23). On easy the
-    # model can only credit; a bribe doesn't cost you either.
     guard = make_guard()
 
-    assert guard.react_to("I'm sure your brother was a good man.", ("insult", 0.9), EASY) == (
-        "other",
+    assert guard.react_to("I'm sure your brother was a good man.", {"insult": 0.9}, EASY) == (
+        ("other",),
         0,
     )
-    assert guard.react_to("Look I have gold", ("bribe", 0.9), EASY) == ("other", 0)
+    assert guard.react_to("Look I have gold", {"bribe": 0.9}, EASY) == (("other",), 0)
 
 
 def test_easy_still_penalises_keyword_hostility():
     guard = make_guard()
 
-    tactic, delta = guard.react_to("Open it or else.", ("request", 0.9), EASY)
+    tactics, delta = guard.react_to("Open it or else.", {"request": 0.9}, EASY)
 
-    assert (tactic, delta) == ("threat", THREAT_DELTA)
+    assert tactics == ("threat", "request")
+    assert delta == THREAT_DELTA
 
 
-def test_hard_lets_a_confident_model_label_penalise():
+def test_hard_lets_a_dominant_model_reading_penalise():
+    # Trace: "Nothing I cannot spend it in here." -> bribe 0.63, request 0.33.
     guard = make_guard()
 
-    assert guard.react_to("Look I have gold", ("bribe", 0.9), HARD) == (
-        "bribe",
+    assert guard.react_to("Nothing I can spend in here.", {"bribe": 0.63, "request": 0.33}, HARD) == (
+        ("bribe", "request"),
         GARRICK_SUSCEPTIBILITY["bribe"],
     )

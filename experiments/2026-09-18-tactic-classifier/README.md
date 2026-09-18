@@ -85,3 +85,30 @@ to pay for it:
 2. A follow-up spike could fold the label into the narration call itself (the Oracle one-pass
    "decide, then narrate" shape), avoiding the second prefill entirely, at the cost of labelling
    under the persona prompt. Not tested.
+
+## Follow-up — multi-label, and a skewed confidence score
+
+The user asked for multi-label ("even a dim human would take more than one meaning, though would
+act on the question first if asked"). `multilabel_analysis.py` re-reads this spike's own trace;
+no new model calls. Two findings:
+
+1. **The confidence score above was skewed.** It multiplied the probabilities of *every*
+   generated token, including an end-of-answer token that sits near 0.65 even when the label is
+   certain. Labels the model was 94–100% sure of scored ~0.62, so every number in the tables above
+   was deflated by about a third. The 0.4 floor was effectively demanding ~0.6. The honest measure
+   is the label's **first-token** probability.
+2. **The same single call already holds the whole distribution over readings.** The first token's
+   top_logprobs map to labels by prefix (all ten labels start with a different letter), so
+   multi-label needs no extra call.
+
+Readings above 0.1 found extra, correct meanings, e.g. "Can you help me please, what is your
+name?" → request + question, and "Open this door right now, you idiot." → request + insult. The
+only harmful extras were kind lines about his brother read as partly hostile, and those
+distributions were diffuse (threat 0.28 spread over five labels; insult 0.36 vs empathy 0.32),
+never dominant.
+
+**Built:** every reading counts, added together.
+- **Hard:** credits from 0.25; the model can penalise only when its reading is dominant (≥ 0.5).
+- **Easy:** credits from 0.1; the model never penalises.
+- **Both:** keyword hostility always counts. When a question is among the meanings, the guard's
+  brief tells him to answer it first.

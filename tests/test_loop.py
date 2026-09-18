@@ -21,15 +21,15 @@ class StubLLM:
     """A fake LLM client: echoes a fixed in-character line, so engine-logic
     tests never need the real model."""
 
-    def __init__(self, reply: str = "Stay put.", tactic: tuple[str, float | None] | None = None):
+    def __init__(self, reply: str = "Stay put.", readings: dict[str, float] | None = None):
         self.reply = reply
-        self.tactic = tactic
+        self.readings = readings
         self.calls: list[tuple[str, str | None]] = []
         self.choices: list[tuple[str, str, list[str], int | None]] = []
 
-    def choose(self, prompt, system_message, options, id_slot=None):
+    def rank(self, prompt, system_message, options, id_slot=None):
         self.choices.append((prompt, system_message, options, id_slot))
-        return self.tactic
+        return self.readings
 
     def ask(
         self,
@@ -46,13 +46,13 @@ class SequencedLLM:
     """Returns each reply in `replies` in order, then repeats the last —
     for exercising the bland-dismissal retry in `engine.loop._ask_and_record`."""
 
-    def __init__(self, replies: list[str], tactic: tuple[str, float | None] | None = None):
+    def __init__(self, replies: list[str], readings: dict[str, float] | None = None):
         self.replies = replies
-        self.tactic = tactic
+        self.readings = readings
         self.calls: list[tuple[str, str | None, str]] = []
 
-    def choose(self, prompt, system_message, options, id_slot=None):
-        return self.tactic
+    def rank(self, prompt, system_message, options, id_slot=None):
+        return self.readings
 
     def ask(
         self,
@@ -548,7 +548,7 @@ def test_unrelated_self_repeat_still_falls_back():
 
 def test_guard_turn_is_scored_by_the_classified_tactic():
     scenario = build_cell_and_guard()
-    llm = StubLLM(reply="Hmph.", tactic=("empathy", 0.9))
+    llm = StubLLM(reply="Hmph.", readings={"empathy": 0.9})
 
     run_turn(scenario, llm, "I'm sorry about your brother.")
 
@@ -559,7 +559,7 @@ def test_guard_turn_is_scored_by_the_classified_tactic():
 def test_classifier_sees_the_guards_previous_line_for_context():
     scenario = build_cell_and_guard()
     scenario.guard.remember("guard", "Dig.")
-    llm = StubLLM(reply="Hmph.", tactic=("other", 0.9))
+    llm = StubLLM(reply="Hmph.", readings={"other": 0.9})
 
     run_turn(scenario, llm, "yes Dig")
 
@@ -572,7 +572,7 @@ def test_a_winning_line_can_unlock_on_the_turn_it_lands():
     # the door on this turn, not the next.
     scenario = build_cell_and_guard()
     scenario.guard.affiliation.value = 72
-    llm = StubLLM(reply="Go. Before I think better of it.", tactic=("empathy", 0.9))
+    llm = StubLLM(reply="Go. Before I think better of it.", readings={"empathy": 0.9})
 
     _, _, outcome = run_turn(scenario, llm, "Your brother would have wanted mercy.")
 
@@ -582,7 +582,7 @@ def test_a_winning_line_can_unlock_on_the_turn_it_lands():
 
 def test_dm_turns_are_not_classified():
     scenario = build_cell_and_guard()
-    llm = StubLLM(reply="Cold stone.", tactic=("empathy", 0.9))
+    llm = StubLLM(reply="Cold stone.", readings={"empathy": 0.9})
 
     run_turn(scenario, llm, "describe the room")
 
@@ -645,7 +645,7 @@ def test_play_turn_applies_the_scenarios_difficulty():
 
     scenario = build_cell_and_guard()
     scenario.difficulty = EASY
-    llm = StubLLM(reply="Hmph.", tactic=("bribe", 0.9))
+    llm = StubLLM(reply="Hmph.", readings={"bribe": 0.9})
 
     run_turn(scenario, llm, "Look I have gold")
 
@@ -658,7 +658,7 @@ def test_run_loop_writes_a_transcript_line_per_turn(tmp_path):
 
     scenario = build_cell_and_guard()
     scenario.difficulty = EASY
-    llm = StubLLM(reply="Hmph.", tactic=("empathy", 0.9))
+    llm = StubLLM(reply="Hmph.", readings={"empathy": 0.9})
     transcript = tmp_path / "t.jsonl"
 
     run_loop(
@@ -669,6 +669,6 @@ def test_run_loop_writes_a_transcript_line_per_turn(tmp_path):
     rows = [json.loads(line) for line in transcript.read_text().splitlines()]
     assert [r["speaker"] for r in rows] == ["guard", "dm"]
     assert rows[0]["difficulty"] == "easy"
-    assert rows[0]["tactic"] == "empathy"
+    assert rows[0]["tactics"] == ["empathy"]
     assert rows[0]["mood_delta"] == GARRICK_SUSCEPTIBILITY["empathy"]
     assert rows[1]["mood_delta"] == 0

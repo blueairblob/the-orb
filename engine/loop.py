@@ -69,9 +69,9 @@ class LLMClient(Protocol):
         id_slot: int | None = None,
     ) -> LLMResult: ...
 
-    def choose(
+    def rank(
         self, prompt: str, system_message: str, options: list[str], id_slot: int | None = None
-    ) -> tuple[str, float | None] | None: ...
+    ) -> dict[str, float] | None: ...
 
 
 BLAND_NUDGE = (
@@ -294,7 +294,7 @@ class Turn:
     reply: str
     speaker: str
     outcome: str | None
-    tactic: str | None = None
+    tactics: tuple[str, ...] | None = None
     _pending: Callable[[], None] | None = None
 
     def finish(self) -> None:
@@ -351,8 +351,8 @@ def play_turn(scenario: CellAndGuard, llm: LLMClient, player_utterance: str) -> 
     # and before the reply — his mood decides how he answers, and whether
     # the door opens this turn.
     previous_reply = (guard.own_lines("guard") or ["(the scene opens)"])[-1]
-    classified = classify_tactic(llm, player_utterance, previous_reply)
-    tactic, _ = guard.react_to(player_utterance, classified, scenario.difficulty)
+    readings = classify_tactic(llm, player_utterance, previous_reply)
+    tactics, _ = guard.react_to(player_utterance, readings, scenario.difficulty)
     guard.remember("player", player_utterance)
 
     outcome = guard.check_thresholds()
@@ -389,7 +389,7 @@ def play_turn(scenario: CellAndGuard, llm: LLMClient, player_utterance: str) -> 
         if quote and _is_quoted_from(quote, reply):
             guard.add_established_fact(format_guard_fact(player_utterance, quote))
 
-    return Turn(reply, "guard", outcome, tactic=tactic, _pending=record_guard_fact)
+    return Turn(reply, "guard", outcome, tactics=tactics, _pending=record_guard_fact)
 
 
 def run_turn(
@@ -458,7 +458,7 @@ def _log_turn(
         "player": utterance,
         "speaker": turn.speaker,
         "reply": turn.reply,
-        "tactic": turn.tactic,
+        "tactics": list(turn.tactics) if turn.tactics else None,
         "mood_delta": guard.affiliation.value - mood_before,
         "mood": guard.affiliation.value,
         "band": guard.affiliation.band,

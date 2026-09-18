@@ -119,7 +119,7 @@ class Guard(Thing):
     # This turn's resolved move and what it did to him, set by react_to so
     # the brief can tell the actor how he took it (REVIEW.md R13). Transient:
     # overwritten every guard turn before his brief is built, never saved.
-    last_move: tuple[str | None, int] | None = None
+    last_move: tuple[tuple[str, ...] | None, int] | None = None
     unlock_threshold: int = 75
     lockout_threshold: int = 10
     secret_reveal_threshold: int = 65
@@ -224,56 +224,64 @@ class Guard(Thing):
             return "insult"
         return None
 
-    def resolve_tactic(
+    def resolve_tactics(
         self,
         utterance: str,
-        classified: tuple[str, float | None] | None,
+        readings: dict[str, float] | None,
         difficulty: Difficulty = HARD,
-    ) -> str | None:
-        """The engine's final call on what this line is — the classifier
-        proposes, this disposes, under the game's `difficulty`. None means no
-        usable classification at all (the caller falls back to
+    ) -> tuple[str, ...] | None:
+        """The engine's final call on what this line *does* — every meaning
+        that counts, most likely first. The classifier proposes, this
+        disposes, under the game's `difficulty`: a crediting reading counts
+        from its credit_floor; a penalising one only from its penalty_floor
+        (never, on easy); keyword hostility always counts. A line can do
+        several things at once, as a person hears it ("sorry — how did it
+        happen?" is sympathy *and* a question). None means no usable
+        classification at all (the caller falls back to
         adjust_affiliation_from_text)."""
         hostile = self.keyword_hostility(utterance)
-        if hostile:
-            return hostile
-        if classified is None:
-            return None
-        label, confidence = classified
-        if label not in self.susceptibility:
-            return None
-        if not difficulty.model_can_penalise and self.susceptibility[label] < 0:
-            return "other"
-        if confidence is not None and confidence < difficulty.confidence_floor:
-            return "other"
-        return label
+        if not readings or not any(label in self.susceptibility for label in readings):
+            return (hostile,) if hostile else None
+        meanings = [hostile] if hostile else []
+        for label, probability in sorted(readings.items(), key=lambda item: -item[1]):
+            if label not in self.susceptibility or label in meanings:
+                continue
+            if self.susceptibility[label] < 0:
+                floor = difficulty.penalty_floor
+                if floor is None or probability < floor:
+                    continue
+            elif probability < difficulty.credit_floor:
+                continue
+            meanings.append(label)
+        return tuple(meanings) or ("other",)
 
     def react_to(
         self,
         utterance: str,
-        classified: tuple[str, float | None] | None,
+        readings: dict[str, float] | None,
         difficulty: Difficulty = HARD,
-    ) -> tuple[str | None, int]:
-        """Moves the affiliation dial for one player line; returns (tactic,
-        delta) so callers/tests can see what happened. Call before the line
-        joins memory, same as adjust_affiliation_from_text (the repeat check
-        compares against earlier turns only)."""
-        tactic = self.resolve_tactic(utterance, classified, difficulty)
-        if tactic is None:
+    ) -> tuple[tuple[str, ...] | None, int]:
+        """Moves the affiliation dial for one player line; returns (tactics,
+        delta) so callers/tests can see what happened. Each meaning adds its
+        own table value, and each wears down separately with repetition.
+        Call before the line joins memory, same as
+        adjust_affiliation_from_text (the repeat check compares against
+        earlier turns only)."""
+        tactics = self.resolve_tactics(utterance, readings, difficulty)
+        if tactics is None:
             delta = self.adjust_affiliation_from_text(utterance)
             self.last_move = (None, delta)
             return None, delta
 
-        was_repeat = self._is_repeat(utterance)
-        base = self.susceptibility[tactic]
-        times_tried = self.tactic_counts.get(tactic, 0)
-        delta = round(base * TACTIC_REPEAT_DECAY**times_tried) if base > 0 else base
-        if was_repeat:
-            delta += REPEAT_DELTA
-        self.tactic_counts[tactic] = times_tried + 1
+        delta = REPEAT_DELTA if self._is_repeat(utterance) else 0
+        for tactic in tactics:
+            base = self.susceptibility[tactic]
+            times_tried = self.tactic_counts.get(tactic, 0)
+            delta += round(base * TACTIC_REPEAT_DECAY**times_tried) if base > 0 else base
+            self.tactic_counts[tactic] = times_tried + 1
         self.affiliation.adjust(delta)
-        self.last_move = (tactic, delta)
-        return tactic, delta
+        self.last_move = (tactics, delta)
+        return tactics, delta
 
     def check_thresholds(self) -> str | None:
         """Returns 'unlock', 'lockout', or None."""

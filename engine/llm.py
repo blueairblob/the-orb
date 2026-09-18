@@ -364,19 +364,27 @@ class GemmaHarness:
             raw_response=final_chunk,
         )
 
-    def choose(
+    def rank(
         self,
         prompt: str,
         system_message: str,
         options: list[str],
         id_slot: int | None = None,
-    ) -> tuple[str, float | None] | None:
-        """Asks the model to pick exactly one of `options`, returning the pick
-        and its probability — or None if the call fails or returns something
-        off-list, so callers can fall back rather than crash. A GBNF grammar
-        makes any other answer impossible, and logprobs give the confidence
-        from the same call (validated in experiments/2026-09-18-tactic-
-        classifier/). Non-streaming: the answer is a single short label."""
+    ) -> dict[str, float] | None:
+        """The model's probability for each of `options` as the answer —
+        several readings from one call — or None if the call fails, so
+        callers can fall back rather than crash. A GBNF grammar forces the
+        generated answer onto the list; the distribution comes from the
+        *first* token's top_logprobs, mapped to options by prefix and
+        renormalised over them (the raw distribution also holds non-option
+        tokens). Options must start with distinct tokens for the prefix
+        mapping to be unambiguous.
+
+        First token only, deliberately: an earlier version multiplied every
+        generated token's probability, including an end-of-answer token that
+        sits near 0.65 even for a certain answer, deflating every score by
+        about a third (experiments/2026-09-18-tactic-classifier/
+        multilabel_analysis.py)."""
         payload = {
             "messages": [
                 {"role": "system", "content": system_message},
@@ -386,7 +394,7 @@ class GemmaHarness:
             "temperature": 0,
             "max_tokens": 8,
             "logprobs": True,
-            "top_logprobs": 1,
+            "top_logprobs": 10,
             "id_slot": self._id_slot if id_slot is None else id_slot,
             "cache_prompt": True,
             "stream": False,
@@ -400,8 +408,14 @@ class GemmaHarness:
         answer = (choice.get("message") or {}).get("content", "").strip()
         if answer not in options:
             return None
-        token_logprobs = [
-            token["logprob"] for token in ((choice.get("logprobs") or {}).get("content") or [])
-        ]
-        confidence = math.exp(sum(token_logprobs)) if token_logprobs else None
-        return answer, confidence
+        tokens = (choice.get("logprobs") or {}).get("content") or []
+        dist: dict[str, float] = {}
+        for alt in tokens[0].get("top_logprobs", []) if tokens else []:
+            text = alt["token"].strip().lower()
+            matches = [option for option in options if text and option.lower().startswith(text)]
+            if len(matches) == 1:
+                dist[matches[0]] = dist.get(matches[0], 0.0) + math.exp(alt["logprob"])
+        total = sum(dist.values())
+        if answer not in dist or not total:
+            return {answer: 1.0}
+        return {option: p / total for option, p in dist.items()}

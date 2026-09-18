@@ -1,23 +1,23 @@
 from engine.tactics import TACTIC_ID_SLOT, TACTICS, classify_tactic
 
 
-class RecordingChooser:
+class RecordingRanker:
     def __init__(self, answer):
         self.answer = answer
         self.calls = []
 
-    def choose(self, prompt, system_message, options, id_slot=None):
+    def rank(self, prompt, system_message, options, id_slot=None):
         self.calls.append((prompt, system_message, options, id_slot))
         return self.answer
 
 
 def test_classifier_asks_for_one_of_the_tactics_on_its_own_slot():
-    chooser = RecordingChooser(("bribe", 0.9))
+    ranker = RecordingRanker({"bribe": 0.9})
 
-    result = classify_tactic(chooser, "Look I have gold", "He was. Now stop wasting my time.")
+    result = classify_tactic(ranker, "Look I have gold", "He was. Now stop wasting my time.")
 
-    assert result == ("bribe", 0.9)
-    prompt, system, options, slot = chooser.calls[0]
+    assert result == {"bribe": 0.9}
+    prompt, system, options, slot = ranker.calls[0]
     assert options == TACTICS
     assert slot == TACTIC_ID_SLOT  # own KV slot: the static definitions stay cached
     # The previous reply is in the prompt -- "yes Dig" means nothing without it.
@@ -26,17 +26,17 @@ def test_classifier_asks_for_one_of_the_tactics_on_its_own_slot():
 
 
 def test_classifier_passes_through_a_failed_call():
-    assert classify_tactic(RecordingChooser(None), "hello", "What?") is None
+    assert classify_tactic(RecordingRanker(None), "hello", "What?") is None
 
 
 def test_static_definitions_are_identical_across_calls():
     # Only the per-turn prompt changes; a byte-identical system message is
     # what lets llama.cpp reuse the cached prefix.
-    chooser = RecordingChooser(("other", 1.0))
-    classify_tactic(chooser, "one", "a")
-    classify_tactic(chooser, "two", "b")
+    ranker = RecordingRanker({"other": 1.0})
+    classify_tactic(ranker, "one", "a")
+    classify_tactic(ranker, "two", "b")
 
-    assert chooser.calls[0][1] == chooser.calls[1][1]
+    assert ranker.calls[0][1] == ranker.calls[1][1]
 
 
 def test_difficulty_setting_defaults_to_hard_and_rejects_unknowns():

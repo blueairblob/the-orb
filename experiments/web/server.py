@@ -120,7 +120,7 @@ def create_app(
                         "speaker": turn.speaker,
                         "reply": turn.reply,
                         "difficulty": scenario.difficulty.name,
-                        "tactic": turn.tactic,
+                        "tactics": list(turn.tactics) if turn.tactics else None,
                         "mood": scenario.guard.affiliation.value,
                         "band": scenario.guard.affiliation.band,
                         "outcome": turn.outcome,

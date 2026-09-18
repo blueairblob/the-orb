@@ -91,3 +91,27 @@ correctly but with low confidence (0.28), and the 0.4 floor turns it neutral. Th
 for harmful misreads, which were all hostile labels, and keyword lists already own hostility
 precisely. The proposal (ignore model threat/insult labels, lower the floor for positive ones) is
 logged under R15 for the user to decide, since it sets how winnable Garrick is.
+
+## Update — R15 becomes a switch: easy vs hard (`1e57c6c`, `--new` in the next commit)
+
+The user's call on "is Garrick too hard to win?" was: gamify it. So there's a switch to play both,
+rather than a guessed tuning.
+
+- **hard (default):** unchanged. The classifier's labels count for or against the player, above
+  a 0.4 confidence floor.
+- **easy:** the classifier can only *credit* the player. Model labels that would lower the mood
+  are ignored (only the keyword lists penalise), and crediting labels count from 0.2.
+- Launched with `orb-engine --difficulty easy|hard --new` (or `ORB_DIFFICULTY`, also honoured by
+  the web rig).
+
+Terminal playtests now write transcripts (R6), with the difficulty and every turn's tactic and
+mood change, so sessions can be compared afterwards.
+
+**Same 30-line replay:** hard 40 → 44, easy 40 → 52. Neither unlocks, because that playtest leaned
+on bribes and questions. On easy he still refuses bribes in his own voice ("Gold doesn't buy
+freedom.") even though they cost nothing.
+
+One limitation surfaced: each line gets one label, so a line that does two things scores only one.
+"Wow, look I am really sorry. How did it happen?" was labelled *question*, and the apology earned
+nothing on either difficulty. A candidate for later: multi-label, or ranking empathy above
+question.

@@ -18,6 +18,7 @@ parameters, so any NPC can use it.
 
 from __future__ import annotations
 
+import dataclasses
 from typing import Protocol
 
 TACTICS = [
@@ -37,6 +38,50 @@ TACTICS = [
 # dangerous error — a kind line read as hostile, which would *punish*
 # sympathy — scored 0.15-0.35; at 0.4 the kept labels were 95% accurate.
 CONFIDENCE_FLOOR = 0.4
+
+
+@dataclasses.dataclass(frozen=True)
+class Difficulty:
+    """How much the engine trusts the classifier's reading of the player
+    (REVIEW.md R15). A game setting, chosen at launch — the user asked for a
+    switch so both can be played and compared, rather than tuning blind.
+
+    - **hard**: the classifier's labels count for or against the player,
+      but only above CONFIDENCE_FLOOR.
+    - **easy**: the classifier can only *credit* the player. Its labels that
+      would lower the mood are ignored — only the keyword lists penalise
+      (hostility, which they read precisely) — and crediting labels count
+      from a lower floor. Every harmful spike error was a model label that
+      penalised a kind line, and in live play real sympathy was often read
+      correctly but unsurely ("Wow, look I am really sorry" -> empathy
+      0.28), which hard's floor turns neutral.
+
+    Checked on the spike's 43 labelled lines: neither mode gave undeserved
+    credit or a harmful penalty; easy differs mainly in not charging for
+    bribes."""
+
+    name: str
+    confidence_floor: float
+    model_can_penalise: bool
+
+
+HARD = Difficulty("hard", CONFIDENCE_FLOOR, model_can_penalise=True)
+EASY = Difficulty("easy", 0.2, model_can_penalise=False)
+DIFFICULTIES = {d.name: d for d in (EASY, HARD)}
+
+
+def difficulty_from_setting(value: str | None) -> Difficulty:
+    """`--difficulty` / ORB_DIFFICULTY -> a Difficulty; unset means hard (the
+    tuned default). Raises ValueError naming the valid choices otherwise."""
+    if not value:
+        return HARD
+    try:
+        return DIFFICULTIES[value.strip().lower()]
+    except KeyError:
+        raise ValueError(
+            f"Unknown difficulty {value!r}: choose one of {', '.join(sorted(DIFFICULTIES))}."
+        ) from None
+
 
 # Its own llama.cpp KV-cache slot (0 narration, 1 fact extraction), so the
 # static definitions stay cached and each call only prefills the new line.

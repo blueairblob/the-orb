@@ -635,3 +635,40 @@ def test_run_loop_still_records_facts_before_saving(tmp_path):
     assert saved["guard_established_facts"] == [
         'Asked "where are you from?", you said: "Kelsey. By the river."'
     ]
+
+
+# --- R15 difficulty switch + R6 transcripts ---
+
+
+def test_play_turn_applies_the_scenarios_difficulty():
+    from engine.tactics import EASY
+
+    scenario = build_cell_and_guard()
+    scenario.difficulty = EASY
+    llm = StubLLM(reply="Hmph.", tactic=("bribe", 0.9))
+
+    run_turn(scenario, llm, "Look I have gold")
+
+    assert scenario.guard.affiliation.value == 40  # easy: the model can't penalise
+
+
+def test_run_loop_writes_a_transcript_line_per_turn(tmp_path):
+    # REVIEW.md R6: terminal playtests used to survive only in chat.
+    from engine.tactics import EASY
+
+    scenario = build_cell_and_guard()
+    scenario.difficulty = EASY
+    llm = StubLLM(reply="Hmph.", tactic=("empathy", 0.9))
+    transcript = tmp_path / "t.jsonl"
+
+    run_loop(
+        scenario, llm, ScriptedVoice(["I'm sorry about your brother.", "describe the room"]),
+        tmp_path / "save.json", transcript,
+    )
+
+    rows = [json.loads(line) for line in transcript.read_text().splitlines()]
+    assert [r["speaker"] for r in rows] == ["guard", "dm"]
+    assert rows[0]["difficulty"] == "easy"
+    assert rows[0]["tactic"] == "empathy"
+    assert rows[0]["mood_delta"] == GARRICK_SUSCEPTIBILITY["empathy"]
+    assert rows[1]["mood_delta"] == 0

@@ -9,9 +9,14 @@ else here is exactly what ships. `llm` is typed against a small protocol so
 
 from __future__ import annotations
 
+import argparse
 import dataclasses
+import datetime
+import json
+import os
 import sys
 import threading
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Protocol
@@ -28,7 +33,7 @@ from engine.guard import Guard
 from engine.llm import GemmaHarness, is_model_ready
 from engine.save import load_state, save_state
 from engine.scenario import CellAndGuard
-from engine.tactics import classify_tactic
+from engine.tactics import DIFFICULTIES, classify_tactic, difficulty_from_setting
 from engine.voice import Voice
 from engine.voice_text import TextVoice
 
@@ -347,7 +352,7 @@ def play_turn(scenario: CellAndGuard, llm: LLMClient, player_utterance: str) -> 
     # the door opens this turn.
     previous_reply = (guard.own_lines("guard") or ["(the scene opens)"])[-1]
     classified = classify_tactic(llm, player_utterance, previous_reply)
-    tactic, _ = guard.react_to(player_utterance, classified)
+    tactic, _ = guard.react_to(player_utterance, classified, scenario.difficulty)
     guard.remember("player", player_utterance)
 
     outcome = guard.check_thresholds()
@@ -400,8 +405,16 @@ def run_turn(
 
 
 def run_loop(
-    scenario: CellAndGuard, llm: LLMClient, voice: Voice, save_path: Path
+    scenario: CellAndGuard,
+    llm: LLMClient,
+    voice: Voice,
+    save_path: Path,
+    transcript_path: Path | None = None,
 ) -> None:
+    """`transcript_path`, if given, gets one JSON line per turn — the full,
+    uncapped record of a playtest (PRD §14: "log everything"; REVIEW.md R6),
+    including the difficulty and what each line did to his mood, so easy and
+    hard sessions can be compared afterwards."""
     voice.speak(build_intro(scenario.premise), speaker="dm")
     while True:
         try:
@@ -413,6 +426,7 @@ def run_loop(
         if not utterance.strip():
             continue
 
+        mood_before = scenario.guard.affiliation.value
         turn = play_turn(scenario, llm, utterance)
         # R4: fact recording runs while the reply is being delivered (a real
         # voice backend blocks on TTS here), not before it. llama.cpp serves
@@ -423,6 +437,8 @@ def run_loop(
         voice.speak(turn.reply, speaker=turn.speaker)
         recorder.join()
         save_state(save_path, scenario)
+        if transcript_path is not None:
+            _log_turn(transcript_path, scenario, utterance, turn, mood_before)
 
         if turn.outcome == "unlock":
             voice.speak("(The door creaks open. You're free.)", speaker="dm")
@@ -432,7 +448,41 @@ def run_loop(
             break
 
 
+def _log_turn(
+    path: Path, scenario: CellAndGuard, utterance: str, turn: Turn, mood_before: int
+) -> None:
+    guard = scenario.guard
+    entry = {
+        "ts": time.time(),
+        "difficulty": scenario.difficulty.name,
+        "player": utterance,
+        "speaker": turn.speaker,
+        "reply": turn.reply,
+        "tactic": turn.tactic,
+        "mood_delta": guard.affiliation.value - mood_before,
+        "mood": guard.affiliation.value,
+        "band": guard.affiliation.band,
+        "outcome": turn.outcome,
+    }
+    with path.open("a") as f:
+        f.write(json.dumps(entry) + "\n")
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Play the cell-and-guard scene.")
+    parser.add_argument(
+        "--difficulty",
+        choices=sorted(DIFFICULTIES),
+        default=os.environ.get("ORB_DIFFICULTY"),
+        help="easy: the classifier can only credit you; hard (default): it can "
+        "also count against you. Also settable via ORB_DIFFICULTY.",
+    )
+    args = parser.parse_args()
+    try:
+        difficulty = difficulty_from_setting(args.difficulty)
+    except ValueError as error:
+        parser.error(str(error))
+
     if not is_model_ready():
         print(
             "Model not imported yet. Run `orb-harness setup` first.", file=sys.stderr
@@ -442,9 +492,17 @@ def main() -> None:
     save_path = DEFAULT_SAVE_PATH
     save_path.parent.mkdir(parents=True, exist_ok=True)
     scenario = load_state(save_path)
+    scenario.difficulty = difficulty
+
+    transcript_dir = save_path.parent / "transcripts"
+    transcript_dir.mkdir(parents=True, exist_ok=True)
+    transcript_path = (
+        transcript_dir / f"{datetime.datetime.now(tz=datetime.UTC):%Y%m%d-%H%M%SZ}-terminal-{difficulty.name}.jsonl"
+    )
+    print(f"(difficulty: {difficulty.name} — transcript: {transcript_path})", file=sys.stderr)
 
     with GemmaHarness() as llm:
-        run_loop(scenario, llm, TextVoice(), save_path)
+        run_loop(scenario, llm, TextVoice(), save_path, transcript_path)
 
 
 if __name__ == "__main__":

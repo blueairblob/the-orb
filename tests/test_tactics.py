@@ -37,3 +37,15 @@ def test_static_definitions_are_identical_across_calls():
     classify_tactic(chooser, "two", "b")
 
     assert chooser.calls[0][1] == chooser.calls[1][1]
+
+
+def test_difficulty_setting_defaults_to_hard_and_rejects_unknowns():
+    import pytest
+
+    from engine.tactics import EASY, HARD, difficulty_from_setting
+
+    assert difficulty_from_setting(None) is HARD
+    assert difficulty_from_setting("") is HARD
+    assert difficulty_from_setting(" Easy ") is EASY
+    with pytest.raises(ValueError, match="easy, hard"):
+        difficulty_from_setting("medium")

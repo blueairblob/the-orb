@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 
 from engine.guard import Guard
+from engine.tactics import HARD, Difficulty
 from engine.world import Door, Room, World
 
 # 11pm: deep night, the guard "bored, cold, wants his watch to end" (his
@@ -24,6 +25,9 @@ class CellAndGuard:
     # into both the guard's and the DM's briefs so suspicion/sympathy has
     # something concrete to hang on, not just an abstract "the prisoner."
     premise: str = "poaching a stag from the king's forest, this last hard winter"
+    # A launch-time game setting (engine/tactics.py Difficulty), not saved
+    # state: pick easy or hard per session to compare them (REVIEW.md R15).
+    difficulty: Difficulty = HARD
 
 
 def build_cell_and_guard() -> CellAndGuard:

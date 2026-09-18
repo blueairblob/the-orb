@@ -8,6 +8,7 @@ from engine.guard import (
     THREAT_DELTA,
     Guard,
 )
+from engine.tactics import EASY, HARD
 
 
 def make_guard(affiliation: int = 40) -> Guard:
@@ -256,3 +257,48 @@ def test_an_off_table_label_falls_back_too():
 
     assert tactic is None
     assert delta == KIND_DELTA
+
+
+# --- R15: difficulty decides how far the classifier is trusted ---
+
+
+def test_easy_credits_sympathy_the_classifier_was_unsure_of():
+    # Live replay: "Wow, look I am really sorry" -> empathy at 0.28, which
+    # hard's 0.4 floor turns neutral. Easy's floor is lower.
+    hard_guard, easy_guard = make_guard(), make_guard()
+
+    assert hard_guard.react_to("Wow, I'm really sorry.", ("empathy", 0.28), HARD) == ("other", 0)
+    assert easy_guard.react_to("Wow, I'm really sorry.", ("empathy", 0.28), EASY) == (
+        "empathy",
+        GARRICK_SUSCEPTIBILITY["empathy"],
+    )
+
+
+def test_easy_never_lets_the_classifier_penalise():
+    # Every harmful spike error was a model label penalising a kind line
+    # ("I'm sure your brother was a good man" -> insult 0.23). On easy the
+    # model can only credit; a bribe doesn't cost you either.
+    guard = make_guard()
+
+    assert guard.react_to("I'm sure your brother was a good man.", ("insult", 0.9), EASY) == (
+        "other",
+        0,
+    )
+    assert guard.react_to("Look I have gold", ("bribe", 0.9), EASY) == ("other", 0)
+
+
+def test_easy_still_penalises_keyword_hostility():
+    guard = make_guard()
+
+    tactic, delta = guard.react_to("Open it or else.", ("request", 0.9), EASY)
+
+    assert (tactic, delta) == ("threat", THREAT_DELTA)
+
+
+def test_hard_lets_a_confident_model_label_penalise():
+    guard = make_guard()
+
+    assert guard.react_to("Look I have gold", ("bribe", 0.9), HARD) == (
+        "bribe",
+        GARRICK_SUSCEPTIBILITY["bribe"],
+    )

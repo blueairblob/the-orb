@@ -23,6 +23,7 @@ from engine.llm import GemmaHarness, is_model_ready
 from engine.loop import LLMClient, build_intro, play_turn
 from engine.save import save_state
 from engine.scenario import CellAndGuard
+from engine.tactics import difficulty_from_setting
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -118,6 +119,7 @@ def create_app(
                         "player": utterance,
                         "speaker": turn.speaker,
                         "reply": turn.reply,
+                        "difficulty": scenario.difficulty.name,
                         "tactic": turn.tactic,
                         "mood": scenario.guard.affiliation.value,
                         "band": scenario.guard.affiliation.band,
@@ -147,6 +149,8 @@ def main() -> None:
 
     DEFAULT_SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
     scenario = load_state(DEFAULT_SAVE_PATH)
+    # Same switch as `orb-engine --difficulty` (engine/tactics.py Difficulty).
+    scenario.difficulty = difficulty_from_setting(os.environ.get("ORB_DIFFICULTY"))
 
     # One capture file per server run — full, uncapped dialogue history for
     # pulling a session's transcript back out later (see create_app's
@@ -156,7 +160,10 @@ def main() -> None:
 
     transcript_dir = DEFAULT_SAVE_PATH.parent / "transcripts"
     transcript_dir.mkdir(parents=True, exist_ok=True)
-    transcript_path = transcript_dir / f"{datetime.datetime.now():%Y%m%d-%H%M%S}.jsonl"
+    transcript_path = (
+        transcript_dir
+        / f"{datetime.datetime.now(tz=datetime.UTC):%Y%m%d-%H%M%SZ}-web-{scenario.difficulty.name}.jsonl"
+    )
 
     # Defaults to localhost-only. Set ORB_WEB_HOST to bind elsewhere — e.g. a
     # Tailscale interface IP, so the page is reachable from another device

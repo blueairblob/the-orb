@@ -16,7 +16,7 @@ import dataclasses
 import re
 
 from engine.character import Stat, has_unnegated_match
-from engine.tactics import CONFIDENCE_FLOOR
+from engine.tactics import HARD, Difficulty
 from engine.world import Thing, add_fact
 
 KIND_WORDS = {
@@ -225,11 +225,15 @@ class Guard(Thing):
         return None
 
     def resolve_tactic(
-        self, utterance: str, classified: tuple[str, float | None] | None
+        self,
+        utterance: str,
+        classified: tuple[str, float | None] | None,
+        difficulty: Difficulty = HARD,
     ) -> str | None:
         """The engine's final call on what this line is — the classifier
-        proposes, this disposes. None means no usable classification at all
-        (the caller falls back to adjust_affiliation_from_text)."""
+        proposes, this disposes, under the game's `difficulty`. None means no
+        usable classification at all (the caller falls back to
+        adjust_affiliation_from_text)."""
         hostile = self.keyword_hostility(utterance)
         if hostile:
             return hostile
@@ -238,18 +242,23 @@ class Guard(Thing):
         label, confidence = classified
         if label not in self.susceptibility:
             return None
-        if confidence is not None and confidence < CONFIDENCE_FLOOR:
+        if not difficulty.model_can_penalise and self.susceptibility[label] < 0:
+            return "other"
+        if confidence is not None and confidence < difficulty.confidence_floor:
             return "other"
         return label
 
     def react_to(
-        self, utterance: str, classified: tuple[str, float | None] | None
+        self,
+        utterance: str,
+        classified: tuple[str, float | None] | None,
+        difficulty: Difficulty = HARD,
     ) -> tuple[str | None, int]:
         """Moves the affiliation dial for one player line; returns (tactic,
         delta) so callers/tests can see what happened. Call before the line
         joins memory, same as adjust_affiliation_from_text (the repeat check
         compares against earlier turns only)."""
-        tactic = self.resolve_tactic(utterance, classified)
+        tactic = self.resolve_tactic(utterance, classified, difficulty)
         if tactic is None:
             delta = self.adjust_affiliation_from_text(utterance)
             self.last_move = (None, delta)

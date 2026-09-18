@@ -71,3 +71,23 @@ uv run python experiments/2026-09-18-guard-fact-precision/eval.py [current|candi
 - **R16 (Open):** his fact block inserts newest-first mid-brief, which invalidates the prompt cache
   whenever it grows. Unmeasured latency.
 - The classifier's own share of the 12.1 s time-to-reply wasn't isolated in the loop.
+
+## Update — R13: the actor now voices the director's judgement (`25931b3`)
+
+`Guard.react_to` records the resolved move and what it earned. The guard brief adds one
+engine-worded line just before his current mood ("# Just now they offered you a bribe. It sits
+badly with you — you won't give them what they want for it."), bucketed from the actual delta.
+
+On the same 30-line replay, all five bribes are now refused in his own voice ("Treasure is a
+waste of my time.", "Gold buys nothing here."), where before he said "Show it to me." three times.
+He never parroted the line back.
+
+The one warm reaction ("It truly reaches you") got "I don't care." That's one sample, but it
+matches the 2026-09-15 finding that concrete gruff examples beat abstract instructions: negative
+reactions agree with the persona, positive ones fight it.
+
+The replay also showed *why* the mood barely moves (R15). The classifier often reads real sympathy
+correctly but with low confidence (0.28), and the 0.4 floor turns it neutral. The floor was built
+for harmful misreads, which were all hostile labels, and keyword lists already own hostility
+precisely. The proposal (ignore model threat/insult labels, lower the floor for positive ones) is
+logged under R15 for the user to decide, since it sets how winnable Garrick is.

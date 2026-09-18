@@ -13,7 +13,7 @@ def test_load_state_returns_a_fresh_scenario_when_no_save_exists(tmp_path):
 def test_save_and_load_round_trips_every_persisted_field(tmp_path):
     save_path = tmp_path / "save.json"
     scenario = build_cell_and_guard()
-    scenario.world.clock.advance(15)
+    scenario.world.clock.minutes = 6 * 60 + 15
     scenario.door.unlock()
     scenario.guard.affiliation.value = 77
     scenario.guard.remember("player", "hello")
@@ -25,7 +25,7 @@ def test_save_and_load_round_trips_every_persisted_field(tmp_path):
     save_state(save_path, scenario)
     loaded = load_state(save_path)
 
-    assert loaded.world.clock.minutes == 15
+    assert loaded.world.clock.minutes == 6 * 60 + 15
     assert loaded.door.locked is False
     assert loaded.guard.affiliation.value == 77
     assert loaded.guard.memory == ["player: hello", "guard: Hmph."]
@@ -58,3 +58,21 @@ def test_load_state_defaults_missing_fields_from_an_older_save_format(tmp_path):
     assert loaded.guard.secret_revealed is False
     assert loaded.guard.established_facts == []
     assert loaded.world.established_facts == []
+
+
+def test_resumed_session_keeps_its_time_of_day(tmp_path):
+    # With time read live from the clock, a resumed session's briefs reflect
+    # the saved time -- the old frozen room.state copy was recomputed from a
+    # fresh clock at load and ignored the saved minutes entirely.
+    save_path = tmp_path / "save.json"
+    scenario = build_cell_and_guard()
+    scenario.world.clock.minutes = 6 * 60
+    save_state(save_path, scenario)
+
+    assert load_state(save_path).world.clock.time_of_day == "dawn"
+
+
+def test_scenario_starts_at_its_authored_hour():
+    from engine.scenario import SCENE_START_MINUTES
+
+    assert build_cell_and_guard().world.clock.minutes == SCENE_START_MINUTES

@@ -7,6 +7,12 @@ import dataclasses
 from engine.guard import Guard
 from engine.world import Door, Room, World
 
+# 11pm: deep night, the guard "bored, cold, wants his watch to end" (his
+# drives). PRD §5 names dawn as when the shift changes — still hours away
+# at one minute per turn; making time *matter* is the NPC-timetable work
+# (REVIEW.md R3), not this.
+SCENE_START_MINUTES = 23 * 60
+
 
 @dataclasses.dataclass
 class CellAndGuard:
@@ -46,5 +52,9 @@ def build_cell_and_guard() -> CellAndGuard:
             ),
         )
     )
-    room.state["time_of_day"] = world.clock.time_of_day
+    # Authored start, not an accident of the clock defaulting to minute 0.
+    # Time of day is read live from world.clock by every brief — it used to
+    # be copied into room.state once, here, and never updated as the clock
+    # ticked (REVIEW.md R2), so the briefs showed a frozen time forever.
+    world.clock.minutes = SCENE_START_MINUTES
     return CellAndGuard(world=world, room=room, door=door, guard=guard)

@@ -6,13 +6,20 @@ from engine.brief import (
 from engine.scenario import build_cell_and_guard
 
 
+def brief_for(scenario):
+    return build_guard_brief(
+        scenario.guard, scenario.door, scenario.room, scenario.premise,
+        clock=scenario.world.clock,
+    )
+
+
 def test_brief_reflects_current_state():
     scenario = build_cell_and_guard()
     scenario.guard.affiliation.value = 90
     scenario.guard.remember("player", "please let me out")
     scenario.guard.remember("guard", "No.")
 
-    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+    brief = brief_for(scenario)
 
     assert "locked" in brief
     assert "ready to help" in brief
@@ -27,7 +34,7 @@ def test_brief_reflects_unlocked_door():
     scenario = build_cell_and_guard()
     scenario.door.unlock()
 
-    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+    brief = brief_for(scenario)
 
     assert "unlocked" in brief
 
@@ -36,7 +43,7 @@ def test_secret_withheld_below_trust_threshold():
     scenario = build_cell_and_guard()
     scenario.guard.affiliation.value = 40
 
-    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+    brief = brief_for(scenario)
 
     assert scenario.guard.secret not in brief
 
@@ -45,7 +52,7 @@ def test_secret_available_once_trust_is_earned():
     scenario = build_cell_and_guard()
     scenario.guard.affiliation.value = 90
 
-    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+    brief = brief_for(scenario)
 
     assert scenario.guard.secret in brief
     assert "you may let a fragment" in brief  # not-yet-revealed framing -- secret_revealed is False
@@ -60,7 +67,7 @@ def test_secret_shows_already_revealed_framing_once_flag_is_set():
     scenario.guard.affiliation.value = 20  # would normally withhold the secret entirely
     scenario.guard.secret_revealed = True
 
-    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+    brief = brief_for(scenario)
 
     assert scenario.guard.secret in brief
     assert "already let this slip" in brief
@@ -70,7 +77,7 @@ def test_secret_shows_already_revealed_framing_once_flag_is_set():
 def test_brief_omits_established_facts_section_when_none_recorded():
     scenario = build_cell_and_guard()
 
-    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+    brief = brief_for(scenario)
 
     assert "already told them" not in brief
 
@@ -80,7 +87,7 @@ def test_brief_feeds_back_established_facts_newest_first():
     scenario.guard.add_established_fact("He grew up in the river town of Kelsey.")
     scenario.guard.add_established_fact("His brother served in the same watch.")
 
-    brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+    brief = brief_for(scenario)
 
     assert "already told them" in brief
     assert "He grew up in the river town of Kelsey." in brief
@@ -120,14 +127,12 @@ def test_brief_shows_a_mood_appropriate_voice_example():
     scenario = build_cell_and_guard()
 
     scenario.guard.affiliation.value = 92  # "ready to help"
-    warm_brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+    warm_brief = brief_for(scenario)
     assert "Friends call me that" in warm_brief
     assert "Now hush" not in warm_brief  # the gruff-band example, not shown here
 
     scenario.guard.affiliation.value = 40  # "gruff and suspicious"
-    default_brief = build_guard_brief(
-        scenario.guard, scenario.door, scenario.room, scenario.premise
-    )
+    default_brief = brief_for(scenario)
     assert "Now hush" in default_brief
     assert "Friends call me that" not in default_brief
 
@@ -139,7 +144,7 @@ def test_anti_promise_examples_shown_at_every_mood():
     scenario = build_cell_and_guard()
     for mood in (5, 40, 62, 92):
         scenario.guard.affiliation.value = mood
-        brief = build_guard_brief(scenario.guard, scenario.door, scenario.room, scenario.premise)
+        brief = brief_for(scenario)
         assert "I promise nothing" in brief
 
 
@@ -158,3 +163,15 @@ def test_guard_fact_extraction_prompt_asks_for_a_verbatim_copy():
 
     assert "word for word" in prompt
     assert "third-person" not in prompt
+
+
+def test_brief_reads_the_live_clock_not_a_frozen_copy():
+    # REVIEW.md R2: time of day used to be copied into room.state once at
+    # scenario build and never updated, so the brief showed the same time
+    # forever no matter how far the clock ticked.
+    scenario = build_cell_and_guard()
+    assert "It is night." in brief_for(scenario)
+
+    scenario.world.clock.minutes = 6 * 60  # 6am
+    assert "It is dawn." in brief_for(scenario)
+    assert "time_of_day" not in scenario.room.state  # no duplicate to go stale

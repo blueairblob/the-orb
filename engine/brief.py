@@ -26,7 +26,7 @@ from __future__ import annotations
 import re
 
 from engine.guard import Guard
-from engine.world import Door, Room
+from engine.world import Door, Room, WorldClock
 
 # Kept deliberately small — 2-3 hard rules, not the growing list this file
 # used to carry. Removed vs. the previous version: the multi-sentence
@@ -163,7 +163,9 @@ RULE_REMINDER = (
     "answered it before you move on to anything new."
 )
 
-def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str:
+def build_guard_brief(
+    guard: Guard, door: Door, room: Room, premise: str, *, clock: WorldClock
+) -> str:
     """Walks the guard/door/room state into a markdown system message."""
     lines = [
         PERSONA.format(name=guard.name),
@@ -173,7 +175,7 @@ def build_guard_brief(guard: Guard, door: Door, room: Room, premise: str) -> str
         *ALWAYS_VOICE_EXAMPLES,
         "",
         "# Scene",
-        f"You are outside {room.name}, at {door.name}. It is {room.state.get('time_of_day', 'night')}.",
+        f"You are outside {room.name}, at {door.name}. It is {clock.time_of_day}.",
         f"The door is currently {'locked' if door.locked else 'unlocked'}.",
         f"The prisoner is here for {premise}.",
         "",

@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from engine.guard import Guard
-    from engine.world import Door, Room
+    from engine.world import Door, Room, WorldClock
 
 DM_PERSONA = (
     "You are the Dungeon Master narrating a fantasy dungeon escape. Speak in "
@@ -131,7 +131,13 @@ def build_refusal_brief(
 
 
 def build_narration_brief(
-    room: Room, door: Door, guard: Guard, premise: str, scene_facts: Sequence[str] = ()
+    room: Room,
+    door: Door,
+    guard: Guard,
+    premise: str,
+    scene_facts: Sequence[str] = (),
+    *,
+    clock: WorldClock,
 ) -> str:
     return "\n".join(
         [
@@ -141,7 +147,7 @@ def build_narration_brief(
             (
                 f"{room.description or room.name}. The door is "
                 f"{'locked' if door.locked else 'unlocked'}. It is "
-                f"{room.state.get('time_of_day', 'night')}."
+                f"{clock.time_of_day}."
             ),
             f"The guard beyond the door seems {guard.affiliation.band}.",
             (

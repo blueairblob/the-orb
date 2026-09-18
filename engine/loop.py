@@ -270,7 +270,12 @@ def run_turn(
             )
         else:
             brief = dm.build_narration_brief(
-                scenario.room, scenario.door, guard, scenario.premise, world.established_facts
+                scenario.room,
+                scenario.door,
+                guard,
+                scenario.premise,
+                world.established_facts,
+                clock=world.clock,
             )
         reply = _ask_and_record(llm, guard, player_utterance, brief, "dm")
         # The DM improvises scene detail every time it narrates or redirects —
@@ -301,7 +306,9 @@ def run_turn(
     # real chance to narrate the moment — rather than skipping straight to
     # "already revealed" before it's ever actually been said. Flipped for
     # future turns only after this one's brief and reply are done.
-    brief = build_guard_brief(guard, scenario.door, scenario.room, scenario.premise)
+    brief = build_guard_brief(
+        guard, scenario.door, scenario.room, scenario.premise, clock=scenario.world.clock
+    )
     reply = _ask_and_record(
         llm,
         guard,

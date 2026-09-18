@@ -7,6 +7,13 @@ from engine.dm import (
 from engine.scenario import build_cell_and_guard
 
 
+def narration_for(scenario, scene_facts=()):
+    return build_narration_brief(
+        scenario.room, scenario.door, scenario.guard, scenario.premise, scene_facts,
+        clock=scenario.world.clock,
+    )
+
+
 def test_classifies_ungrounded_actions_as_refusal():
     assert classify_utterance("I cast a spell on the guard") == "refusal"
     assert classify_utterance("I draw my sword") == "refusal"
@@ -62,7 +69,7 @@ def test_refusal_brief_names_the_attempted_action():
 
 def test_narration_brief_describes_scene_not_guard_dialogue():
     scenario = build_cell_and_guard()
-    brief = build_narration_brief(scenario.room, scenario.door, scenario.guard, scenario.premise)
+    brief = narration_for(scenario)
 
     assert "locked" in brief
     assert "Do not speak as the guard" in brief
@@ -75,9 +82,7 @@ def test_narration_brief_feeds_back_scene_facts():
     scenario = build_cell_and_guard()
     facts = ["A single iron grate covers the door."]
 
-    brief = build_narration_brief(
-        scenario.room, scenario.door, scenario.guard, scenario.premise, facts
-    )
+    brief = narration_for(scenario, facts)
 
     assert "already described" in brief
     assert "A single iron grate covers the door." in brief
@@ -96,9 +101,7 @@ def test_refusal_brief_feeds_back_scene_facts():
 def test_dm_briefs_omit_the_facts_section_when_there_are_none():
     scenario = build_cell_and_guard()
 
-    narration = build_narration_brief(
-        scenario.room, scenario.door, scenario.guard, scenario.premise
-    )
+    narration = narration_for(scenario)
     refusal = build_refusal_brief(scenario.room, "I cast a spell")
 
     assert "already described" not in narration
@@ -123,3 +126,10 @@ def test_scene_fact_extraction_prompt_treats_the_authored_room_as_known():
     assert "Stone walls, a drip in the corner." in prompt
     assert "door is locked" in prompt
     assert "NONE" in prompt
+
+
+def test_narration_brief_reads_the_live_clock():
+    scenario = build_cell_and_guard()
+    scenario.world.clock.minutes = 12 * 60
+
+    assert "It is day." in narration_for(scenario)

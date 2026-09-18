@@ -41,7 +41,7 @@ def load_state(path: Path) -> CellAndGuard:
         return scenario
 
     data = json.loads(path.read_text())
-    scenario.world.clock.minutes = data.get("clock_minutes", 0)
+    scenario.world.clock.minutes = data.get("clock_minutes", scenario.world.clock.minutes)
     if not data.get("door_locked", True):
         scenario.door.unlock()
     scenario.guard.affiliation.value = data.get(

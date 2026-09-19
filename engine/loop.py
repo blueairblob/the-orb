@@ -233,7 +233,7 @@ def _ask_and_record(
         if guardrail.is_repeated_reply(reply, voice_examples):
             return "voice_example"
         if room_name is not None and guardrail.is_room_description(
-            reply, room_name, room_description
+            reply, room_name, room_description, player_utterance=prompt
         ):
             return "room_description"
         return None

@@ -68,6 +68,23 @@ ENVIRONMENT_QUERY_PHRASES = (
     "let me look",
     "can i look",
     "could i look",
+    # Questions about the place itself: the Dungeon Master narrates the world,
+    # the guard doesn't (PRD §12) — REVIEW.md R21. Asked these, the guard was
+    # being made to narrate the cell, which his own guardrail then rejected:
+    # 8 of 12 such turns in a real probe ended in his fallback line. Anchored
+    # question phrasings only — bare "this place" / "in here" also occur in
+    # plain dialogue to him ("I hate this place and I hate you", "Nothing I
+    # cannot spend it in here").
+    "what is this place",
+    "what's this place",
+    "whats this place",
+    "tell me about this place",
+    "what's it like in here",
+    "whats it like in here",
+    "what is it like in here",
+    "is this a dungeon",
+    "is this a cell",
+    "is this a prison",
 )
 
 Route = Literal["refusal", "narration", "dialogue"]

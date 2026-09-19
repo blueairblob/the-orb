@@ -184,7 +184,7 @@ def test_room_description_triggers_one_retry():
     scenario = build_cell_and_guard()
     llm = SequencedLLM(["This is a cell. It's cold.", "That's not mine to say."])
 
-    reply, _, _ = run_turn(scenario, llm, "tell me about this place")
+    reply, _, _ = run_turn(scenario, llm, "what are you guarding here?")
 
     assert reply == "That's not mine to say."
     assert len(llm.calls) == 3  # narration + retry + fact-extraction
@@ -200,7 +200,7 @@ def test_room_description_falls_back_to_safe_line_if_retry_also_fails():
     scenario = build_cell_and_guard()
     llm = SequencedLLM(["This is a cell.", "It's a cell, obviously."])
 
-    reply, _, _ = run_turn(scenario, llm, "tell me about this place")
+    reply, _, _ = run_turn(scenario, llm, "what are you guarding here?")
 
     assert reply == "Enough talk."
     # narration + retry only -- a fallback line is the engine's own words,
@@ -675,3 +675,24 @@ def test_run_loop_writes_a_transcript_line_per_turn(tmp_path):
     assert rows[0]["tactics"] == ["empathy"]
     assert rows[0]["mood_delta"] == GARRICK_SUSCEPTIBILITY["empathy"]
     assert rows[1]["mood_delta"] == 0
+
+
+def test_talking_about_the_cold_the_player_raised_is_not_retried():
+    # R21: "It's just the cold" (asked how he stands it) used to be rejected
+    # as narrating the cell, retried, and sometimes ended in the fallback.
+    scenario = build_cell_and_guard()
+    llm = SequencedLLM(["It's just the cold. It doesn't matter.", "NONE"])
+
+    reply, speaker, _ = run_turn(scenario, llm, "How do you stand the cold?")
+
+    assert (reply, speaker) == ("It's just the cold. It doesn't matter.", "guard")
+    assert len(llm.calls) == 2  # narration + extraction: no retry
+
+
+def test_place_questions_are_answered_by_the_dm_not_the_guard():
+    scenario = build_cell_and_guard()
+    llm = StubLLM(reply="Cold stone presses against your back.")
+
+    _, speaker, _ = run_turn(scenario, llm, "What is this place?")
+
+    assert speaker == "dm"

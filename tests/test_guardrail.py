@@ -1,3 +1,5 @@
+import pytest
+
 from engine.guardrail import (
     DM_FALLBACK_LINE,
     GUARD_FALLBACK_LINE,
@@ -125,3 +127,61 @@ def test_filter_reply_falls_back_to_a_dm_appropriate_line_for_the_dm():
 
 def test_filter_reply_defaults_to_the_guard_fallback():
     assert filter_reply("") == GUARD_FALLBACK_LINE
+
+
+# --- R21: he may follow a topic or speak about himself; he may not introduce the scene ---
+ROOM = ("the cell", "A cold stone cell.")
+
+
+@pytest.mark.parametrize(
+    ("reply", "player"),
+    [
+        # Real drafts (experiments/2026-09-19-room-vocabulary/probe-before.jsonl)
+        # the old check rejected, each hand-labelled a false positive.
+        ("It's just the cold. It doesn't matter.", "How do you stand the cold?"),
+        ("The cold is just the air. It's not for you to worry about.",
+         "You must be cold standing there all night."),
+        ("I'm not built for feeling anything. It's just the cold.",
+         "You must be cold standing there all night."),
+        ("Twenty years. That's how long I've been standing in this cold.",
+         "How long have you worked here?"),
+        ("I've stopped feeling the cold.", "You look cold."),
+    ],
+)
+def test_ordinary_talk_about_the_cold_is_not_room_narration(reply, player):
+    assert not is_room_description(reply, *ROOM, player_utterance=player)
+
+
+@pytest.mark.parametrize(
+    ("reply", "player"),
+    [
+        # Real drafts hand-labelled true violations: he introduces the scene.
+        ("It's a cell. That's all you need to know.", "Is this a dungeon?"),
+        ("It's a cell. You're in a cell.", "What is this place?"),
+        ("It's cold. That's all you need to know.", "What's it like in here?"),
+        ("The stone keeps the chill. It doesn't change.", "Is the cell always this cold?"),
+        ("It's always cold. The stones hold the chill.", "Is the cell always this cold?"),
+    ],
+)
+def test_introducing_the_scene_is_still_caught(reply, player):
+    assert is_room_description(reply, *ROOM, player_utterance=player)
+
+
+def test_a_room_word_the_player_just_said_is_not_him_introducing_it():
+    reply = "It's always cold. That's how it is."
+    assert not is_room_description(reply, *ROOM, player_utterance="Is the cell always this cold?")
+    assert is_room_description(reply, *ROOM, player_utterance="How long is your watch?")
+
+
+def test_a_first_person_sentence_does_not_excuse_the_next_one():
+    # Judged sentence by sentence: talking about himself first doesn't license
+    # narrating the cell afterwards.
+    assert is_room_description("I'm on watch. This cell is cold.", *ROOM)
+    assert not is_room_description("This is my watch. I keep the cell shut.", *ROOM)
+
+
+def test_plural_room_words_are_caught_too():
+    # Found in the probe: "The stones hold the chill" slipped past a check
+    # that only knew "stone".
+    assert is_room_description("The stones hold the chill.", *ROOM)
+    assert is_room_description("The cells are damp.", *ROOM)

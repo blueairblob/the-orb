@@ -133,3 +133,19 @@ def test_narration_brief_reads_the_live_clock():
     scenario.world.clock.minutes = 12 * 60
 
     assert "It is day." in narration_for(scenario)
+
+
+def test_questions_about_the_place_go_to_the_dm():
+    # R21: asked these, the guard was made to narrate the cell and his own
+    # guardrail rejected it -- 8 of 12 such turns ended in his fallback line.
+    for line in ("What is this place?", "Tell me about this place", "What's it like in here?",
+                 "Is this a dungeon?"):
+        assert classify_utterance(line) == "narration", line
+
+
+def test_plain_dialogue_mentioning_the_place_still_goes_to_the_guard():
+    # Real lines from earlier playtests: bare "this place" / "in here" / "cell"
+    # are ordinary dialogue *to him*, not requests for narration.
+    for line in ("I hate this place and I hate you.", "Nothing I cannot spend it in here.",
+                 "you can then put me back in my cell?", "Is the cell always this cold?"):
+        assert classify_utterance(line) == "dialogue", line

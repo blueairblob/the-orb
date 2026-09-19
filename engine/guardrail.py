@@ -113,27 +113,51 @@ def is_repeated_reply(text: str, prior_lines: list[str]) -> bool:
 _DESCRIPTION_STOPWORDS = {"a", "an", "the", "is", "are", "it", "this", "that", "in", "of", "and"}
 
 
-def is_room_description(text: str, room_name: str, room_description: str = "") -> bool:
-    """True if `text` names or describes the room directly (e.g. "This is a
-    cell." or "It's stone and damp.") — PERSONA already forbids the guard
-    from describing his surroundings (that's the Dungeon Master's job), but
-    stating the rule wasn't enough on its own, and restating it in
-    RULE_REMINDER right before generation wasn't either (real playtest
-    2026-09-14, confirmed for "Tell me about this place" even with both).
-    Driven by the room's own name and description so this generalises past
-    this one scenario's "cell" rather than being hardcoded to it — matches
-    whole words only (the room name's own last word, its key noun: "the
-    cell" -> "cell"; plus room_description's own content words, minus
-    common stopwords), so a guard line that happens to share unrelated
-    ordinary vocabulary doesn't false-positive."""
-    candidates = {room_name.rsplit(maxsplit=1)[-1].lower()}
+_FIRST_PERSON = {"i", "i'm", "i've", "i'll", "i'd", "me", "my", "mine", "myself"}
+
+
+def _stem(word: str) -> str:
+    """Crude plural tolerance: "stones" -> "stone", "cells" -> "cell". Found
+    in the R21 probe, where "The stones hold the chill" slipped past a check
+    that only knew "stone"."""
+    return word[:-1] if len(word) > 3 and word.endswith("s") and not word.endswith("ss") else word
+
+
+def is_room_description(
+    text: str, room_name: str, room_description: str = "", player_utterance: str = ""
+) -> bool:
+    """True if `text` *introduces* the room to the player — names or describes
+    it ("This is a cell." / "It's stone and damp.") — which PERSONA forbids the
+    guard: that's the Dungeon Master's job. Stating the rule wasn't enough on
+    its own, and restating it in RULE_REMINDER right before generation wasn't
+    either (real playtest 2026-09-14, confirmed for "Tell me about this place"
+    even with both). Driven by the room's own name and description so this
+    generalises past this one scenario's "cell" — matches whole words only
+    (the room name's last word, its key noun: "the cell" -> "cell"; plus the
+    description's content words, minus common stopwords).
+
+    Two exemptions (REVIEW.md R21). The room's words are ordinary ones —
+    "cold", "stone" — and the original check rejected any reply containing
+    them: "I've stopped feeling the cold", "It's just the cold" (asked how he
+    stands it) and "Twenty years standing in this cold" were all treated as
+    narrating the cell, retried, and sometimes ended in the fallback line.
+    He may *follow* a topic the player raised, and speak about *himself*; he
+    may not *introduce* the scene. So a room word only counts when (a) the
+    player didn't just say it (`player_utterance`), and (b) it's in a
+    sentence with no first-person reference. Judged sentence by sentence, so
+    "I'm on watch. This cell is cold." is still caught."""
+    candidates = {_stem(room_name.rsplit(maxsplit=1)[-1].lower())}
     candidates |= {
-        word
+        _stem(word)
         for word in re.findall(r"[a-z']+", room_description.lower())
         if word not in _DESCRIPTION_STOPWORDS
     }
-    words = set(re.findall(r"[a-z']+", text.lower()))
-    return bool(words & candidates)
+    candidates -= {_stem(word) for word in re.findall(r"[a-z']+", player_utterance.lower())}
+    for sentence in re.split(r"(?<=[.!?\u2026])\s+", text):
+        raw_words = set(re.findall(r"[a-z']+", sentence.lower()))
+        if {_stem(word) for word in raw_words} & candidates and not raw_words & _FIRST_PERSON:
+            return True
+    return False
 
 
 def filter_reply(text: str, speaker: str = "guard") -> str:

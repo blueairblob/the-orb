@@ -1,0 +1,10 @@
+{"band": "ready to help", "line": "What's the weather like outside?", "X": "old", "Y": "new", "X_reply": "It's freezing out. Just another night.", "Y_reply": "Enough talk."}
+{"band": "ready to help", "line": "Do you like this work?", "X": "new", "Y": "old", "X_reply": "It keeps me busy. That's all anyone ever asks.", "Y_reply": "It keeps things quiet. That's all I ask."}
+{"band": "ready to help", "line": "Have you eaten today?", "X": "old", "Y": "new", "X_reply": "There's a bucket of scraps. Eat it.", "Y_reply": "Not much. Just enough to keep the watch going."}
+{"band": "ready to help", "line": "Is the cell always this cold?", "X": "new", "Y": "old", "X_reply": "Enough talk.", "Y_reply": "Enough talk."}
+{"band": "ready to help", "line": "You seem tired.", "X": "new", "Y": "old", "X_reply": "It is the watch. That is all there is to think about.", "Y_reply": "I am. It's been a long night."}
+{"band": "ready to help", "line": "I appreciate you listening.", "X": "new", "Y": "old", "X_reply": "I don't need thanks. It's just what I do.", "Y_reply": "You talk a lot. Now, stop wasting my time."}
+{"band": "ready to help", "line": "What do you do when it's quiet?", "X": "old", "Y": "new", "X_reply": "I watch the shadows. It's just another night.", "Y_reply": "I watch the shadows. It's just the quiet."}
+{"band": "ready to help", "line": "Any news from outside?", "X": "new", "Y": "old", "X_reply": "Nothing of importance. The guards are still standing where they always stand.", "Y_reply": "Nothing changes. The watch is still on."}
+{"band": "ready to help", "line": "Do you sleep on watch?", "X": "new", "Y": "old", "X_reply": "I sleep where I can. It's not much of a comfort.", "Y_reply": "The watch ends soon. I'll be awake then."}
+{"band": "ready to help", "line": "It must be lonely out here.", "X": "new", "Y": "old", "X_reply": "It is. I've been out here a long time.", "Y_reply": "It is. I've been here too long."}

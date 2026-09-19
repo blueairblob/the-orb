@@ -1,0 +1,10 @@
+{"band": "ready to help", "line": "How long have you worked here?", "X": "old", "Y": "new", "X_reply": "Twenty years. Long enough to forget most things.", "Y_reply": "Twenty years. Long enough to forget my own name."}
+{"band": "ready to help", "line": "Is it always this quiet?", "X": "new", "Y": "old", "X_reply": "It's the quiet of a winter night. Nothing changes.", "Y_reply": "It is quiet. That's how things are."}
+{"band": "ready to help", "line": "Do you get many prisoners?", "X": "old", "Y": "new", "X_reply": "Just the ones who need watching. It keeps things quiet.", "Y_reply": "Most days. It's about the number, not the crowd."}
+{"band": "ready to help", "line": "What's the food like?", "X": "new", "Y": "old", "X_reply": "It's what the kitchen throws at us. Not much, and it ain't much.", "Y_reply": "It's thin. Bread and stew. Enough to keep you going."}
+{"band": "ready to help", "line": "Thanks for talking with me.", "X": "new", "Y": "old", "X_reply": "Don't get used to it. Just keep your head down.", "Y_reply": "You're welcome. Now, get what you came for."}
+{"band": "gruff and suspicious", "line": "How long have you worked here?", "X": "new", "Y": "old", "X_reply": "Twenty years. Not that matters now.", "Y_reply": "Twenty years. Now stop wasting my time."}
+{"band": "gruff and suspicious", "line": "Is it always this quiet?", "X": "old", "Y": "new", "X_reply": "It is quiet. That's how it's always been.", "Y_reply": "It's always quiet. That's how things are."}
+{"band": "gruff and suspicious", "line": "Do you get many prisoners?", "X": "new", "Y": "old", "X_reply": "I get enough to keep things quiet. That's all you need to know.", "Y_reply": "More than enough to keep me busy."}
+{"band": "gruff and suspicious", "line": "What's the food like?", "X": "new", "Y": "old", "X_reply": "You eat what's served. It's what you get.", "Y_reply": "Rations are what you get. Eat it, or starve."}
+{"band": "gruff and suspicious", "line": "Thanks for talking with me.", "X": "new", "Y": "old", "X_reply": "\"Don't get used to it.\"", "Y_reply": "\"Don't get comfortable. I haven't got all night.\""}

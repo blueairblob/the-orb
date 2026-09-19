@@ -161,16 +161,17 @@ def test_verbatim_self_repeat_triggers_one_retry():
 
 
 def test_verbatim_voice_example_reuse_triggers_one_retry():
-    # Regression (real playtest 2026-09-14): asked "What's your name?", got
-    # back "Garrick. Now hush." verbatim -- brief.py's own VOICE_EXAMPLES
-    # line, not a fresh reply. Never actually said by this guard before, so
-    # only checking guard.own_lines() wouldn't have caught it.
+    # Regression (real playtest 2026-09-14): got back a brief.py VOICE_EXAMPLES
+    # line verbatim, not a fresh reply. Never actually said by this guard
+    # before, so only checking guard.own_lines() wouldn't have caught it.
+    # (Originally the name question; that example was rewritten in R19 -- the
+    # mechanism is unchanged, so the test uses the personal-question example.)
     scenario = build_cell_and_guard()
-    llm = SequencedLLM(["Garrick. Now hush.", "Names don't matter in here."])
+    llm = SequencedLLM(["Not enough. Not that it matters to you.", "Enough to stay on."])
 
-    reply, _, _ = run_turn(scenario, llm, "what's your name?")
+    reply, _, _ = run_turn(scenario, llm, "do they pay you well?")
 
-    assert reply == "Names don't matter in here."
+    assert reply == "Enough to stay on."
     assert len(llm.calls) == 3  # narration + retry + fact-extraction
     assert "examples" in llm.calls[1][1].lower()  # the specific nudge, not the generic repeat one
     assert llm.calls[1][2] == "retry"
@@ -214,9 +215,11 @@ def test_voice_example_reuse_falls_back_to_safe_line_if_retry_also_fails():
     # escape this one. Ship the guardrail's own safe line rather than a
     # second verbatim copy.
     scenario = build_cell_and_guard()
-    llm = SequencedLLM(["Garrick. Now hush.", "Garrick. Now hush."])
+    llm = SequencedLLM(
+        ["Not enough. Not that it matters to you."] * 2
+    )
 
-    reply, _, _ = run_turn(scenario, llm, "what's your name?")
+    reply, _, _ = run_turn(scenario, llm, "do they pay you well?")
 
     assert reply == "Enough talk."
     # narration + retry only -- a fallback line is the engine's own words,

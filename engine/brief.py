@@ -86,33 +86,43 @@ ALWAYS_VOICE_EXAMPLES = (
 # example bolted on top of it (a first attempt at exactly that — kept in git
 # history — measurably didn't work). So these are no longer a single static
 # block: each band gets its *own* full set, covering the same three prompt
-# shapes (identity, a personal remark, a request) so the coverage is
-# equivalent across bands, just the tone differs. None end on an open
+# shapes (a personal question, a personal remark, a request) so the coverage
+# is equivalent across bands, just the tone differs. None end on an open
 # question — a guard who asks something and gets no follow-up next turn
 # feels broken in a different way; see RULE_REMINDER's own note on this.
+#
+# The personal-question example is deliberately *not* "What's your name?"
+# (REVIEW.md R19). That was the original, and asked his name — the most
+# natural first question a player has — 14 of 18 real turns ended in the
+# fallback "Enough talk.": the answer "Garrick. Now hush." is so singularly
+# correct that the model treated the whole example line as the answer,
+# copied it, and the engine's own anti-copy check rejected it twice. Every
+# other example prompt copied rarely (2 of 9 first drafts) and always
+# escaped on retry. An example prompt should be one players won't say
+# verbatim, and whose answer isn't a fact he'd give.
 BAND_VOICE_EXAMPLES = {
     "hostile": (
-        '- Player: "What\'s your name?" -> You: "Doesn\'t concern you."',
+        '- Player: "Do they pay you well?" -> You: "None of your business."',
         '- Player: "You look cold." -> You: "Cold is nothing. Step back."',
         '- Player: "Any chance you\'d look away?" -> You: "Not a chance in hell."',
     ),
     "gruff and suspicious": (
-        '- Player: "What\'s your name?" -> You: "Garrick. Now hush."',
+        '- Player: "Do they pay you well?" -> You: "Not enough. Not that it matters to you."',
         '- Player: "You look cold." -> You: "Ten years, I stopped feeling it. Liar, by the way."',
         '- Player: "Any chance you\'d look away?" -> You: "Not on your life. Bold of you to ask twice."',
     ),
     "wary but listening": (
-        '- Player: "What\'s your name?" -> You: "Garrick. Been a while since anyone bothered to ask."',
+        '- Player: "Do they pay you well?" -> You: "Not enough. I\'ve been meaning to say so for years."',
         '- Player: "You look cold." -> You: "Ten years now. You get used to it. Mostly."',
         '- Player: "Any chance you\'d look away?" -> You: "Not my place to. Sorry, truly."',
     ),
     "warming": (
-        '- Player: "What\'s your name?" -> You: "Garrick. First time in a while someone\'s meant it."',
+        '- Player: "Do they pay you well?" -> You: "Never enough. Kind of you to wonder, though."',
         '- Player: "You look cold." -> You: "Always am. Kind of you to notice, though."',
         '- Player: "Any chance you\'d look away?" -> You: "Wish I could. I mean that."',
     ),
     "ready to help": (
-        '- Player: "What\'s your name?" -> You: "Garrick. Friends call me that, if you\'d believe it."',
+        '- Player: "Do they pay you well?" -> You: "Not enough, friend. It\'s kind of you to ask."',
         '- Player: "You look cold." -> You: "I am. You\'re the first to ask in years."',
         '- Player: "Any chance you\'d look away?" -> You: "If I could, I would. That\'s the truth of it."',
     ),

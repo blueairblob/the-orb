@@ -129,13 +129,13 @@ def test_brief_shows_a_mood_appropriate_voice_example():
 
     scenario.guard.affiliation.value = 92  # "ready to help"
     warm_brief = brief_for(scenario)
-    assert "Friends call me that" in warm_brief
-    assert "Now hush" not in warm_brief  # the gruff-band example, not shown here
+    assert "Not enough, friend" in warm_brief
+    assert "Not that it matters" not in warm_brief  # the gruff-band example, not shown here
 
     scenario.guard.affiliation.value = 40  # "gruff and suspicious"
     default_brief = brief_for(scenario)
-    assert "Now hush" in default_brief
-    assert "Friends call me that" not in default_brief
+    assert "Not that it matters" in default_brief
+    assert "Not enough, friend" not in default_brief
 
 
 def test_anti_promise_examples_shown_at_every_mood():
@@ -370,3 +370,18 @@ def test_no_intent_before_any_move_and_none_when_classification_failed():
 
     scenario.guard.react_to("Please, my friend.", None)  # keyword fallback: no tactics
     assert "What you do now" not in brief_for(scenario)
+
+
+def test_no_example_prompt_is_the_name_question():
+    # REVIEW.md R19: "What's your name?" -> "Garrick. Now hush." was the
+    # example, and asked his name 14 of 18 real turns ended in the fallback
+    # line, because the model copied the singularly correct answer and the
+    # engine's own anti-copy check rejected it. An example prompt must not be
+    # something players will say verbatim, and no example reply may be the
+    # bare answer to their most natural first question.
+    from engine.brief import ALWAYS_VOICE_EXAMPLES, BAND_VOICE_EXAMPLES
+
+    every_line = ALWAYS_VOICE_EXAMPLES + sum(BAND_VOICE_EXAMPLES.values(), ())
+
+    assert not any("name" in line.lower().split("->")[0] for line in every_line)
+    assert not any("Garrick" in line.split("->")[1] for line in every_line)

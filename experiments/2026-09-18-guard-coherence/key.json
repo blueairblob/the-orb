@@ -1,0 +1,242 @@
+{
+ "user-easy-session#0": {
+  "A": "directed",
+  "B": "e4b_directed",
+  "C": "baseline",
+  "D": "e4b"
+ },
+ "user-easy-session#1": {
+  "A": "baseline",
+  "B": "e4b",
+  "C": "directed",
+  "D": "e4b_directed"
+ },
+ "user-easy-session#2": {
+  "A": "e4b",
+  "B": "baseline",
+  "C": "e4b_directed",
+  "D": "directed"
+ },
+ "user-easy-session#3": {
+  "A": "directed",
+  "B": "e4b_directed",
+  "C": "baseline",
+  "D": "e4b"
+ },
+ "user-easy-session#4": {
+  "A": "e4b_directed",
+  "B": "e4b",
+  "C": "baseline",
+  "D": "directed"
+ },
+ "user-easy-session#5": {
+  "A": "e4b_directed",
+  "B": "directed",
+  "C": "baseline",
+  "D": "e4b"
+ },
+ "user-easy-session#6": {
+  "A": "baseline",
+  "B": "e4b_directed",
+  "C": "e4b",
+  "D": "directed"
+ },
+ "user-easy-session#7": {
+  "A": "directed",
+  "B": "baseline",
+  "C": "e4b_directed",
+  "D": "e4b"
+ },
+ "user-easy-session#8": {
+  "A": "directed",
+  "B": "baseline",
+  "C": "e4b",
+  "D": "e4b_directed"
+ },
+ "user-easy-session#9": {
+  "A": "e4b_directed",
+  "B": "e4b",
+  "C": "baseline",
+  "D": "directed"
+ },
+ "playtest-2026-09-16#0": {
+  "A": "e4b_directed",
+  "B": "baseline",
+  "C": "e4b",
+  "D": "directed"
+ },
+ "playtest-2026-09-16#1": {
+  "A": "e4b_directed",
+  "B": "e4b",
+  "C": "directed",
+  "D": "baseline"
+ },
+ "playtest-2026-09-16#2": {
+  "A": "e4b",
+  "B": "baseline",
+  "C": "directed",
+  "D": "e4b_directed"
+ },
+ "playtest-2026-09-16#3": {
+  "A": "directed",
+  "B": "baseline",
+  "C": "e4b_directed",
+  "D": "e4b"
+ },
+ "playtest-2026-09-16#4": {
+  "A": "e4b",
+  "B": "baseline",
+  "C": "e4b_directed",
+  "D": "directed"
+ },
+ "playtest-2026-09-16#5": {
+  "A": "e4b_directed",
+  "B": "e4b",
+  "C": "baseline",
+  "D": "directed"
+ },
+ "playtest-2026-09-16#6": {
+  "A": "directed",
+  "B": "e4b",
+  "C": "e4b_directed",
+  "D": "baseline"
+ },
+ "playtest-2026-09-16#7": {
+  "A": "e4b",
+  "B": "directed",
+  "C": "e4b_directed",
+  "D": "baseline"
+ },
+ "playtest-2026-09-16#8": {
+  "A": "e4b_directed",
+  "B": "directed",
+  "C": "e4b",
+  "D": "baseline"
+ },
+ "playtest-2026-09-16#9": {
+  "A": "e4b_directed",
+  "B": "baseline",
+  "C": "directed",
+  "D": "e4b"
+ },
+ "playtest-2026-09-16#10": {
+  "A": "e4b_directed",
+  "B": "directed",
+  "C": "e4b",
+  "D": "baseline"
+ },
+ "playtest-2026-09-16#11": {
+  "A": "baseline",
+  "B": "directed",
+  "C": "e4b_directed",
+  "D": "e4b"
+ },
+ "playtest-2026-09-16#12": {
+  "A": "e4b",
+  "B": "directed",
+  "C": "e4b_directed",
+  "D": "baseline"
+ },
+ "playtest-2026-09-16#13": {
+  "A": "e4b",
+  "B": "baseline",
+  "C": "directed",
+  "D": "e4b_directed"
+ },
+ "playtest-2026-09-16#14": {
+  "A": "e4b",
+  "B": "baseline",
+  "C": "e4b_directed",
+  "D": "directed"
+ },
+ "playtest-2026-09-16#15": {
+  "A": "e4b_directed",
+  "B": "e4b",
+  "C": "directed",
+  "D": "baseline"
+ },
+ "playtest-2026-09-16#16": {
+  "A": "baseline",
+  "B": "e4b_directed",
+  "C": "directed",
+  "D": "e4b"
+ },
+ "playtest-2026-09-16#17": {
+  "A": "directed",
+  "B": "e4b",
+  "C": "e4b_directed",
+  "D": "baseline"
+ },
+ "playtest-2026-09-16#18": {
+  "A": "baseline",
+  "B": "e4b_directed",
+  "C": "directed",
+  "D": "e4b"
+ },
+ "playtest-2026-09-16#19": {
+  "A": "e4b_directed",
+  "B": "directed",
+  "C": "baseline",
+  "D": "e4b"
+ },
+ "playtest-2026-09-16#20": {
+  "A": "e4b",
+  "B": "directed",
+  "C": "baseline",
+  "D": "e4b_directed"
+ },
+ "playtest-2026-09-16#21": {
+  "A": "baseline",
+  "B": "e4b_directed",
+  "C": "e4b",
+  "D": "directed"
+ },
+ "playtest-2026-09-16#22": {
+  "A": "directed",
+  "B": "e4b_directed",
+  "C": "baseline",
+  "D": "e4b"
+ },
+ "playtest-2026-09-16#23": {
+  "A": "e4b",
+  "B": "baseline",
+  "C": "directed",
+  "D": "e4b_directed"
+ },
+ "playtest-2026-09-16#24": {
+  "A": "baseline",
+  "B": "e4b_directed",
+  "C": "directed",
+  "D": "e4b"
+ },
+ "playtest-2026-09-16#25": {
+  "A": "directed",
+  "B": "e4b_directed",
+  "C": "baseline",
+  "D": "e4b"
+ },
+ "playtest-2026-09-16#26": {
+  "A": "baseline",
+  "B": "e4b_directed",
+  "C": "directed",
+  "D": "e4b"
+ },
+ "playtest-2026-09-16#27": {
+  "A": "directed",
+  "B": "e4b_directed",
+  "C": "baseline",
+  "D": "e4b"
+ },
+ "playtest-2026-09-16#28": {
+  "A": "e4b_directed",
+  "B": "e4b",
+  "C": "directed",
+  "D": "baseline"
+ },
+ "playtest-2026-09-16#29": {
+  "A": "e4b",
+  "B": "e4b_directed",
+  "C": "directed",
+  "D": "baseline"
+ }
+}

@@ -18,6 +18,12 @@ means yes, "-" means no):
   F  fluent       — reads as a natural line from a gruff guard: no garbled or
                     self-contradicting phrasing. (A bare fallback line is
                     fluent but fails R.)
+  M  makes sense  — the exchange reads as coherent to a player: the reply gives
+                    a plausible reason or reaction, not a non-explanation, a
+                    muddle, or a line contradicting his previous one. Added
+                    after viewing the (blinded) replies and before unblinding,
+                    because R/C/F don't capture the user's actual complaint:
+                    an incoherent *rationale*.
 
 Run:  uv run python experiments/2026-09-18-guard-coherence/blind.py
 """

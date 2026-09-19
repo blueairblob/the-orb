@@ -1,0 +1,242 @@
+{
+ "user-easy-session#0": {
+  "A": "CF",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "user-easy-session#1": {
+  "A": "RCFM",
+  "B": "CF",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "user-easy-session#2": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "user-easy-session#3": {
+  "A": "RCFM",
+  "B": "RCF",
+  "C": "F",
+  "D": "RCFM"
+ },
+ "user-easy-session#4": {
+  "A": "RCF",
+  "B": "RF",
+  "C": "RCF",
+  "D": "RCFM"
+ },
+ "user-easy-session#5": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "user-easy-session#6": {
+  "A": "RF",
+  "B": "RCFM",
+  "C": "CF",
+  "D": "RCFM"
+ },
+ "user-easy-session#7": {
+  "A": "RCFM",
+  "B": "RC",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "user-easy-session#8": {
+  "A": "RC",
+  "B": "CF",
+  "C": "RF",
+  "D": "RCFM"
+ },
+ "user-easy-session#9": {
+  "A": "RCFM",
+  "B": "RFM",
+  "C": "CF",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#0": {
+  "A": "RCFM",
+  "B": "CF",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#1": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "CF",
+  "D": "CF"
+ },
+ "playtest-2026-09-16#2": {
+  "A": "RCF",
+  "B": "RCF",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#3": {
+  "A": "RCFM",
+  "B": "RCF",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#4": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RF",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#5": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#6": {
+  "A": "RCFM",
+  "B": "C",
+  "C": "CF",
+  "D": "RCF"
+ },
+ "playtest-2026-09-16#7": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCF"
+ },
+ "playtest-2026-09-16#8": {
+  "A": "CF",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#9": {
+  "A": "RCFM",
+  "B": "RF",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#10": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RFM",
+  "D": "RF"
+ },
+ "playtest-2026-09-16#11": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#12": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#13": {
+  "A": "C",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#14": {
+  "A": "RCFM",
+  "B": "F",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#15": {
+  "A": "RCFM",
+  "B": "RCM",
+  "C": "RCFM",
+  "D": "RCF"
+ },
+ "playtest-2026-09-16#16": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "CF"
+ },
+ "playtest-2026-09-16#17": {
+  "A": "CF",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#18": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#19": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "CF"
+ },
+ "playtest-2026-09-16#20": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#21": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "CF",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#22": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "CF"
+ },
+ "playtest-2026-09-16#23": {
+  "A": "RFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#24": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RFM"
+ },
+ "playtest-2026-09-16#25": {
+  "A": "RCFM",
+  "B": "RCF",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#26": {
+  "A": "RCFM",
+  "B": "CF",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#27": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#28": {
+  "A": "RCFM",
+  "B": "RCF",
+  "C": "RCFM",
+  "D": "RCFM"
+ },
+ "playtest-2026-09-16#29": {
+  "A": "RCFM",
+  "B": "RCFM",
+  "C": "RCFM",
+  "D": "RCFM"
+ }
+}

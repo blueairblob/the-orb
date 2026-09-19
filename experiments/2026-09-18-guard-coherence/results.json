@@ -1,0 +1,46 @@
+{
+ "directed": {
+  "n": 40,
+  "pct_R": 92,
+  "pct_C": 100,
+  "pct_F": 98,
+  "pct_M": 90,
+  "pct_all": 90,
+  "fallbacks": 1,
+  "retries": 6,
+  "median_reply_s": 9.95
+ },
+ "e4b_directed": {
+  "n": 40,
+  "pct_R": 92,
+  "pct_C": 98,
+  "pct_F": 100,
+  "pct_M": 82,
+  "pct_all": 82,
+  "fallbacks": 1,
+  "retries": 7,
+  "median_reply_s": 16.15
+ },
+ "baseline": {
+  "n": 40,
+  "pct_R": 85,
+  "pct_C": 88,
+  "pct_F": 98,
+  "pct_M": 60,
+  "pct_all": 60,
+  "fallbacks": 1,
+  "retries": 6,
+  "median_reply_s": 23.95
+ },
+ "e4b": {
+  "n": 40,
+  "pct_R": 80,
+  "pct_C": 85,
+  "pct_F": 92,
+  "pct_M": 70,
+  "pct_all": 58,
+  "fallbacks": 0,
+  "retries": 4,
+  "median_reply_s": 14.5
+ }
+}

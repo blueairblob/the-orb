@@ -27,6 +27,7 @@ leave it here if it's closer to "here's what we tried and found."
 
 ## Entries
 
+- [2026-09-19 — The guard's incoherence is a direction problem, not a capacity one (R18)](2026-09-19-guard-coherence-direction-not-capacity.md)
 - [2026-09-18 — The mood dial learns tactics (R5), replies stop waiting (R4), and junk canon (R14)](2026-09-18-tactic-mood-dial-and-deferred-recording.md)
 - [2026-09-18 — Hardening the state machine: R10, R2 and a canon-vs-anti-echo conflict (R12)](2026-09-18-state-machine-hardening.md)
 - [2026-09-18 — The DM's improvisations become canon too (REVIEW R1)](2026-09-18-dm-scene-canon.md)

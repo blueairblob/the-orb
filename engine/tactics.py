@@ -65,6 +65,17 @@ HARD = Difficulty("hard", credit_floor=0.25, penalty_floor=0.5)
 EASY = Difficulty("easy", credit_floor=0.1, penalty_floor=None)
 DIFFICULTIES = {d.name: d for d in (EASY, HARD)}
 
+# The minimum a reading needs to steer his *reply direction* (not his mood),
+# above whatever the difficulty credits toward mood (REVIEW.md R23). The
+# mood credits generously on easy (from 0.1) so persuasion registers; but a
+# reading that weak shouldn't tell his words what to *do* — a spurious
+# question=0.10 on a plain statement had him "answer what they asked" about
+# nothing. Measured (experiments/2026-09-23-reply-direction/floor_probe.py):
+# every real move read >= 0.40, every spurious secondary <= 0.22, genuine
+# compound secondaries >= 0.33; 0.3 separates them. The classifier is
+# dominant-label in practice, so this trims noise, not real compounds.
+DIRECTION_FLOOR = 0.3
+
 
 def difficulty_from_setting(value: str | None) -> Difficulty:
     """`--difficulty` / ORB_DIFFICULTY -> a Difficulty; unset means hard (the

@@ -338,6 +338,28 @@ def test_what_he_did_is_tracked_apart_from_what_counted_toward_his_mood():
     assert guard.last_did == ("bribe",)
 
 
+def test_a_weak_secondary_reading_does_not_steer_reply_direction():
+    # REVIEW.md R23: mood credits from 0.1 on easy, but a spurious
+    # question=0.10 on a plain statement shouldn't tell him to answer a
+    # question. Measured: real moves read >= 0.4, spurious secondaries <= 0.22.
+    guard = make_guard()
+
+    guard.react_to("I'm sure your brother was a good man.",
+                   {"empathy": 0.4, "question": 0.10, "other": 0.37}, EASY)
+
+    assert "question" not in guard.last_did
+    assert "empathy" in guard.last_did
+
+
+def test_a_genuine_compound_still_steers_both_moves():
+    # The floor trims noise, not real compounds: a strong secondary survives.
+    guard = make_guard()
+
+    guard.react_to("I'm sorry. How did it happen?", {"empathy": 0.5, "question": 0.4}, EASY)
+
+    assert set(guard.last_did) == {"empathy", "question"}
+
+
 def test_easy_direction_only_hears_a_dominant_penalising_reading():
     # Measured (experiments/2026-09-23-reply-direction/): a kind line's insult
     # reading was 0.10, exactly easy's credit floor; the reported bribe was 0.95.

@@ -31,3 +31,27 @@ and `other` readings at ~0.10, so he was told to "Answer what they asked" about 
 weak *crediting* reading steering direction on Easy's 0.1 floor. R20's "hi anyone there" note
 (other 0.77 + question 0.22) is the same family. Whether direction should use a higher floor for
 weak readings is a separate call from this fix.
+
+## R23 — a direction floor for reply steering (follow-up, same experiment dir)
+
+R20's fix left `describe_intent` reading every tactic the mood credited. On Easy the mood credits
+from 0.1, so weak readings steered his *words*: a spurious `question=0.10` on the plain statement
+"I'm sure your brother was a good man." told him to "answer what they asked."
+
+**Measured, not guessed** (`floor_probe.py` → `floor_readings.jsonl`, 12 hand-labelled lines): every
+*real* move read ≥ 0.40 (usually ≥ 0.8); every *spurious* secondary ≤ 0.22; genuine compound
+secondaries ("I'm sorry. How did it happen?" question=0.40, "Nothing I can spend in here"
+bribe=0.63/request=0.33) ≥ 0.33. **The classifier is dominant-label in practice**, not richly
+multi-label — most compounds collapse to one label. A `DIRECTION_FLOOR = 0.3` (`engine/tactics.py`)
+separates real moves from noise: applied to reply direction only, on top of the mood credit floor.
+
+**Fixed and verified** (`verify_r23.py`, real Gemma 4 E2B, Easy): "I'm sure your brother was a good
+man." now gets the empathy directive, not "answer the question", both tries; a genuine question
+still gets it.
+
+**One sub-case reclassified as not-a-bug.** R20 also flagged "hi anyone there" getting the
+answer-the-question directive. In the real opening context it reads `question=0.37–0.48` (and
+"anyone there?" → 0.95, "is someone there" → 0.98): a presence-query genuinely *is* a question,
+and "answer them" is a fair directive — the replies ("You're in the way. Keep talking.") aren't
+broken. Catching it would need the floor above 0.4, which would drop the genuine compounds at
+0.33–0.40 and undo the R18/R15 multi-label coherence. Left as-is deliberately.

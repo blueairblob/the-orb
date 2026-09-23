@@ -16,7 +16,7 @@ import dataclasses
 import re
 
 from engine.character import Stat, has_unnegated_match
-from engine.tactics import HARD, Difficulty
+from engine.tactics import DIRECTION_FLOOR, HARD, Difficulty
 from engine.world import Thing, add_fact
 
 KIND_WORDS = {
@@ -278,14 +278,18 @@ class Guard(Thing):
 
         `for_direction` asks a different question — what did the player
         *do*, so his reply can follow it — rather than what counts toward
-        his mood (REVIEW.md R20). It differs in one place: where the
-        difficulty never lets the model penalise (easy), a *dominant*
-        penalising reading (hard's penalty floor) is still heard, so a
-        bribe he won't be marked down for is still a bribe he turns down.
-        Not the credit floor: the probe in experiments/2026-09-23-reply-
-        direction/ put a kind line's insult reading at 0.10, exactly
-        easy's credit floor, and he would have shut it down coldly. Where
-        the difficulty does penalise (hard) nothing changes, so a
+        his mood (REVIEW.md R20, R23). Two ways it differs from the mood
+        reading. (1) Where the difficulty never lets the model penalise
+        (easy), a *dominant* penalising reading (hard's penalty floor) is
+        still heard, so a bribe he won't be marked down for is still a
+        bribe he turns down — not the credit floor: the probe put a kind
+        line's insult reading at 0.10, exactly easy's credit floor, and he
+        would have shut it down coldly. (2) A reading must clear
+        DIRECTION_FLOOR to steer his words at all, above whatever the mood
+        credits: the mood credits generously (0.1 on easy) so persuasion
+        registers, but a spurious question=0.10 on a plain statement
+        shouldn't tell him to "answer what they asked" (R23). Where the
+        difficulty does penalise (hard) the mood reading is unchanged, so a
         misreading the mood ignores doesn't steer his words either."""
         hostile = self.keyword_hostility(utterance)
         if not readings or not any(label in self.susceptibility for label in readings):
@@ -301,6 +305,8 @@ class Guard(Thing):
                 if floor is None or probability < floor:
                     continue
             elif probability < difficulty.credit_floor:
+                continue
+            if for_direction and probability < DIRECTION_FLOOR:
                 continue
             meanings.append(label)
         return tuple(meanings) or ("other",)

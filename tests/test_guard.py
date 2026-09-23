@@ -326,6 +326,47 @@ def test_easy_never_lets_the_classifier_penalise():
     assert guard.react_to("Look I have gold", {"bribe": 0.9}, EASY) == (("other",), 0)
 
 
+def test_what_he_did_is_tracked_apart_from_what_counted_toward_his_mood():
+    # REVIEW.md R20: on Easy the model can't penalise, so a clear bribe scored
+    # nothing -- and, being resolved to "other", lost the "turn the offer down"
+    # reply direction too. Mood and direction are separate questions.
+    guard = make_guard()
+
+    tactics, delta = guard.react_to("Look I have gold", {"bribe": 0.9}, EASY)
+
+    assert (tactics, delta) == (("other",), 0)
+    assert guard.last_did == ("bribe",)
+
+
+def test_easy_direction_only_hears_a_dominant_penalising_reading():
+    # Measured (experiments/2026-09-23-reply-direction/): a kind line's insult
+    # reading was 0.10, exactly easy's credit floor; the reported bribe was 0.95.
+    guard = make_guard()
+
+    guard.react_to("I'm sure your brother was a good man.", {"empathy": 0.4, "insult": 0.10}, EASY)
+
+    assert "insult" not in guard.last_did
+    assert "empathy" in guard.last_did
+
+
+def test_hard_direction_matches_mood_so_a_misreading_it_ignores_steers_nothing():
+    guard = make_guard()
+
+    guard.react_to("yes Dig", {"bribe": 0.3, "other": 0.4}, HARD)
+
+    assert guard.last_did == guard.last_move[0]
+    assert "bribe" not in guard.last_did
+
+
+def test_a_line_with_no_usable_classification_has_no_direction():
+    guard = make_guard()
+    guard.react_to("Look I have gold", {"bribe": 0.9}, EASY)
+
+    guard.react_to("Please, my friend.", None)
+
+    assert guard.last_did is None
+
+
 def test_easy_still_penalises_keyword_hostility():
     guard = make_guard()
 

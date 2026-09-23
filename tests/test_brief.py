@@ -341,6 +341,17 @@ def test_a_question_is_dealt_with_before_the_other_move():
     assert line.index("Answer what they asked") < line.index("Let it reach you a little")
 
 
+def test_easy_still_turns_down_a_bribe_it_wont_penalise():
+    # REVIEW.md R20: on Easy the mood ignores the bribe, but he still answers
+    # what the player *did*.
+    from engine.tactics import EASY
+
+    scenario = build_cell_and_guard()
+    scenario.guard.react_to("You have time to help me get gold", {"bribe": 0.9}, EASY)
+
+    assert "Turn the offer down and say why" in brief_for(scenario)
+
+
 def test_no_more_than_two_directives():
     scenario = build_cell_and_guard()
     scenario.guard.react_to(

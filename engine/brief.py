@@ -199,11 +199,9 @@ def describe_intent(guard: Guard) -> str | None:
     always dealt with first (the user: "act on the question first if asked");
     then the strongest other move. At most two directives — a small model
     follows one or two, not five."""
-    if not guard.reply_intents or guard.last_move is None:
+    if not guard.reply_intents or not guard.last_did:
         return None
-    tactics, _ = guard.last_move
-    if not tactics:
-        return None
+    tactics = guard.last_did
     ordered = sorted(tactics, key=lambda t: t != "question")
     others = [t for t in ordered if t != "other"]
     chosen = (others or ordered)[:MAX_INTENT_DIRECTIVES]

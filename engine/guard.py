@@ -150,6 +150,10 @@ class Guard(Thing):
     # the brief can tell the actor how he took it (REVIEW.md R13). Transient:
     # overwritten every guard turn before his brief is built, never saved.
     last_move: tuple[tuple[str, ...] | None, int] | None = None
+    # What the player *did* this turn, as opposed to what counted toward his
+    # mood (last_move): drives the reply direction (REVIEW.md R20). Same
+    # lifetime as last_move.
+    last_did: tuple[str, ...] | None = None
     unlock_threshold: int = 75
     lockout_threshold: int = 10
     secret_reveal_threshold: int = 65
@@ -259,6 +263,8 @@ class Guard(Thing):
         utterance: str,
         readings: dict[str, float] | None,
         difficulty: Difficulty = HARD,
+        *,
+        for_direction: bool = False,
     ) -> tuple[str, ...] | None:
         """The engine's final call on what this line *does* — every meaning
         that counts, most likely first. The classifier proposes, this
@@ -268,7 +274,19 @@ class Guard(Thing):
         several things at once, as a person hears it ("sorry — how did it
         happen?" is sympathy *and* a question). None means no usable
         classification at all (the caller falls back to
-        adjust_affiliation_from_text)."""
+        adjust_affiliation_from_text).
+
+        `for_direction` asks a different question — what did the player
+        *do*, so his reply can follow it — rather than what counts toward
+        his mood (REVIEW.md R20). It differs in one place: where the
+        difficulty never lets the model penalise (easy), a *dominant*
+        penalising reading (hard's penalty floor) is still heard, so a
+        bribe he won't be marked down for is still a bribe he turns down.
+        Not the credit floor: the probe in experiments/2026-09-23-reply-
+        direction/ put a kind line's insult reading at 0.10, exactly
+        easy's credit floor, and he would have shut it down coldly. Where
+        the difficulty does penalise (hard) nothing changes, so a
+        misreading the mood ignores doesn't steer his words either."""
         hostile = self.keyword_hostility(utterance)
         if not readings or not any(label in self.susceptibility for label in readings):
             return (hostile,) if hostile else None
@@ -278,6 +296,8 @@ class Guard(Thing):
                 continue
             if self.susceptibility[label] < 0:
                 floor = difficulty.penalty_floor
+                if floor is None and for_direction:
+                    floor = HARD.penalty_floor
                 if floor is None or probability < floor:
                     continue
             elif probability < difficulty.credit_floor:
@@ -301,7 +321,9 @@ class Guard(Thing):
         if tactics is None:
             delta = self.adjust_affiliation_from_text(utterance)
             self.last_move = (None, delta)
+            self.last_did = None
             return None, delta
+        self.last_did = self.resolve_tactics(utterance, readings, difficulty, for_direction=True)
 
         delta = REPEAT_DELTA if self._is_repeat(utterance) else 0
         for tactic in tactics:

@@ -27,6 +27,7 @@ leave it here if it's closer to "here's what we tried and found."
 
 ## Entries
 
+- [2026-09-23 — Reply direction follows what the player did (R20)](2026-09-23-reply-direction-follows-what-was-done.md)
 - [2026-09-19 — The room-description check rejected ordinary speech (R21)](2026-09-19-room-vocabulary-false-positives.md)
 - [2026-09-19 — Why asking his name shipped "Enough talk." (R19)](2026-09-19-name-question-fallback.md)
 - [2026-09-19 — The guard's incoherence is a direction problem, not a capacity one (R18)](2026-09-19-guard-coherence-direction-not-capacity.md)

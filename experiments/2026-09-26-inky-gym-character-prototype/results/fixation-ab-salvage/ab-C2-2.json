@@ -1,0 +1,139 @@
+[
+  {
+    "f": "Inky checks rack seven.",
+    "k": []
+  },
+  {
+    "f": "The fluorescent lights are buzzing.",
+    "k": []
+  },
+  {
+    "f": "It always sounds louder after midnight.",
+    "k": []
+  },
+  {
+    "f": "Inky does not like that kind of noise down there.",
+    "k": []
+  },
+  {
+    "f": "The noise rattles Inky's teeth.",
+    "k": []
+  },
+  {
+    "f": "The cooling fans are working overtime tonight.",
+    "k": []
+  },
+  {
+    "f": "Inky is Inky",
+    "k": [
+      "inky",
+      "name",
+      "keeps running",
+      "tonight",
+      "fluorescent lights",
+      "buzzing",
+      "loud",
+      "evening"
+    ]
+  },
+  {
+    "f": "Inky does not keep track of clocks.",
+    "k": [
+      "time",
+      "clock",
+      "track",
+      "midnight",
+      "dawn"
+    ]
+  },
+  {
+    "f": "Inky does not use a surname",
+    "k": [
+      "surname",
+      "name",
+      "call",
+      "fine",
+      "now"
+    ]
+  },
+  {
+    "f": "Inky is doing his job.",
+    "k": [
+      "job",
+      "work",
+      "tonight",
+      "air",
+      "heavy"
+    ]
+  },
+  {
+    "f": "Inky is on duty",
+    "k": [
+      "duty",
+      "power",
+      "grid",
+      "steady",
+      "tonight"
+    ]
+  },
+  {
+    "f": "The day shift is worse.",
+    "k": [
+      "shift",
+      "work",
+      "noise",
+      "chaos",
+      "lights"
+    ]
+  },
+  {
+    "f": "Inky listens for things",
+    "k": [
+      "listen",
+      "hear",
+      "search",
+      "quiet",
+      "hours"
+    ]
+  },
+  {
+    "f": "Inky sticks around during late hours.",
+    "k": [
+      "stick",
+      "around",
+      "late",
+      "hours",
+      "stay"
+    ]
+  },
+  {
+    "f": "The smell of stale coffee is a memory of Inky's presence.",
+    "k": [
+      "smell",
+      "coffee",
+      "memory",
+      "presence",
+      "stale"
+    ]
+  },
+  {
+    "f": "The air in this room is always cool",
+    "k": [
+      "air",
+      "cool",
+      "room",
+      "temperature",
+      "climate"
+    ]
+  },
+  {
+    "f": "Inky has an old cart with a wheel full of trouble.",
+    "k": [
+      "cart",
+      "wheel",
+      "trouble",
+      "old",
+      "near"
+    ]
+  }
+]

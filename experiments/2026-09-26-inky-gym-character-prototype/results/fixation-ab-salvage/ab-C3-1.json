@@ -1,0 +1,119 @@
+[
+  {
+    "f": "Inky checks rack seven.",
+    "k": []
+  },
+  {
+    "f": "The fluorescent lights are buzzing.",
+    "k": []
+  },
+  {
+    "f": "It always sounds louder after midnight.",
+    "k": []
+  },
+  {
+    "f": "Inky does not like that kind of noise down there.",
+    "k": []
+  },
+  {
+    "f": "The noise rattles Inky's teeth.",
+    "k": []
+  },
+  {
+    "f": "The cooling fans are working overtime tonight.",
+    "k": []
+  },
+  {
+    "f": "Inky is Inky",
+    "k": [
+      "inky",
+      "name",
+      "keeps running",
+      "tonight",
+      "fluorescent lights",
+      "buzzing",
+      "loud",
+      "evening"
+    ]
+  },
+  {
+    "f": "Inky does not keep track of clocks.",
+    "k": [
+      "time",
+      "clock",
+      "track",
+      "midnight",
+      "dawn"
+    ]
+  },
+  {
+    "f": "Inky does not use a surname",
+    "k": [
+      "surname",
+      "name",
+      "call",
+      "fine",
+      "now"
+    ]
+  },
+  {
+    "f": "Inky is doing his job.",
+    "k": [
+      "job",
+      "work",
+      "tonight",
+      "air",
+      "heavy"
+    ]
+  },
+  {
+    "f": "Inky is functional.",
+    "k": [
+      "functional",
+      "server",
+      "hum",
+      "steady",
+      "tonight"
+    ]
+  },
+  {
+    "f": "Inky finished wiping down rack seven.",
+    "k": [
+      "finished",
+      "wiping",
+      "rack",
+      "seven",
+      "dusty"
+    ]
+  },
+  {
+    "f": "Inky finished rack nine last week.",
+    "k": [
+      "rack",
+      "nine",
+      "finished",
+      "week",
+      "completed"
+    ]
+  },
+  {
+    "f": "Inky checked everything twice.",
+    "k": [
+      "check",
+      "twice",
+      "check",
+      "verify",
+      "double"
+    ]
+  },
+  {
+    "f": "Inky checks rack four every hour.",
+    "k": [
+      "rack",
+      "four",
+      "check",
+      "hour",
+      "round"
+    ]
+  }
+]

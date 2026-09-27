@@ -1,0 +1,111 @@
+[
+  {
+    "f": "Inky checks rack seven.",
+    "k": []
+  },
+  {
+    "f": "The fluorescent lights are buzzing.",
+    "k": []
+  },
+  {
+    "f": "It always sounds louder after midnight.",
+    "k": []
+  },
+  {
+    "f": "Inky does not like that kind of noise down there.",
+    "k": []
+  },
+  {
+    "f": "The noise rattles Inky's teeth.",
+    "k": []
+  },
+  {
+    "f": "The cooling fans are working overtime tonight.",
+    "k": []
+  },
+  {
+    "f": "Inky is Inky",
+    "k": [
+      "inky",
+      "name",
+      "keeps running",
+      "tonight",
+      "fluorescent lights",
+      "buzzing",
+      "loud",
+      "evening"
+    ]
+  },
+  {
+    "f": "Inky does not keep track of clocks.",
+    "k": [
+      "time",
+      "clock",
+      "track",
+      "midnight",
+      "dawn"
+    ]
+  },
+  {
+    "f": "Inky does not use a surname",
+    "k": [
+      "surname",
+      "name",
+      "call",
+      "fine",
+      "now"
+    ]
+  },
+  {
+    "f": "Inky is doing his job.",
+    "k": [
+      "job",
+      "work",
+      "tonight",
+      "air",
+      "heavy"
+    ]
+  },
+  {
+    "f": "Inky gets done with rounds when it gets dark",
+    "k": [
+      "dark",
+      "round",
+      "end",
+      "time",
+      "done |"
+    ]
+  },
+  {
+    "f": "Inky works as a maintenance crew member",
+    "k": [
+      "maintenance",
+      "crew",
+      "fan",
+      "faulty",
+      "noise",
+      "time"
+    ]
+  },
+  {
+    "f": "Inky started here twelve years ago",
+    "k": [
+      "inky",
+      "started",
+      "here",
+      "twelve",
+      "years",
+      "ago"
+    ]
+  },
+  {
+    "f": "Family is something Inky left behind ages ago",
+    "k": [
+      "family",
+      "left",
+      "ago",
+      "equipment",
+      "company |"
+    ]
+  }
+]
